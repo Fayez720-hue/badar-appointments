@@ -244,9 +244,21 @@
         for (const ev of [...events].sort((a,b)=>a.date-b.date)) {
             const dateStr = ev.date.toLocaleDateString('ar-EG');
             const isCallback = ev.type !== TYPE_APP;
-            html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="Swal.fire({ title:'${ev.title.replace(/'/g,"\\'")}', html:'<div style=\"text-align:right\"><p><strong>النوع:</strong> ${ev.type}</p><p><strong>التاريخ:</strong> ${dateStr}</p>${ev.displayTime ? `<p><strong>الوقت:</strong> ${ev.displayTime}</p>` : ''}<p><strong>الهاتف:</strong> ${ev.phone || 'غير متوفر'}</p><p><strong>الموقع:</strong> ${ev.city || ''} ${ev.address || ''}</p><p><strong>الملاحظات:</strong> ${ev.notes || 'لا توجد'}</p></div>', icon:'${isCallback ? 'warning' : 'info'}' })">
-                <div class="event-title"><div class="event-name"><i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i> ${ev.title}</div><span class="event-type">${ev.type}</span></div>
-                <div class="event-details"><span>📅 ${dateStr}</span>${ev.displayTime ? `<span>🕐 ${ev.displayTime}</span>` : ''}<span>📞 <span class="event-phone">${ev.phone || 'غير متوفر'}</span></span></div>
+            html += `<div class="event-item ${isCallback ? 'callback' : ''}">
+                <div class="event-title">
+                    <div class="event-name">
+                        <i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i>
+                        <span>${ev.title}</span>
+                    </div>
+                    <span class="event-type">${ev.type}</span>
+                </div>
+                <div class="event-details">
+                    <span>📅 ${dateStr}</span>
+                    ${ev.displayTime ? `<span>🕐 ${ev.displayTime}</span>` : ''}
+                    <span>📞 <span class="event-phone">${ev.phone || 'غير متوفر'}</span></span>
+                </div>
+                ${ev.city || ev.address ? `<div class="event-details" style="margin-top:5px;"><span>📍 ${ev.city || ''} ${ev.address || ''}</span></div>` : ''}
+                ${ev.notes ? `<div class="event-details" style="margin-top:5px;"><span>📝 ${ev.notes.substring(0, 80)}${ev.notes.length > 80 ? '...' : ''}</span></div>` : ''}
             </div>`;
         }
         container.innerHTML = html;
@@ -258,17 +270,12 @@
         if (!events.length) { el.innerHTML = '<div class="loading">لا توجد مواعيد</div>'; return; }
         const fcEvents = events.map(ev => ({
             id: ev.id, title: `${ev.type === TYPE_APP ? '🏢' : (ev.type === TYPE_CB_L ? '📞' : '📋')} ${ev.title}${ev.displayTime ? ` (${ev.displayTime})` : ''}`,
-            start: ev.date, backgroundColor: ev.type === TYPE_APP ? '#c9a03d' : (ev.type === TYPE_CB_L ? '#e67e22' : '#3b82f6'),
-            extendedProps: { phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, type: ev.type }
+            start: ev.date, backgroundColor: ev.type === TYPE_APP ? '#c9a03d' : (ev.type === TYPE_CB_L ? '#e67e22' : '#3b82f6')
         }));
         calendar = new FullCalendar.Calendar(el, {
             initialView: 'dayGridMonth', locale: 'ar', direction: 'rtl',
             headerToolbar: { left: 'prev,next', center: 'title', right: window.innerWidth < 768 ? '' : 'dayGridMonth' },
-            events: fcEvents,
-            eventClick: (info) => {
-                const ex = info.event.extendedProps;
-                Swal.fire({ title: info.event.title.replace(/^[🏢📞📋] /, ''), html: `<div style="text-align:right"><p><strong>النوع:</strong> ${ex.type}</p><p><strong>التاريخ:</strong> ${info.event.start.toLocaleDateString('ar-EG')}</p><p><strong>الهاتف:</strong> ${ex.phone || 'غير متوفر'}</p><p><strong>الموقع:</strong> ${ex.city || ''} ${ex.address || ''}</p><p><strong>الملاحظات:</strong> ${ex.notes || 'لا توجد'}</p></div>`, icon: ex.type === TYPE_APP ? 'info' : 'warning' });
-            }, height: 'auto', firstDay: 6
+            events: fcEvents, height: 'auto', firstDay: 6
         });
         calendar.render();
     }
