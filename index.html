@@ -67,9 +67,7 @@
         .spinner { width: 40px; height: 40px; border: 3px solid #fef8e7; border-top: 3px solid #c9a03d; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .sample-data-panel { background: #2d3748; color: #cbd5e0; padding: 12px; margin-top: 16px; border-radius: 12px; font-size: 12px; }
-        .sample-data-panel h4 { color: #fbbf24; margin-bottom: 8px; }
-        .sample-data-panel code { background: #1a202c; padding: 2px 6px; border-radius: 4px; color: #fbbf24; }
+        .status-badge { display: inline-block; background: #eef2ff; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; }
         
         @media (min-width: 768px) {
             body { padding: 20px; }
@@ -99,6 +97,7 @@
                 <button class="filter-btn" data-filter="callback"><i class="fas fa-phone-alt"></i> متابعات</button>
             </div>
             <button class="refresh-btn" id="refreshDataBtn"><i class="fas fa-sync-alt"></i> تحديث</button>
+            <span class="status-badge" id="syncStatus">✅ جاهز</span>
         </div>
     </div>
 
@@ -120,15 +119,7 @@
         </div>
     </div>
     
-    <div class="sample-data-panel">
-        <h4>📌 معلومات عن الأعمدة المستخدمة:</h4>
-        <p><strong>العمود O (index 14):</strong> تاريخ المعاينة - مثال: <code>27/04/2026</code> أو <code>2026-04-27</code></p>
-        <p><strong>العمود P (index 15):</strong> وقت المعاينة - مثال: <code>10:30</code> أو <code>2:30 م</code> أو <code>14:30</code></p>
-        <p><strong>العمود L (index 11):</strong> تاريخ المتابعة الأول</p>
-        <p><strong>العمود S (index 18):</strong> تاريخ المتابعة الثاني</p>
-    </div>
-    
-    <div class="footer-note"><i class="fas fa-bell"></i> إشعارات للمواعيد القادمة | <i class="fas fa-clock"></i> يتم استخراج الوقت من العمود P | <i class="fas fa-sync-alt"></i> تحديث تلقائي كل 5 دقائق</div>
+    <div class="footer-note"><i class="fas fa-bell"></i> إشعارات للمواعيد القادمة | <i class="fas fa-clock"></i> الوقت من العمود P | <i class="fas fa-sync-alt"></i> تحديث تلقائي كل 5 دقائق</div>
 </div>
 
 <div class="notifications-panel" id="notificationsPanel">
@@ -157,173 +148,138 @@
     const TYPE_APPOINTMENT = 'معاينة عقار';
     const TYPE_CALLBACK = 'متابعة عميل';
     
-    // دالة لاستخراج الوقت من العمود P بدقة
+    // ========== بيانات تجريبية للتأكد من عمل التقويم ==========
+    function getDemoEvents() {
+        const today = new Date();
+        const demoEvents = [
+            {
+                id: 'demo1',
+                title: 'أحمد محمد (معاينة فيلا)',
+                type: TYPE_APPOINTMENT,
+                start: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 30),
+                displayTime: '10:30 ص',
+                phone: '0501234567',
+                city: 'الرياض',
+                address: 'حي الملقا - شارع الأمير محمد بن سلمان',
+                notes: 'عميل جيد - يبحث عن فيلا بمساحة 400م'
+            },
+            {
+                id: 'demo2',
+                title: 'سارة خالد (معاينة شقة)',
+                type: TYPE_APPOINTMENT,
+                start: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 14, 0),
+                displayTime: '02:00 م',
+                phone: '0551234567',
+                city: 'جدة',
+                address: 'حي الشاطئ - شارع الأندلس',
+                notes: 'تريد شقة 3 غرف مع إطلالة على البحر'
+            },
+            {
+                id: 'demo3',
+                title: 'محمد علي (معاينة)',
+                type: TYPE_APPOINTMENT,
+                start: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 2, 11, 0),
+                displayTime: '11:00 ص',
+                phone: '0541234567',
+                city: 'الدمام',
+                address: 'حي الفيصلية',
+                notes: 'يبحث عن منزل مستقل'
+            },
+            {
+                id: 'demo4',
+                title: 'فاطمة حسن (متابعة)',
+                type: TYPE_CALLBACK,
+                start: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 15, 0),
+                displayTime: '03:00 م',
+                phone: '0561234567',
+                notes: 'تأكيد موعد معاينة الأسبوع القادم'
+            },
+            {
+                id: 'demo5',
+                title: 'يوسف رامي (معاينة)',
+                type: TYPE_APPOINTMENT,
+                start: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 3, 9, 30),
+                displayTime: '09:30 ص',
+                phone: '0571234567',
+                city: 'مكة',
+                address: 'حي العزيزية',
+                notes: 'يبحث عن شقة قريبة من الحرم'
+            },
+            {
+                id: 'demo6',
+                title: 'نور الهدى (متابعة)',
+                type: TYPE_CALLBACK,
+                start: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 13, 0),
+                displayTime: '01:00 م',
+                phone: '0581234567',
+                notes: 'تأكيد موعد المعاينة السابق'
+            }
+        ];
+        return demoEvents;
+    }
+    
+    // دالة لاستخراج الوقت من العمود P
     function extractTimeFromColumnP(timeValue) {
         if (!timeValue) return null;
-        
         let timeStr = timeValue.toString().trim();
         if (timeStr === '') return null;
         
-        console.log(`⏰ استخراج الوقت من العمود P: "${timeStr}"`);
-        
-        // تنسيق 1: HH:MM (24 ساعة) مثل "14:30"
+        // تنسيق HH:MM (24 ساعة)
         let match24 = timeStr.match(/^(\d{1,2}):(\d{2})$/);
         if (match24) {
             let hour = parseInt(match24[1]);
             let minute = parseInt(match24[2]);
             if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
-                console.log(`   ✓ تنسيق 24 ساعة: ${hour}:${minute}`);
                 return { hour: hour, minute: minute, display: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}` };
             }
         }
         
-        // تنسيق 2: H:MM (24 ساعة بدون صفر في البداية) مثل "9:30"
-        let match24b = timeStr.match(/^(\d{1,2}):(\d{2})$/);
-        if (match24b) {
-            let hour = parseInt(match24b[1]);
-            let minute = parseInt(match24b[2]);
-            if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
-                console.log(`   ✓ تنسيق 24 ساعة (بدون صفر): ${hour}:${minute}`);
-                return { hour: hour, minute: minute, display: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}` };
-            }
-        }
-        
-        // تنسيق 3: HH:MM مع ص/م (12 ساعة) مثل "02:30 م"
+        // تنسيق HH:MM مع ص/م
         let match12 = timeStr.match(/^(\d{1,2}):(\d{2})\s*(ص|م|صباحاً|مساءً|AM|PM|am|pm)$/i);
         if (match12) {
             let hour = parseInt(match12[1]);
             let minute = parseInt(match12[2]);
             let period = match12[3].toLowerCase();
-            
             if (period === 'م' || period === 'مساءً' || period === 'pm') {
                 if (hour !== 12) hour += 12;
             } else if (period === 'ص' || period === 'صباحاً' || period === 'am') {
                 if (hour === 12) hour = 0;
             }
-            console.log(`   ✓ تنسيق 12 ساعة: ${hour}:${minute}`);
             return { hour: hour, minute: minute, display: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}` };
         }
         
-        // تنسيق 4: HH (ساعة فقط) مثل "10"
-        let hourOnly = parseInt(timeStr);
-        if (!isNaN(hourOnly) && hourOnly >= 0 && hourOnly <= 23) {
-            console.log(`   ✓ ساعة فقط: ${hourOnly}:00`);
-            return { hour: hourOnly, minute: 0, display: `${hourOnly.toString().padStart(2, '0')}:00` };
-        }
-        
-        // تنسيق 5: H (ساعة واحدة) مثل "9"
-        let hourSingle = parseInt(timeStr);
-        if (!isNaN(hourSingle) && hourSingle >= 1 && hourSingle <= 12) {
-            console.log(`   ✓ ساعة واحدة (12 ساعة): ${hourSingle}:00 (يفترض صباحاً)`);
-            return { hour: hourSingle, minute: 0, display: `${hourSingle.toString().padStart(2, '0')}:00` };
-        }
-        
-        console.log(`   ⚠ لم يتم التعرف على تنسيق الوقت: "${timeStr}"`);
         return null;
     }
     
-    // دالة لتحويل التاريخ مع الوقت من العمود P
-    function parseAppointmentDate(dateValue, timeValue) {
-        if (!dateValue) return null;
-        
-        let dateStr = dateValue.toString().trim();
-        console.log(`📅 معالجة معاينة - التاريخ: "${dateStr}", الوقت من العمود P: "${timeValue || 'غير موجود'}"`);
-        
-        let day, month, year;
-        
-        // تنسيق DD/MM/YYYY
-        let matchDDMMYYYY = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-        if (matchDDMMYYYY) {
-            day = parseInt(matchDDMMYYYY[1]);
-            month = parseInt(matchDDMMYYYY[2]) - 1;
-            year = parseInt(matchDDMMYYYY[3]);
-            console.log(`   ✓ تنسيق DD/MM/YYYY: يوم=${day}, شهر=${month+1}, سنة=${year}`);
-        }
-        // تنسيق YYYY-MM-DD
-        else {
-            let matchYYYYMMDD = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-            if (matchYYYYMMDD) {
-                year = parseInt(matchYYYYMMDD[1]);
-                month = parseInt(matchYYYYMMDD[2]) - 1;
-                day = parseInt(matchYYYYMMDD[3]);
-                console.log(`   ✓ تنسيق YYYY-MM-DD: سنة=${year}, شهر=${month+1}, يوم=${day}`);
-            }
-            // تنسيق DD-MM-YYYY
-            else {
-                let matchDDMMYYYY2 = dateStr.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
-                if (matchDDMMYYYY2) {
-                    day = parseInt(matchDDMMYYYY2[1]);
-                    month = parseInt(matchDDMMYYYY2[2]) - 1;
-                    year = parseInt(matchDDMMYYYY2[3]);
-                    console.log(`   ✓ تنسيق DD-MM-YYYY: يوم=${day}, شهر=${month+1}, سنة=${year}`);
-                }
-                else {
-                    let d = new Date(dateStr);
-                    if (!isNaN(d.getTime())) {
-                        console.log(`   ✓ تم التحويل عبر new Date(): ${d.toDateString()}`);
-                        return d;
-                    }
-                    console.log(`   ❌ فشل تحويل التاريخ: "${dateStr}"`);
-                    return null;
-                }
-            }
-        }
-        
-        // استخراج الوقت من العمود P
-        let hour = 12, minute = 0;
-        let displayTime = "12:00";
-        let timeResult = extractTimeFromColumnP(timeValue);
-        
-        if (timeResult) {
-            hour = timeResult.hour;
-            minute = timeResult.minute;
-            displayTime = timeResult.display;
-            console.log(`   ✓ الوقت المستخرج من العمود P: ${displayTime} (${hour}:${minute})`);
-        } else {
-            console.log(`   ⚠ لم يتم العثور على وقت صالح في العمود P، استخدام 12:00 كقيمة افتراضية`);
-        }
-        
-        let dateObj = new Date(year, month, day, hour, minute);
-        if (!isNaN(dateObj.getTime())) {
-            let formattedTime = dateObj.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
-            console.log(`   ✅ تم إنشاء الموعد: ${dateObj.toLocaleDateString('ar-EG')} ${formattedTime}`);
-            return { date: dateObj, displayTime: displayTime };
-        }
-        
-        console.log(`   ❌ فشل إنشاء التاريخ النهائي`);
-        return null;
-    }
-    
+    // جلب البيانات الحقيقية من Google Sheets
     async function fetchRealSheetData() {
-        console.log("═══════════════════════════════════════════════════");
-        console.log("🔄 بدء جلب البيانات من Google Sheets...");
+        console.log("🔄 محاولة جلب البيانات من Google Sheets...");
         
         try {
-            const range = `${SHEET_NAME}!A1:V1000`;
+            const range = `${SHEET_NAME}!A1:V100`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
             
             const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            if (!response.ok) {
+                console.log(`❌ فشل الاتصال: HTTP ${response.status}`);
+                return null;
+            }
             
             const data = await response.json();
             const rows = data.values;
-            if (!rows || rows.length < 2) throw new Error("لا توجد بيانات");
+            if (!rows || rows.length < 2) {
+                console.log("❌ لا توجد بيانات في الجدول");
+                return null;
+            }
             
             console.log(`✅ تم جلب ${rows.length} صف من البيانات`);
             
-            // عرض العناوين للتأكد
-            if (rows[0]) {
-                console.log(`📋 عنوان العمود O (index 14): "${rows[0][14] || 'غير موجود'}"`);
-                console.log(`📋 عنوان العمود P (index 15): "${rows[0][15] || 'غير موجود'}"`);
-            }
-            
             const events = [];
-            let appCount = 0, cbCount = 0;
-            let timeSuccessCount = 0;
+            let appCount = 0;
             
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
-                if (!row || row.length < 2) continue;
+                if (!row || row.length < 16) continue;
                 
                 const name = row[1] || 'غير محدد';
                 const phone = row[2] || '';
@@ -331,129 +287,63 @@
                 const address = row[7] || '';
                 const generalNotes = row[8] || '';
                 
-                // ========== معاينة من العمود O و P ==========
-                const appointmentDateRaw = row[14] || '';   // العمود O - التاريخ
-                const appointmentTimeRaw = row[15] || '';   // العمود P - الوقت ⭐⭐⭐
+                // التاريخ من العمود O (index 14)
+                const appointmentDateRaw = row[14] || '';
+                // الوقت من العمود P (index 15)
+                const appointmentTimeRaw = row[15] || '';
                 
                 if (appointmentDateRaw && appointmentDateRaw.toString().trim() !== '') {
-                    console.log(`\n🔍 الصف ${i}: "${name}"`);
-                    console.log(`   📅 التاريخ (العمود O): "${appointmentDateRaw}"`);
-                    console.log(`   ⏰ الوقت (العمود P): "${appointmentTimeRaw || 'فارغ'}"`);
+                    console.log(`📅 صف ${i}: ${name} - التاريخ: ${appointmentDateRaw}, الوقت: ${appointmentTimeRaw || 'غير موجود'}`);
                     
-                    const result = parseAppointmentDate(appointmentDateRaw, appointmentTimeRaw);
-                    
-                    if (result && result.date && !isNaN(result.date.getTime())) {
-                        events.push({
-                            id: `app_${i}_${Date.now()}`,
-                            title: name,
-                            type: TYPE_APPOINTMENT,
-                            start: result.date,
-                            displayTime: result.displayTime,
-                            originalTimeRaw: appointmentTimeRaw,
-                            phone: phone,
-                            city: city,
-                            address: address,
-                            notes: generalNotes || 'لا توجد ملاحظات'
-                        });
-                        appCount++;
-                        if (appointmentTimeRaw && appointmentTimeRaw.trim() !== '') {
-                            timeSuccessCount++;
+                    // تحويل التاريخ
+                    let dateParts = appointmentDateRaw.toString().trim().split('/');
+                    if (dateParts.length === 3) {
+                        let day = parseInt(dateParts[0]);
+                        let month = parseInt(dateParts[1]) - 1;
+                        let year = parseInt(dateParts[2]);
+                        
+                        let hour = 12, minute = 0;
+                        let displayTime = "12:00";
+                        
+                        // استخراج الوقت من العمود P
+                        let timeResult = extractTimeFromColumnP(appointmentTimeRaw);
+                        if (timeResult) {
+                            hour = timeResult.hour;
+                            minute = timeResult.minute;
+                            displayTime = timeResult.display;
+                            console.log(`   ✓ الوقت المستخرج: ${displayTime}`);
                         }
-                        console.log(`   ✅ تمت إضافة المعاينة - الوقت المعروض: ${result.displayTime}`);
-                    } else {
-                        console.log(`   ❌ فشل تحويل التاريخ للمعاينة`);
-                    }
-                }
-                
-                // ========== متابعة من العمود L ==========
-                const callbackDateL = row[11] || '';
-                const callbackNotesL = row[13] || '';
-                
-                if (callbackDateL && callbackDateL.toString().trim() !== '') {
-                    let date = parseDateOnly(callbackDateL);
-                    if (date) {
-                        events.push({
-                            id: `cbL_${i}_${Date.now()}`,
-                            title: name,
-                            type: TYPE_CALLBACK,
-                            start: date,
-                            displayTime: '',
-                            phone: phone,
-                            city: '',
-                            address: '',
-                            notes: callbackNotesL || generalNotes || 'متابعة'
-                        });
-                        cbCount++;
-                        console.log(`   ✅ تمت إضافة متابعة من العمود L`);
-                    }
-                }
-                
-                // ========== متابعة من العمود S ==========
-                const callbackDateS = row[18] || '';
-                const callbackNotesS = row[19] || '';
-                
-                if (callbackDateS && callbackDateS.toString().trim() !== '') {
-                    let date = parseDateOnly(callbackDateS);
-                    if (date) {
-                        events.push({
-                            id: `cbS_${i}_${Date.now()}`,
-                            title: name,
-                            type: TYPE_CALLBACK,
-                            start: date,
-                            displayTime: '',
-                            phone: phone,
-                            city: '',
-                            address: '',
-                            notes: callbackNotesS || generalNotes || 'متابعة إضافية'
-                        });
-                        cbCount++;
-                        console.log(`   ✅ تمت إضافة متابعة من العمود S`);
+                        
+                        let dateObj = new Date(year, month, day, hour, minute);
+                        if (!isNaN(dateObj.getTime())) {
+                            events.push({
+                                id: `app_${i}`,
+                                title: name,
+                                type: TYPE_APPOINTMENT,
+                                start: dateObj,
+                                displayTime: displayTime,
+                                phone: phone,
+                                city: city,
+                                address: address,
+                                notes: generalNotes || 'لا توجد ملاحظات'
+                            });
+                            appCount++;
+                            console.log(`   ✅ تمت إضافة معاينة: ${name}`);
+                        }
                     }
                 }
             }
             
-            console.log(`\n═══════════════════════════════════════════════════`);
-            console.log(`📊 التقرير النهائي:`);
-            console.log(`   • معاينات: ${appCount}`);
-            console.log(`   • منها تم استخراج وقت بنجاح: ${timeSuccessCount}`);
-            console.log(`   • متابعات: ${cbCount}`);
-            console.log(`   • المجموع الكلي: ${events.length}`);
-            console.log(`═══════════════════════════════════════════════════`);
+            console.log(`📊 تم العثور على ${appCount} معاينة من Google Sheets`);
+            return events.length > 0 ? events : null;
             
-            return events;
         } catch (error) {
-            console.error(`❌ خطأ في جلب البيانات: ${error.message}`);
-            return [];
+            console.error("❌ خطأ في جلب البيانات:", error);
+            return null;
         }
     }
     
-    function parseDateOnly(dateStr) {
-        if (!dateStr) return null;
-        let cleaned = dateStr.toString().trim();
-        let year, month, day;
-        
-        let match = cleaned.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-        if (match) {
-            day = parseInt(match[1]);
-            month = parseInt(match[2]) - 1;
-            year = parseInt(match[3]);
-        } else {
-            match = cleaned.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-            if (match) {
-                year = parseInt(match[1]);
-                month = parseInt(match[2]) - 1;
-                day = parseInt(match[3]);
-            } else {
-                let d = new Date(cleaned);
-                if (!isNaN(d.getTime())) return d;
-                return null;
-            }
-        }
-        
-        let dateObj = new Date(year, month, day, 12, 0);
-        return isNaN(dateObj.getTime()) ? null : dateObj;
-    }
-    
+    // تحديث الإحصائيات
     function updateStats(events) {
         const totalApp = events.filter(e => e.type === TYPE_APPOINTMENT).length;
         const totalCb = events.filter(e => e.type === TYPE_CALLBACK).length;
@@ -480,14 +370,11 @@
         document.getElementById('todayAppointments').innerText = todayApps;
         document.getElementById('todayCallbacks').innerText = todayCbs;
         
-        if (todayApps > 0) {
-            addNotification('🏢 معاينات اليوم', `${todayApps} معاينة عقار اليوم`, 'appointment', `today_app_${today.toDateString()}`);
-        }
-        if (todayCbs > 0) {
-            addNotification('📞 متابعات اليوم', `${todayCbs} متابعة عميل اليوم`, 'callback', `today_cb_${today.toDateString()}`);
-        }
+        const statusSpan = document.getElementById('syncStatus');
+        statusSpan.innerHTML = `✅ ${events.length} موعد`;
     }
     
+    // عرض قائمة الأحداث القادمة
     function renderUpcomingList(events) {
         const container = document.getElementById('upcomingEventsList');
         if (events.length === 0) {
@@ -514,7 +401,7 @@
         let html = '';
         for (const ev of upcoming) {
             const dateStr = ev.start.toLocaleDateString('ar-EG', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
-            const timeStr = ev.displayTime || ev.start.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            const timeStr = ev.displayTime || ev.start.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
             const isCallback = ev.type === TYPE_CALLBACK;
             
             html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${ev.phone || ''}', '${(ev.notes || '').replace(/'/g, "\\'")}', '${ev.type}', '${(ev.city || '').replace(/'/g, "\\'")}', '${(ev.address || '').replace(/'/g, "\\'")}', '${timeStr}')">
@@ -529,6 +416,7 @@
         container.innerHTML = html;
     }
     
+    // عرض التفاصيل
     window.showDetails = function(title, phone, notes, type, city = '', address = '', timeStr = '') {
         let locationHtml = '';
         if (type === TYPE_APPOINTMENT && (city || address)) {
@@ -556,20 +444,25 @@
         });
     };
     
+    // تهيئة التقويم
     function initCalendar(events) {
         const calendarEl = document.getElementById('calendar');
         if (calendarInstance) calendarInstance.destroy();
-        if (events.length === 0) return;
+        
+        if (events.length === 0) {
+            calendarEl.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-calendar-times" style="font-size:3rem;opacity:0.5;"></i><p>لا توجد مواعيد للعرض</p></div>';
+            return;
+        }
         
         const fcEvents = events.map(ev => {
-            let timeDisplay = '';
+            let titleWithTime = ev.title;
             if (ev.type === TYPE_APPOINTMENT && ev.displayTime) {
-                timeDisplay = ` ${ev.displayTime}`;
+                titleWithTime = `${ev.title} (${ev.displayTime})`;
             }
             
             return {
                 id: ev.id, 
-                title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : '📞'} ${ev.title}${timeDisplay}`,
+                title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : '📞'} ${titleWithTime}`,
                 start: ev.start, 
                 backgroundColor: ev.type === TYPE_APPOINTMENT ? '#c9a03d' : '#e67e22',
                 extendedProps: { 
@@ -578,20 +471,25 @@
                     type: ev.type, 
                     city: ev.city || '', 
                     address: ev.address || '',
-                    displayTime: ev.displayTime || ev.start.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })
+                    displayTime: ev.displayTime
                 }
             };
         });
         
         calendarInstance = new FullCalendar.Calendar(calendarEl, {
-            initialView: window.innerWidth < 768 ? 'dayGridMonth' : 'dayGridMonth',
-            locale: 'ar', direction: 'rtl',
-            headerToolbar: { left: 'prev,next', center: 'title', right: window.innerWidth < 768 ? '' : 'dayGridMonth,timeGridWeek' },
+            initialView: 'dayGridMonth',
+            locale: 'ar', 
+            direction: 'rtl',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: window.innerWidth < 768 ? '' : 'dayGridMonth,timeGridWeek'
+            },
             events: fcEvents,
             eventClick: (info) => { 
                 const ext = info.event.extendedProps; 
                 showDetails(
-                    info.event.title.replace(/^[🏢📞] [0-9:]+/, '').replace(/^[🏢📞] /, ''), 
+                    info.event.title.replace(/^[🏢📞] /, '').replace(/\([^)]*\)/, '').trim(), 
                     ext.phone, 
                     ext.notes, 
                     ext.type, 
@@ -711,32 +609,41 @@
     }
     
     async function refreshDashboard() {
-        console.log(`\n🔄 === بدء تحديث البيانات ===`);
-        const realEvents = await fetchRealSheetData();
-        if (realEvents.length > 0) {
+        console.log("🔄 بدء تحديث البيانات...");
+        
+        // محاولة جلب البيانات الحقيقية
+        let realEvents = await fetchRealSheetData();
+        
+        if (realEvents && realEvents.length > 0) {
+            // إذا تم جلب بيانات حقيقية، استخدمها
             originalEvents = realEvents;
-            applyFilter();
-            console.log(`✅ تم تحديث الواجهة بـ ${realEvents.length} موعد`);
+            console.log(`✅ تم استخدام البيانات الحقيقية - ${realEvents.length} موعد`);
+            const statusSpan = document.getElementById('syncStatus');
+            statusSpan.innerHTML = `✅ ${realEvents.length} موعد (حقيقي)`;
         } else {
-            originalEvents = [];
-            filteredEvents = [];
-            updateStats([]);
-            renderUpcomingList([]);
-            initCalendar([]);
-            console.log(`⚠️ لم يتم العثور على مواعيد`);
+            // وإلا استخدم البيانات التجريبية
+            originalEvents = getDemoEvents();
+            console.log(`⚠️ استخدام البيانات التجريبية - ${originalEvents.length} موعد تجريبي`);
+            const statusSpan = document.getElementById('syncStatus');
+            statusSpan.innerHTML = `⚠️ ${originalEvents.length} موعد (تجريبي)`;
+            
+            addNotification('ℹ️ بيانات تجريبية', 'يتم عرض بيانات تجريبية. قم بتحديث إعدادات Google Sheets لعرض بياناتك الحقيقية.', 'info', 'demo_notification');
         }
-        console.log(`🔄 === انتهاء التحديث ===\n`);
+        
+        applyFilter();
+        console.log(`📊 تم تحديث الواجهة بـ ${filteredEvents.length} موعد (بعد الفلتر)`);
     }
     
     window.addEventListener('load', () => {
         console.log(`🚀 بدء تشغيل التطبيق - نظام العقارات`);
         console.log(`📅 التاريخ الحالي: ${new Date().toLocaleString('ar-EG')}`);
-        console.log(`📍 يتم استخراج الوقت من العمود P (index 15)`);
         
         requestNotificationPermission();
+        
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => setFilter(btn.dataset.filter));
         });
+        
         document.getElementById('refreshDataBtn').addEventListener('click', refreshDashboard);
         document.getElementById('notificationBell').addEventListener('click', toggleNotifications);
         document.getElementById('closeNotificationsBtn').addEventListener('click', closeNotifications);
