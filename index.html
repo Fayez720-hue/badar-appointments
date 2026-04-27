@@ -48,13 +48,12 @@
         .event-type { font-size: 0.65rem; padding: 2px 8px; border-radius: 15px; background: #fef8e7; }
         .event-details { font-size: 0.7rem; display: flex; flex-wrap: wrap; gap: 10px; color: #6c7a74; }
         
-        /* Notifications */
-        .notification-area { position: relative; cursor: pointer; }
-        .notification-bell { background: rgba(201,160,61,0.1); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-        .notification-badge { position: absolute; top: -5px; right: -5px; background: #dc2626; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.6rem; display: flex; align-items: center; justify-content: center; }
+        /* Notifications Panel - مع زر الرجوع */
         .notifications-panel { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: none; flex-direction: column; overflow: hidden; }
         .notifications-header { background: linear-gradient(135deg, #c9a03d, #8b6914); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .clear-notifications { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 12px; border-radius: 20px; cursor: pointer; }
+        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .back-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.05); }
+        .clear-notifications { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; }
         .notifications-list { flex: 1; overflow-y: auto; }
         .notification-item { padding: 12px 15px; border-bottom: 1px solid #e5e7eb; display: flex; gap: 12px; cursor: pointer; }
         .notification-item.unread { background: #fef8e7; }
@@ -62,6 +61,11 @@
         .notification-icon.appointment { background: #dcfce7; color: #16a34a; }
         .notification-icon.callback { background: #ffecb3; color: #b45f06; }
         .notification-icon.info { background: #dbeafe; color: #3b82f6; }
+        
+        /* Notification Bell */
+        .notification-area { position: relative; cursor: pointer; }
+        .notification-bell { background: rgba(201,160,61,0.1); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .notification-badge { position: absolute; top: -5px; right: -5px; background: #dc2626; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.6rem; display: flex; align-items: center; justify-content: center; }
         
         /* Calendar Mobile */
         .fc .fc-toolbar { flex-direction: column; gap: 10px; }
@@ -77,7 +81,7 @@
             body { padding: 20px; }
             .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 18px; }
             .two-columns { flex-direction: row; }
-            .notifications-panel { width: 380px; height: auto; max-height: 500px; top: 20px; left: 20px; border-radius: 20px; }
+            .notifications-panel { width: 400px; height: auto; max-height: 600px; top: 20px; left: 20px; border-radius: 20px; }
             h1 { font-size: 1.4rem; }
         }
     </style>
@@ -121,12 +125,19 @@
             <div id="upcomingEventsList" class="event-list"><div class="loading"><div class="spinner"></div><p>جاري التحميل...</p></div></div>
         </div>
     </div>
-    <div class="footer-note"><i class="fas fa-bell"></i> إشعارات للمواعيد القادمة | <i class="fas fa-sync-alt"></i> تحديث تلقائي كل 5 دقائق</div>
+    <div class="footer-note"><i class="fas fa-bell"></i> إشعارات للمواعيد القادمة | <i class="fas fa-phone-alt"></i> يتم جلب المتابعات من الأعمدة L & S | <i class="fas fa-sync-alt"></i> تحديث تلقائي</div>
 </div>
 
+<!-- Notifications Panel with Back Button -->
 <div class="notifications-panel" id="notificationsPanel">
-    <div class="notifications-header"><h3><i class="fas fa-bell"></i> الإشعارات</h3><button class="clear-notifications" id="clearNotifications">مسح الكل</button></div>
-    <div class="notifications-list" id="notificationsList"><div style="text-align:center;padding:40px;"><i class="fas fa-inbox" style="font-size:2rem;"></i><p>لا توجد إشعارات</p></div></div>
+    <div class="notifications-header">
+        <button class="back-btn" id="closeNotificationsBtn"><i class="fas fa-arrow-right"></i></button>
+        <h3><i class="fas fa-bell"></i> الإشعارات</h3>
+        <button class="clear-notifications" id="clearNotifications">مسح الكل</button>
+    </div>
+    <div class="notifications-list" id="notificationsList">
+        <div style="text-align:center;padding:40px;"><i class="fas fa-inbox" style="font-size:2rem;"></i><p>لا توجد إشعارات</p></div>
+    </div>
 </div>
 
 <script>
@@ -141,7 +152,7 @@
     let currentFilter = 'all';
     let notifications = [];
     let notificationId = 0;
-    let lastNotifiedDates = new Set(); // تتبع التواريخ التي تم إرسال إشعار لها
+    let lastNotifiedDates = new Set();
     
     const TYPE_APPOINTMENT = 'معاينة عقار';
     const TYPE_CALLBACK = 'متابعة عميل';
@@ -162,14 +173,12 @@
     
     // إضافة إشعار جديد
     function addNotification(title, message, type, eventId = null) {
-        // تجنب الإشعارات المكررة
         if (eventId && lastNotifiedDates.has(eventId)) return;
         if (eventId) lastNotifiedDates.add(eventId);
         
         const id = notificationId++;
         notifications.unshift({ id, title, message, type, time: new Date(), read: false });
         
-        // الاحتفاظ بآخر 50 إشعار فقط
         if (notifications.length > 50) notifications.pop();
         
         updateNotificationUI();
@@ -241,6 +250,10 @@
         panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
     }
     
+    function closeNotifications() {
+        document.getElementById('notificationsPanel').style.display = 'none';
+    }
+    
     function showToast(message) {
         Swal.fire({ text: message, toast: true, position: 'top-end', showConfirmButton: false, timer: 2500, timerProgressBar: true, background: '#fff', didOpen: (toast) => { toast.style.direction = 'rtl'; } });
     }
@@ -251,10 +264,7 @@
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
-        const twoDaysLater = new Date(today);
-        twoDaysLater.setDate(twoDaysLater.getDate() + 2);
         
-        // تجميع المواعيد حسب الفئات
         const todayAppointments = [];
         const todayCallbacks = [];
         const tomorrowAppointments = [];
@@ -263,7 +273,6 @@
         for (const ev of events) {
             const evDate = new Date(ev.start);
             evDate.setHours(0, 0, 0, 0);
-            const dateKey = evDate.toDateString();
             
             if (evDate.getTime() === today.getTime()) {
                 if (ev.type === TYPE_APPOINTMENT) todayAppointments.push(ev);
@@ -274,31 +283,19 @@
             }
         }
         
-        // إرسال إشعارات لمواعيد اليوم
         if (todayAppointments.length > 0) {
-            const message = todayAppointments.length === 1 
-                ? `معاينة عقار اليوم: ${todayAppointments[0].title}` 
-                : `${todayAppointments.length} معاينات عقارات اليوم`;
-            addNotification('🏢 معاينات اليوم', message, 'appointment', `today_app_${today.toDateString()}`);
+            addNotification('🏢 معاينات اليوم', `${todayAppointments.length} معاينة عقار اليوم`, 'appointment', `today_app_${today.toDateString()}`);
         }
-        
         if (todayCallbacks.length > 0) {
-            const message = todayCallbacks.length === 1 
-                ? `متابعة عميل اليوم: ${todayCallbacks[0].title}` 
-                : `${todayCallbacks.length} متابعات عملاء اليوم`;
-            addNotification('📞 متابعات اليوم', message, 'callback', `today_cb_${today.toDateString()}`);
+            addNotification('📞 متابعات اليوم', `${todayCallbacks.length} متابعة عميل اليوم`, 'callback', `today_cb_${today.toDateString()}`);
         }
-        
-        // إشعار لمواعيد الغد
         if (tomorrowAppointments.length > 0) {
             addNotification('⏰ تذكير معاينات غداً', `${tomorrowAppointments.length} معاينة عقار غداً`, 'appointment', `tomorrow_app_${tomorrow.toDateString()}`);
         }
-        
         if (tomorrowCallbacks.length > 0) {
             addNotification('⏰ تذكير متابعات غداً', `${tomorrowCallbacks.length} متابعة عميل غداً`, 'callback', `tomorrow_cb_${tomorrow.toDateString()}`);
         }
         
-        // عرض ملخص في وحدة التحكم للتأكد من عمل الإشعارات
         console.log(`📊 إشعارات: اليوم: ${todayAppointments.length} معاينة, ${todayCallbacks.length} متابعة | غداً: ${tomorrowAppointments.length} معاينة, ${tomorrowCallbacks.length} متابعة`);
     }
     
@@ -333,34 +330,86 @@
             const events = [];
             let appCount = 0, cbCount = 0;
             
+            // عرض العناوين للتأكد من الأعمدة
+            if (rows[0]) {
+                console.log("📋 العناوين:", rows[0]);
+                console.log("📍 العمود L (index 11):", rows[0][11]);
+                console.log("📍 العمود S (index 18):", rows[0][18]);
+                console.log("📍 العمود O (index 14):", rows[0][14]);
+            }
+            
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
-                if (!row || row.length < 15) continue;
+                if (!row) continue;
+                
                 const name = row[1] || 'غير محدد';
                 const phone = row[2] || row[12] || '';
-                const appDate = row[14] || '';
-                const appTime = row[15] || '';
-                const cbDate = row[11] || '';
-                const cbNotes = row[13] || '';
-                const notes = row[8] || '';
                 
-                if (appDate && appDate.toString().trim()) {
-                    let date = parseDate(appDate, appTime);
+                // ========== معاينات من العمود O (index 14) ==========
+                const appointmentDateRaw = row[14] || '';
+                const appointmentTime = row[15] || '';
+                
+                // ========== متابعات من العمود L (index 11) ==========
+                const callbackDateL = row[11] || '';
+                const callbackPhoneL = row[12] || '';
+                const callbackNotesL = row[13] || '';
+                
+                // ========== متابعات من العمود S (index 18) ==========
+                const callbackDateS = row[18] || '';      // العمود S - تاريخ متابعة إضافي
+                const callbackPhoneS = row[12] || '';     // نفس رقم الهاتف
+                const callbackNotesS = row[19] || '';     // العمود T - ملاحظات إضافية
+                
+                const generalNotes = row[8] || '';
+                
+                // معاينة
+                if (appointmentDateRaw && appointmentDateRaw.toString().trim()) {
+                    let date = parseDate(appointmentDateRaw, appointmentTime);
                     if (date) {
-                        events.push({ id: `app_${i}`, title: name, type: TYPE_APPOINTMENT, start: date, time: appTime, phone: phone, notes: notes || cbNotes });
+                        events.push({
+                            id: `app_${i}`, title: name, type: TYPE_APPOINTMENT,
+                            start: date, time: appointmentTime, phone: phone,
+                            notes: generalNotes || callbackNotesL || 'لا توجد ملاحظات'
+                        });
                         appCount++;
                     }
                 }
-                if (cbDate && cbDate.toString().trim()) {
-                    let date = parseDate(cbDate, '');
+                
+                // متابعة من العمود L
+                if (callbackDateL && callbackDateL.toString().trim()) {
+                    let date = parseDate(callbackDateL, '');
                     if (date) {
-                        events.push({ id: `cb_${i}`, title: name, type: TYPE_CALLBACK, start: date, time: '', phone: row[12] || phone, notes: cbNotes || notes });
+                        events.push({
+                            id: `cbL_${i}`, title: name, type: TYPE_CALLBACK,
+                            start: date, time: '', phone: callbackPhoneL || phone,
+                            notes: callbackNotesL || generalNotes || 'متابعة من السجل'
+                        });
                         cbCount++;
+                        console.log(`✅ متابعة من العمود L: ${name} - ${callbackDateL}`);
+                    }
+                }
+                
+                // متابعة من العمود S
+                if (callbackDateS && callbackDateS.toString().trim()) {
+                    let date = parseDate(callbackDateS, '');
+                    if (date) {
+                        events.push({
+                            id: `cbS_${i}`, title: name, type: TYPE_CALLBACK,
+                            start: date, time: '', phone: callbackPhoneS || phone,
+                            notes: callbackNotesS || generalNotes || 'متابعة إضافية'
+                        });
+                        cbCount++;
+                        console.log(`✅ متابعة من العمود S: ${name} - ${callbackDateS}`);
                     }
                 }
             }
             
-            console.log(`✅ تم جلب ${events.length} حدث (${appCount} معاينة، ${cbCount} متابعة)`);
+            console.log(`📊 النتائج النهائية: ${appCount} معاينة, ${cbCount} متابعة, المجموع: ${events.length}`);
+            
+            if (events.length === 0) throw new Error("لم يتم العثور على مواعيد");
+            
+            // إشعار بنتيجة الجلب
+            addNotification('✅ تحديث البيانات', `تم جلب ${appCount} معاينة و ${cbCount} متابعة`, 'info', `refresh_${Date.now()}`);
+            
             return events;
         } catch (error) {
             console.error("خطأ في الجلب:", error);
@@ -431,14 +480,23 @@
             const isCallback = ev.type === TYPE_CALLBACK;
             html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${ev.phone || ''}', '${(ev.notes || '').replace(/'/g, "\\'")}', '${ev.type}')">
                 <div class="event-title"><span><i class="fas ${isCallback ? 'fa-user-friends' : 'fa-building'}"></i> ${ev.title}</span><span class="event-type">${ev.type === TYPE_APPOINTMENT ? '🏢 معاينة' : '📞 متابعة'}</span></div>
-                <div class="event-details"><span><i class="far fa-calendar-alt"></i> ${dateStr}</span><span><i class="far fa-clock"></i> ${timeStr}</span></div>
+                <div class="event-details"><span><i class="far fa-calendar-alt"></i> ${dateStr}</span><span><i class="far fa-clock"></i> ${timeStr}</span><span><i class="fas fa-phone"></i> ${ev.phone || 'غير متوفر'}</span></div>
             </div>`;
         }
         container.innerHTML = html;
     }
     
     window.showDetails = function(title, phone, notes, type) {
-        Swal.fire({ title, html: `<div style="text-align:right"><p><i class="fas fa-tag"></i> <strong>النوع:</strong> ${type}</p><p><i class="fas fa-phone"></i> <strong>الهاتف:</strong> ${phone || 'غير متوفر'}</p><p><i class="fas fa-sticky-note"></i> <strong>الملاحظات:</strong> ${notes || 'لا توجد'}</p></div>`, icon: type === TYPE_APPOINTMENT ? 'info' : 'warning', confirmButtonColor: '#c9a03d' });
+        Swal.fire({ 
+            title: title, 
+            html: `<div style="text-align:right">
+                <p><i class="fas fa-tag"></i> <strong>النوع:</strong> ${type}</p>
+                <p><i class="fas fa-phone"></i> <strong>الهاتف:</strong> ${phone || 'غير متوفر'}</p>
+                <p><i class="fas fa-sticky-note"></i> <strong>الملاحظات:</strong> ${notes || 'لا توجد'}</p>
+            </div>`, 
+            icon: type === TYPE_APPOINTMENT ? 'info' : 'warning', 
+            confirmButtonColor: '#c9a03d' 
+        });
     };
     
     function initCalendar(events) {
@@ -469,7 +527,6 @@
         if (realEvents.length > 0) {
             originalEvents = realEvents;
             applyFilter();
-            // التحقق من المواعيد القادمة وإرسال الإشعارات
             checkUpcomingEventsAndNotify(realEvents);
             console.log(`✅ تم تحديث الواجهة - ${realEvents.length} موعد`);
         } else {
@@ -489,16 +546,16 @@
         });
         document.getElementById('refreshDataBtn').addEventListener('click', refreshDashboard);
         document.getElementById('notificationBell').addEventListener('click', toggleNotifications);
+        document.getElementById('closeNotificationsBtn').addEventListener('click', closeNotifications);
         document.getElementById('clearNotifications').addEventListener('click', clearAllNotifications);
         document.addEventListener('click', (e) => {
             const panel = document.getElementById('notificationsPanel');
             const bell = document.getElementById('notificationBell');
-            if (!bell.contains(e.target) && !panel.contains(e.target) && panel.style.display === 'flex') {
+            if (window.innerWidth >= 768 && !bell.contains(e.target) && !panel.contains(e.target) && panel.style.display === 'flex') {
                 panel.style.display = 'none';
             }
         });
         refreshDashboard();
-        // تحديث تلقائي كل 5 دقائق
         setInterval(refreshDashboard, 300000);
     });
 </script>
