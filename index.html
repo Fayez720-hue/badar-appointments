@@ -3,544 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>نظام إدارة العملاء - معاينات ومتابعات</title>
-    <!-- FullCalendar CSS & JS -->
+    <title>نظام إدارة العقارات - معاينات ومتابعات</title>
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Sweet Alert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Cairo', 'Segoe UI', Tahoma, system-ui, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 50%, #1a472a 100%);
-            min-height: 100vh;
-            padding: 12px;
-            direction: rtl;
-        }
-
-        /* Mobile First Design */
-        .dashboard-container {
-            max-width: 1600px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Header - Mobile Optimized */
-        .header {
-            background: rgba(255,255,255,0.97);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            border: 1px solid rgba(218, 165, 32, 0.3);
-        }
-
-        .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        h1 {
-            font-size: 1.2rem;
-            background: linear-gradient(135deg, #c9a03d, #8b6914);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        h1 i {
-            font-size: 1.3rem;
-            -webkit-text-fill-color: #c9a03d;
-        }
-
-        h1 small {
-            font-size: 0.6rem;
-            background: #fef8e7;
-            padding: 3px 8px;
-            border-radius: 20px;
-            -webkit-text-fill-color: #8b6914;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        /* Mobile Menu Button */
-        .menu-btn {
-            background: rgba(201,160,61,0.1);
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-        }
-
-        .menu-btn i {
-            font-size: 1.2rem;
-            color: #c9a03d;
-        }
-
-        /* Side Menu */
-        .side-menu {
-            position: fixed;
-            top: 0;
-            right: -280px;
-            width: 280px;
-            height: 100vh;
-            background: white;
-            z-index: 2000;
-            transition: right 0.3s ease;
-            box-shadow: -5px 0 25px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .side-menu.open {
-            right: 0;
-        }
-
-        .menu-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1999;
-            display: none;
-        }
-
-        .menu-overlay.show {
-            display: block;
-        }
-
-        .menu-header {
-            background: linear-gradient(135deg, #c9a03d, #8b6914);
-            padding: 20px;
-            color: white;
-            text-align: center;
-        }
-
-        .menu-header i {
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
-
-        .menu-items {
-            flex: 1;
-            padding: 20px;
-        }
-
-        .menu-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: background 0.3s;
-            margin-bottom: 8px;
-        }
-
-        .menu-item:hover {
-            background: #fef8e7;
-        }
-
-        .menu-item i {
-            width: 24px;
-            color: #c9a03d;
-        }
-
-        /* Filter Buttons - Mobile Optimized */
-        .filter-group {
-            display: flex;
-            gap: 6px;
-            background: rgba(0,0,0,0.05);
-            padding: 4px;
-            border-radius: 40px;
-            flex-wrap: wrap;
-        }
-
-        .filter-btn {
-            padding: 6px 12px;
-            border-radius: 30px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.75rem;
-            transition: all 0.3s;
-            background: transparent;
-            color: #5c6b66;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .filter-btn i {
-            font-size: 0.8rem;
-        }
-
-        .filter-btn.active {
-            background: linear-gradient(135deg, #c9a03d, #8b6914);
-            color: white;
-        }
-
-        .refresh-btn {
-            background: linear-gradient(135deg, #c9a03d, #8b6914);
-            border: none;
-            color: white;
-            padding: 8px 14px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.75rem;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        /* Stats Cards - Mobile Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .stat-card {
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 12px;
-            transition: all 0.3s;
-            border: 1px solid rgba(201,160,61,0.2);
-        }
-
-        .stat-card h3 {
-            font-size: 0.7rem;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .stat-card h3 i {
-            font-size: 0.8rem;
-        }
-
-        .stat-number {
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #c9a03d, #8b6914);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        /* Main Content - Mobile Stacked */
-        .two-columns {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
-        .calendar-panel, .events-panel {
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 16px;
-            border: 1px solid rgba(201,160,61,0.2);
-        }
-
-        .section-title {
-            font-size: 1rem;
-            font-weight: 700;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid rgba(201,160,61,0.3);
-            color: #8b6914;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .event-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .event-item {
-            background: #f9fbfa;
-            margin-bottom: 10px;
-            padding: 12px;
-            border-radius: 14px;
-            border-right: 3px solid #c9a03d;
-        }
-
-        .event-title {
-            font-weight: 700;
-            font-size: 0.85rem;
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 6px;
-        }
-
-        .event-type {
-            font-size: 0.65rem;
-            padding: 2px 8px;
-            border-radius: 15px;
-        }
-
-        .event-details {
-            font-size: 0.7rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        /* Calendar Mobile Overrides */
-        .fc .fc-toolbar {
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .fc .fc-toolbar-title {
-            font-size: 1rem !important;
-        }
-
-        .fc .fc-button {
-            padding: 4px 8px !important;
-            font-size: 0.7rem !important;
-        }
-
-        .fc-daygrid-day-number {
-            font-size: 0.7rem !important;
-        }
-
-        .fc-event-title {
-            font-size: 0.65rem !important;
-        }
-
-        /* Notifications Panel - Mobile */
-        .notifications-panel {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            max-height: 100%;
-            border-radius: 0;
-            z-index: 2001;
-        }
-
-        /* Footer */
-        .footer-note {
-            margin-top: 16px;
-            text-align: center;
-            font-size: 0.65rem;
-            color: rgba(255,255,255,0.8);
-            background: rgba(0,0,0,0.2);
-            padding: 10px;
-            border-radius: 20px;
-        }
-
-        /* Tablet Optimization */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif; }
+        body { background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 50%, #1a472a 100%); min-height: 100vh; padding: 12px; direction: rtl; }
+        .dashboard-container { max-width: 1600px; margin: 0 auto; position: relative; z-index: 1; }
+        
+        /* Header */
+        .header { background: rgba(255,255,255,0.97); backdrop-filter: blur(10px); border-radius: 20px; padding: 12px 16px; margin-bottom: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); border: 1px solid rgba(218, 165, 32, 0.3); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+        h1 { font-size: 1.2rem; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; gap: 8px; }
+        h1 i { font-size: 1.3rem; -webkit-text-fill-color: #c9a03d; }
+        .header-actions { display: flex; gap: 8px; align-items: center; }
+        
+        /* Buttons */
+        .filter-group { display: flex; gap: 6px; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 40px; flex-wrap: wrap; }
+        .filter-btn { padding: 6px 12px; border-radius: 30px; border: none; cursor: pointer; font-weight: 600; font-size: 0.75rem; background: transparent; color: #5c6b66; display: flex; align-items: center; gap: 4px; }
+        .filter-btn.active { background: linear-gradient(135deg, #c9a03d, #8b6914); color: white; }
+        .refresh-btn { background: linear-gradient(135deg, #c9a03d, #8b6914); border: none; color: white; padding: 8px 14px; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: flex; align-items: center; gap: 6px; }
+        
+        /* Stats Cards */
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+        .stat-card { background: rgba(255,255,255,0.95); border-radius: 16px; padding: 12px; border: 1px solid rgba(201,160,61,0.2); }
+        .stat-card h3 { font-size: 0.7rem; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+        .stat-number { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        /* Main Content */
+        .two-columns { display: flex; flex-direction: column; gap: 16px; }
+        .calendar-panel, .events-panel { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 16px; border: 1px solid rgba(201,160,61,0.2); }
+        .calendar-panel { flex: 2; }
+        .events-panel { flex: 1.2; }
+        .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid rgba(201,160,61,0.3); color: #8b6914; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Event List */
+        .event-list { max-height: 400px; overflow-y: auto; }
+        .event-item { background: #f9fbfa; margin-bottom: 10px; padding: 12px; border-radius: 14px; border-right: 3px solid #c9a03d; cursor: pointer; transition: all 0.2s; }
+        .event-item.callback { border-right-color: #e67e22; }
+        .event-item:hover { transform: translateX(-5px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .event-title { font-weight: 700; font-size: 0.85rem; display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .event-type { font-size: 0.65rem; padding: 2px 8px; border-radius: 15px; background: #fef8e7; }
+        .event-details { font-size: 0.7rem; display: flex; flex-wrap: wrap; gap: 10px; color: #6c7a74; }
+        
+        /* Notifications */
+        .notification-area { position: relative; cursor: pointer; }
+        .notification-bell { background: rgba(201,160,61,0.1); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+        .notification-badge { position: absolute; top: -5px; right: -5px; background: #dc2626; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.6rem; display: flex; align-items: center; justify-content: center; }
+        .notifications-panel { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: none; flex-direction: column; overflow: hidden; }
+        .notifications-header { background: linear-gradient(135deg, #c9a03d, #8b6914); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .clear-notifications { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 12px; border-radius: 20px; cursor: pointer; }
+        .notifications-list { flex: 1; overflow-y: auto; }
+        .notification-item { padding: 12px 15px; border-bottom: 1px solid #e5e7eb; display: flex; gap: 12px; cursor: pointer; }
+        .notification-item.unread { background: #fef8e7; }
+        .notification-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .notification-icon.appointment { background: #dcfce7; color: #16a34a; }
+        .notification-icon.callback { background: #ffecb3; color: #b45f06; }
+        .notification-icon.info { background: #dbeafe; color: #3b82f6; }
+        
+        /* Calendar Mobile */
+        .fc .fc-toolbar { flex-direction: column; gap: 10px; }
+        .fc .fc-toolbar-title { font-size: 1rem !important; }
+        .fc .fc-button { padding: 4px 8px !important; font-size: 0.7rem !important; }
+        
+        .footer-note { margin-top: 16px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 20px; }
+        .loading { text-align: center; padding: 40px; }
+        .spinner { width: 40px; height: 40px; border: 3px solid #fef8e7; border-top: 3px solid #c9a03d; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
         @media (min-width: 768px) {
-            body {
-                padding: 20px;
-            }
-            
-            .header {
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
-                padding: 16px 24px;
-            }
-            
-            .header-top {
-                flex: 1;
-            }
-            
-            .stats-grid {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 18px;
-            }
-            
-            .two-columns {
-                flex-direction: row;
-            }
-            
-            .calendar-panel {
-                flex: 2;
-            }
-            
-            .events-panel {
-                flex: 1.2;
-            }
-            
-            h1 {
-                font-size: 1.4rem;
-            }
-            
-            .stat-number {
-                font-size: 2rem;
-            }
-        }
-
-        /* Desktop Optimization */
-        @media (min-width: 1024px) {
-            body {
-                padding: 24px;
-            }
-            
-            .stats-grid {
-                gap: 24px;
-            }
-            
-            .stat-card {
-                padding: 20px 24px;
-            }
-            
-            .stat-number {
-                font-size: 2.2rem;
-            }
-        }
-
-        /* Loading Spinner */
-        .loading {
-            text-align: center;
-            padding: 40px;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid #fef8e7;
-            border-top: 3px solid #c9a03d;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Notification Badge */
-        .notification-area {
-            position: relative;
-            cursor: pointer;
-        }
-
-        .notification-bell {
-            background: rgba(201,160,61,0.1);
-            width: 40px;
-            height: 40px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #dc2626;
-            color: white;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 0.6rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .status-badge {
-            background: #eef2ff;
-            padding: 6px 12px;
-            border-radius: 25px;
-            font-size: 0.7rem;
+            body { padding: 20px; }
+            .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 18px; }
+            .two-columns { flex-direction: row; }
+            .notifications-panel { width: 380px; height: auto; max-height: 500px; top: 20px; left: 20px; border-radius: 20px; }
+            h1 { font-size: 1.4rem; }
         }
     </style>
 </head>
 <body>
 <div class="dashboard-container">
-    <!-- Side Menu -->
-    <div class="menu-overlay" id="menuOverlay"></div>
-    <div class="side-menu" id="sideMenu">
-        <div class="menu-header">
-            <i class="fas fa-building"></i>
-            <h3>القائمة الرئيسية</h3>
-        </div>
-        <div class="menu-items">
-            <div class="menu-item" onclick="setFilter('all'); closeMenu();">
-                <i class="fas fa-globe"></i>
-                <span>جميع المواعيد</span>
-            </div>
-            <div class="menu-item" onclick="setFilter('appointment'); closeMenu();">
-                <i class="fas fa-building"></i>
-                <span>معاينات عقارات</span>
-            </div>
-            <div class="menu-item" onclick="setFilter('callback'); closeMenu();">
-                <i class="fas fa-phone-alt"></i>
-                <span>متابعات العملاء</span>
-            </div>
-            <div class="menu-item" onclick="refreshDashboard(); closeMenu();">
-                <i class="fas fa-sync-alt"></i>
-                <span>تحديث البيانات</span>
-            </div>
-            <div class="menu-item" onclick="toggleNotifications(); closeMenu();">
-                <i class="fas fa-bell"></i>
-                <span>الإشعارات</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Header -->
     <div class="header">
         <div class="header-top">
-            <h1>
-                <i class="fas fa-building"></i>
-                نظام العقارات
-                <small>معاينات ومتابعات</small>
-            </h1>
+            <h1><i class="fas fa-building"></i> نظام العقارات <small>معاينات ومتابعات</small></h1>
             <div class="header-actions">
                 <div class="notification-area" id="notificationBell">
-                    <div class="notification-bell">
-                        <i class="fas fa-bell"></i>
-                        <span class="notification-badge" id="notificationCount" style="display: none;">0</span>
-                    </div>
+                    <div class="notification-bell"><i class="fas fa-bell"></i></div>
+                    <span class="notification-badge" id="notificationCount" style="display: none;">0</span>
                 </div>
-                <button class="menu-btn" id="menuBtn">
-                    <i class="fas fa-bars"></i>
-                </button>
             </div>
         </div>
         <div style="display: flex; gap: 8px; justify-content: space-between; flex-wrap: wrap;">
@@ -550,11 +101,9 @@
                 <button class="filter-btn" data-filter="callback"><i class="fas fa-phone-alt"></i> متابعات</button>
             </div>
             <button class="refresh-btn" id="refreshDataBtn"><i class="fas fa-sync-alt"></i> تحديث</button>
-            <span class="status-badge" id="syncStatus"><i class="fas fa-spinner fa-spin"></i></span>
         </div>
     </div>
 
-    <!-- Stats Cards -->
     <div class="stats-grid">
         <div class="stat-card"><h3><i class="fas fa-building"></i> معاينات عقارات</h3><div class="stat-number" id="totalAppointments">0</div></div>
         <div class="stat-card"><h3><i class="fas fa-users"></i> متابعات عملاء</h3><div class="stat-number" id="totalCallbacks">0</div></div>
@@ -562,39 +111,22 @@
         <div class="stat-card"><h3><i class="fas fa-clock"></i> متابعات اليوم</h3><div class="stat-number" id="todayCallbacks">0</div></div>
     </div>
 
-    <!-- Main Content -->
     <div class="two-columns">
         <div class="calendar-panel">
-            <div class="section-title">
-                <span><i class="fas fa-calendar-alt"></i> تقويم المواعيد</span>
-            </div>
+            <div class="section-title"><span><i class="fas fa-calendar-alt"></i> تقويم المواعيد</span></div>
             <div id="calendar"></div>
         </div>
         <div class="events-panel">
-            <div class="section-title">
-                <span><i class="fas fa-list"></i> أقرب المواعيد (7 أيام)</span>
-            </div>
-            <div id="upcomingEventsList" class="event-list">
-                <div class="loading"><div class="spinner"></div><p>جاري التحميل...</p></div>
-            </div>
+            <div class="section-title"><span><i class="fas fa-list"></i> أقرب المواعيد (7 أيام)</span></div>
+            <div id="upcomingEventsList" class="event-list"><div class="loading"><div class="spinner"></div><p>جاري التحميل...</p></div></div>
         </div>
     </div>
-    <div class="footer-note">
-        <i class="fas fa-mobile-alt"></i> متوافق مع الجوال | 
-        <i class="fas fa-bell"></i> إشعارات للمواعيد القادمة |
-        <i class="fas fa-chart-line"></i> تحديث فوري
-    </div>
+    <div class="footer-note"><i class="fas fa-bell"></i> إشعارات للمواعيد القادمة | <i class="fas fa-sync-alt"></i> تحديث تلقائي كل 5 دقائق</div>
 </div>
 
-<!-- Notifications Panel -->
-<div class="notifications-panel" id="notificationsPanel" style="display: none;">
-    <div class="notifications-header">
-        <h3><i class="fas fa-bell"></i> الإشعارات</h3>
-        <button class="clear-notifications" id="clearNotifications">مسح الكل</button>
-    </div>
-    <div class="notifications-list" id="notificationsList">
-        <div style="text-align: center; padding: 40px;"><i class="fas fa-inbox" style="font-size: 2rem;"></i><p>لا توجد إشعارات</p></div>
-    </div>
+<div class="notifications-panel" id="notificationsPanel">
+    <div class="notifications-header"><h3><i class="fas fa-bell"></i> الإشعارات</h3><button class="clear-notifications" id="clearNotifications">مسح الكل</button></div>
+    <div class="notifications-list" id="notificationsList"><div style="text-align:center;padding:40px;"><i class="fas fa-inbox" style="font-size:2rem;"></i><p>لا توجد إشعارات</p></div></div>
 </div>
 
 <script>
@@ -609,58 +141,73 @@
     let currentFilter = 'all';
     let notifications = [];
     let notificationId = 0;
+    let lastNotifiedDates = new Set(); // تتبع التواريخ التي تم إرسال إشعار لها
     
     const TYPE_APPOINTMENT = 'معاينة عقار';
     const TYPE_CALLBACK = 'متابعة عميل';
     
-    // Mobile Menu Functions
-    function openMenu() {
-        document.getElementById('sideMenu').classList.add('open');
-        document.getElementById('menuOverlay').classList.add('show');
-    }
-    
-    function closeMenu() {
-        document.getElementById('sideMenu').classList.remove('open');
-        document.getElementById('menuOverlay').classList.remove('show');
-    }
-    
-    // Notification Functions
+    // طلب إذن الإشعارات
     function requestNotificationPermission() {
-        if ('Notification' in window) Notification.requestPermission();
+        if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            Notification.requestPermission();
+        }
     }
     
-    function addNotification(title, message, type) {
+    // إرسال إشعار المتصفح
+    function sendBrowserNotification(title, body, tag) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(title, { body: body, tag: tag, icon: 'https://img.icons8.com/color/48/real-estate.png' });
+        }
+    }
+    
+    // إضافة إشعار جديد
+    function addNotification(title, message, type, eventId = null) {
+        // تجنب الإشعارات المكررة
+        if (eventId && lastNotifiedDates.has(eventId)) return;
+        if (eventId) lastNotifiedDates.add(eventId);
+        
         const id = notificationId++;
         notifications.unshift({ id, title, message, type, time: new Date(), read: false });
+        
+        // الاحتفاظ بآخر 50 إشعار فقط
+        if (notifications.length > 50) notifications.pop();
+        
         updateNotificationUI();
-        if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(title, { body: message });
-        }
+        sendBrowserNotification(title, message, `notif_${id}`);
         showToast(message);
     }
     
     function updateNotificationUI() {
-        const count = notifications.filter(n => !n.read).length;
+        const unreadCount = notifications.filter(n => !n.read).length;
         const badge = document.getElementById('notificationCount');
-        if (count > 0) {
+        if (unreadCount > 0) {
             badge.style.display = 'flex';
-            badge.innerText = count > 9 ? '9+' : count;
+            badge.innerText = unreadCount > 9 ? '9+' : unreadCount;
         } else {
             badge.style.display = 'none';
         }
         
         const container = document.getElementById('notificationsList');
         if (notifications.length === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 40px;"><i class="fas fa-inbox" style="font-size: 2rem;"></i><p>لا توجد إشعارات</p></div>';
+            container.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-inbox" style="font-size:2rem;"></i><p>لا توجد إشعارات</p></div>';
             return;
         }
         
         let html = '';
         for (const n of notifications) {
             const timeStr = formatTimeAgo(n.time);
+            let iconClass = 'info';
+            let iconHtml = '<i class="fas fa-info-circle"></i>';
+            if (n.type === 'appointment') { iconClass = 'appointment'; iconHtml = '<i class="fas fa-building"></i>'; }
+            else if (n.type === 'callback') { iconClass = 'callback'; iconHtml = '<i class="fas fa-phone-alt"></i>'; }
+            
             html += `<div class="notification-item ${!n.read ? 'unread' : ''}" onclick="markAsRead(${n.id})">
-                <div class="notification-icon ${n.type}"><i class="fas ${n.type === 'appointment' ? 'fa-building' : (n.type === 'callback' ? 'fa-phone-alt' : 'fa-info-circle')}"></i></div>
-                <div class="notification-content"><div class="notification-title">${n.title}</div><div class="notification-time">${timeStr}</div></div>
+                <div class="notification-icon ${iconClass}">${iconHtml}</div>
+                <div class="notification-content">
+                    <div class="notification-title" style="font-weight:600;">${n.title}</div>
+                    <div style="font-size:0.8rem;color:#4b5563;">${n.message}</div>
+                    <div class="notification-time" style="font-size:0.7rem;color:#9ca3af;margin-top:4px;">${timeStr}</div>
+                </div>
             </div>`;
         }
         container.innerHTML = html;
@@ -673,7 +220,9 @@
         if (minutes < 60) return `منذ ${minutes} دقيقة`;
         const hours = Math.floor(minutes / 60);
         if (hours < 24) return `منذ ${hours} ساعة`;
-        return `منذ ${Math.floor(hours / 24)} يوم`;
+        const days = Math.floor(hours / 24);
+        if (days === 1) return 'أمس';
+        return `منذ ${days} يوم`;
     }
     
     window.markAsRead = function(id) {
@@ -684,26 +233,79 @@
     function clearAllNotifications() {
         notifications = [];
         updateNotificationUI();
+        showToast('تم مسح جميع الإشعارات');
     }
     
     function toggleNotifications() {
         const panel = document.getElementById('notificationsPanel');
-        panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
+        panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
     }
     
     function showToast(message) {
-        const toast = document.createElement('div');
-        toast.style.cssText = 'position:fixed;bottom:20px;right:20px;left:20px;background:#333;color:white;padding:12px;border-radius:12px;text-align:center;z-index:3000;animation:fadeInUp 0.3s';
-        toast.innerText = message;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
+        Swal.fire({ text: message, toast: true, position: 'top-end', showConfirmButton: false, timer: 2500, timerProgressBar: true, background: '#fff', didOpen: (toast) => { toast.style.direction = 'rtl'; } });
+    }
+    
+    // التحقق من المواعيد القادمة وإرسال الإشعارات
+    function checkUpcomingEventsAndNotify(events) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const twoDaysLater = new Date(today);
+        twoDaysLater.setDate(twoDaysLater.getDate() + 2);
+        
+        // تجميع المواعيد حسب الفئات
+        const todayAppointments = [];
+        const todayCallbacks = [];
+        const tomorrowAppointments = [];
+        const tomorrowCallbacks = [];
+        
+        for (const ev of events) {
+            const evDate = new Date(ev.start);
+            evDate.setHours(0, 0, 0, 0);
+            const dateKey = evDate.toDateString();
+            
+            if (evDate.getTime() === today.getTime()) {
+                if (ev.type === TYPE_APPOINTMENT) todayAppointments.push(ev);
+                else todayCallbacks.push(ev);
+            } else if (evDate.getTime() === tomorrow.getTime()) {
+                if (ev.type === TYPE_APPOINTMENT) tomorrowAppointments.push(ev);
+                else tomorrowCallbacks.push(ev);
+            }
+        }
+        
+        // إرسال إشعارات لمواعيد اليوم
+        if (todayAppointments.length > 0) {
+            const message = todayAppointments.length === 1 
+                ? `معاينة عقار اليوم: ${todayAppointments[0].title}` 
+                : `${todayAppointments.length} معاينات عقارات اليوم`;
+            addNotification('🏢 معاينات اليوم', message, 'appointment', `today_app_${today.toDateString()}`);
+        }
+        
+        if (todayCallbacks.length > 0) {
+            const message = todayCallbacks.length === 1 
+                ? `متابعة عميل اليوم: ${todayCallbacks[0].title}` 
+                : `${todayCallbacks.length} متابعات عملاء اليوم`;
+            addNotification('📞 متابعات اليوم', message, 'callback', `today_cb_${today.toDateString()}`);
+        }
+        
+        // إشعار لمواعيد الغد
+        if (tomorrowAppointments.length > 0) {
+            addNotification('⏰ تذكير معاينات غداً', `${tomorrowAppointments.length} معاينة عقار غداً`, 'appointment', `tomorrow_app_${tomorrow.toDateString()}`);
+        }
+        
+        if (tomorrowCallbacks.length > 0) {
+            addNotification('⏰ تذكير متابعات غداً', `${tomorrowCallbacks.length} متابعة عميل غداً`, 'callback', `tomorrow_cb_${tomorrow.toDateString()}`);
+        }
+        
+        // عرض ملخص في وحدة التحكم للتأكد من عمل الإشعارات
+        console.log(`📊 إشعارات: اليوم: ${todayAppointments.length} معاينة, ${todayCallbacks.length} متابعة | غداً: ${tomorrowAppointments.length} معاينة, ${tomorrowCallbacks.length} متابعة`);
     }
     
     function setFilter(filter) {
         currentFilter = filter;
         document.querySelectorAll('.filter-btn').forEach(btn => {
-            if (btn.dataset.filter === filter) btn.classList.add('active');
-            else btn.classList.remove('active');
+            btn.classList.toggle('active', btn.dataset.filter === filter);
         });
         applyFilter();
         renderUpcomingList(filteredEvents);
@@ -718,13 +320,12 @@
     }
     
     async function fetchRealSheetData() {
-        const statusSpan = document.getElementById('syncStatus');
-        statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         try {
             const range = `${SHEET_NAME}!A1:V1000`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error(`خطأ ${response.status}`);
+            
             const data = await response.json();
             const rows = data.values;
             if (!rows || rows.length < 2) throw new Error("لا توجد بيانات");
@@ -743,14 +344,14 @@
                 const cbNotes = row[13] || '';
                 const notes = row[8] || '';
                 
-                if (appDate && appDate.trim()) {
+                if (appDate && appDate.toString().trim()) {
                     let date = parseDate(appDate, appTime);
                     if (date) {
                         events.push({ id: `app_${i}`, title: name, type: TYPE_APPOINTMENT, start: date, time: appTime, phone: phone, notes: notes || cbNotes });
                         appCount++;
                     }
                 }
-                if (cbDate && cbDate.trim()) {
+                if (cbDate && cbDate.toString().trim()) {
                     let date = parseDate(cbDate, '');
                     if (date) {
                         events.push({ id: `cb_${i}`, title: name, type: TYPE_CALLBACK, start: date, time: '', phone: row[12] || phone, notes: cbNotes || notes });
@@ -759,11 +360,10 @@
                 }
             }
             
-            statusSpan.innerHTML = `<i class="fas fa-check-circle"></i> ${events.length}`;
-            addNotification('✅ تحديث البيانات', `تم جلب ${appCount} معاينة و ${cbCount} متابعة`, 'info');
+            console.log(`✅ تم جلب ${events.length} حدث (${appCount} معاينة، ${cbCount} متابعة)`);
             return events;
         } catch (error) {
-            statusSpan.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
+            console.error("خطأ في الجلب:", error);
             return [];
         }
     }
@@ -801,17 +401,12 @@
         document.getElementById('totalCallbacks').innerText = totalCb;
         document.getElementById('todayAppointments').innerText = todayApps;
         document.getElementById('todayCallbacks').innerText = todayCbs;
-        
-        // Check for today's events notification
-        if (todayApps > 0 || todayCbs > 0) {
-            addNotification('📅 مواعيد اليوم', `لديك ${todayApps} معاينة و ${todayCbs} متابعة اليوم`, 'info');
-        }
     }
     
     function renderUpcomingList(events) {
         const container = document.getElementById('upcomingEventsList');
         if (events.length === 0) {
-            container.innerHTML = '<div class="loading"><i class="fas fa-calendar-times" style="font-size: 2rem;"></i><p>لا توجد مواعيد</p></div>';
+            container.innerHTML = '<div class="loading"><i class="fas fa-calendar-times" style="font-size:2rem;"></i><p>لا توجد مواعيد</p></div>';
             return;
         }
         const now = new Date();
@@ -831,10 +426,10 @@
         
         let html = '';
         for (const ev of upcoming) {
-            const dateStr = ev.start.toLocaleDateString('ar-EG', { weekday:'short', month:'short', day:'numeric' });
+            const dateStr = ev.start.toLocaleDateString('ar-EG', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
             const timeStr = ev.time || ev.start.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
             const isCallback = ev.type === TYPE_CALLBACK;
-            html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="showEventDetails('${ev.title.replace(/'/g, "\\'")}', '${ev.phone}', '${ev.notes.replace(/'/g, "\\'")}', '${ev.type}')">
+            html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${ev.phone || ''}', '${(ev.notes || '').replace(/'/g, "\\'")}', '${ev.type}')">
                 <div class="event-title"><span><i class="fas ${isCallback ? 'fa-user-friends' : 'fa-building'}"></i> ${ev.title}</span><span class="event-type">${ev.type === TYPE_APPOINTMENT ? '🏢 معاينة' : '📞 متابعة'}</span></div>
                 <div class="event-details"><span><i class="far fa-calendar-alt"></i> ${dateStr}</span><span><i class="far fa-clock"></i> ${timeStr}</span></div>
             </div>`;
@@ -842,7 +437,7 @@
         container.innerHTML = html;
     }
     
-    window.showEventDetails = function(title, phone, notes, type) {
+    window.showDetails = function(title, phone, notes, type) {
         Swal.fire({ title, html: `<div style="text-align:right"><p><i class="fas fa-tag"></i> <strong>النوع:</strong> ${type}</p><p><i class="fas fa-phone"></i> <strong>الهاتف:</strong> ${phone || 'غير متوفر'}</p><p><i class="fas fa-sticky-note"></i> <strong>الملاحظات:</strong> ${notes || 'لا توجد'}</p></div>`, icon: type === TYPE_APPOINTMENT ? 'info' : 'warning', confirmButtonColor: '#c9a03d' });
     };
     
@@ -850,23 +445,39 @@
         const calendarEl = document.getElementById('calendar');
         if (calendarInstance) calendarInstance.destroy();
         if (events.length === 0) return;
-        const fcEvents = events.map(ev => ({ id: ev.id, title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : '📞'} ${ev.title}`, start: ev.start, backgroundColor: ev.type === TYPE_APPOINTMENT ? '#c9a03d' : '#e67e22', extendedProps: { phone: ev.phone, notes: ev.notes, type: ev.type } }));
+        
+        const fcEvents = events.map(ev => ({
+            id: ev.id, title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : '📞'} ${ev.title}`,
+            start: ev.start, backgroundColor: ev.type === TYPE_APPOINTMENT ? '#c9a03d' : '#e67e22',
+            extendedProps: { phone: ev.phone, notes: ev.notes, type: ev.type }
+        }));
+        
         calendarInstance = new FullCalendar.Calendar(calendarEl, {
             initialView: window.innerWidth < 768 ? 'dayGridMonth' : 'dayGridMonth',
             locale: 'ar', direction: 'rtl',
             headerToolbar: { left: 'prev,next', center: 'title', right: window.innerWidth < 768 ? '' : 'dayGridMonth,timeGridWeek' },
             events: fcEvents,
-            eventClick: (info) => { const ext = info.event.extendedProps; showEventDetails(info.event.title.replace(/^[🏢📞] /, ''), ext.phone, ext.notes, ext.type); },
+            eventClick: (info) => { const ext = info.event.extendedProps; showDetails(info.event.title.replace(/^[🏢📞] /, ''), ext.phone, ext.notes, ext.type); },
             height: 'auto', firstDay: 6
         });
         calendarInstance.render();
     }
     
     async function refreshDashboard() {
+        console.log("🔄 جاري تحديث البيانات...");
         const realEvents = await fetchRealSheetData();
         if (realEvents.length > 0) {
             originalEvents = realEvents;
             applyFilter();
+            // التحقق من المواعيد القادمة وإرسال الإشعارات
+            checkUpcomingEventsAndNotify(realEvents);
+            console.log(`✅ تم تحديث الواجهة - ${realEvents.length} موعد`);
+        } else {
+            originalEvents = [];
+            filteredEvents = [];
+            updateStats([]);
+            renderUpcomingList([]);
+            initCalendar([]);
         }
     }
     
@@ -877,11 +488,17 @@
             btn.addEventListener('click', () => setFilter(btn.dataset.filter));
         });
         document.getElementById('refreshDataBtn').addEventListener('click', refreshDashboard);
-        document.getElementById('menuBtn').addEventListener('click', openMenu);
-        document.getElementById('menuOverlay').addEventListener('click', closeMenu);
         document.getElementById('notificationBell').addEventListener('click', toggleNotifications);
         document.getElementById('clearNotifications').addEventListener('click', clearAllNotifications);
+        document.addEventListener('click', (e) => {
+            const panel = document.getElementById('notificationsPanel');
+            const bell = document.getElementById('notificationBell');
+            if (!bell.contains(e.target) && !panel.contains(e.target) && panel.style.display === 'flex') {
+                panel.style.display = 'none';
+            }
+        });
         refreshDashboard();
+        // تحديث تلقائي كل 5 دقائق
         setInterval(refreshDashboard, 300000);
     });
 </script>
