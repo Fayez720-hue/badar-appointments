@@ -177,24 +177,15 @@
     const TYPE_APPOINTMENT = 'معاينة عقار';
     const TYPE_CALLBACK = 'متابعة عميل';
     
-    // دالة آمنة للإشعارات - تعمل على جميع المتصفحات بدون أخطاء
-    function showSafeNotification(title, message) {
-        // استخدام SweetAlert بدلاً من Notification API لتجنب أخطاء Chrome
-        if (document.hidden) {
-            // فقط إذا كان المستخدم في تبويب آخر، نعرض إشعار المتصفح إذا كان مدعوماً
-            if ('Notification' in window && Notification.permission === 'granted' && window.isSecureContext) {
-                try {
-                    new Notification(title, { body: message });
-                } catch(e) {
-                    console.log("الإشعارات غير مدعومة في هذا المتصفح");
-                }
-            }
-        }
-        // دائماً نعرض Toast
-        showToast(message);
+    // دالة دقيقة لتحويل الوقت إلى صيغة 12 ساعة مع م/ص
+    function convertTo12HourFormat(hour24, minute) {
+        let hour12 = hour24 % 12;
+        if (hour12 === 0) hour12 = 12;
+        let period = hour24 >= 12 ? 'م' : 'ص';
+        return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
     }
     
-    // دالة متقدمة لتحويل التاريخ من النص
+    // دالة متقدمة لتحويل التاريخ مع الوقت بدقة
     function parseArabicDate(dateString, timeString) {
         if (!dateString || dateString.toString().trim() === '') return null;
         
@@ -227,40 +218,52 @@
             }
         }
         
-        // معالجة الوقت
-        let hour = 12, minute = 0;
+        // معالجة الوقت - دقة كاملة
+        let hour24 = 12, minute = 0;
         let displayTime = "12:00 م";
         
         if (timeStr && timeStr !== '') {
-            // إزالة الكلمات الإضافية
-            let cleanTime = timeStr.replace(/[年月日]/g, '').trim();
+            // إزالة المسافات الزائدة
+            let cleanTime = timeStr.trim();
             
-            // تنسيق HH:MM:SS
-            let timeParts = cleanTime.match(/(\d{1,2}):(\d{2}):(\d{2})/);
-            if (timeParts) {
-                hour = parseInt(timeParts[1]);
-                minute = parseInt(timeParts[2]);
-                let displayHour = hour % 12 || 12;
-                let ampm = hour >= 12 ? 'م' : 'ص';
-                displayTime = `${displayHour}:${minute.toString().padStart(2, '0')} ${ampm}`;
+            // محاولة استخراج الساعات والدقائق والثواني
+            let timeMatch = cleanTime.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+            if (timeMatch) {
+                hour24 = parseInt(timeMatch[1]);
+                minute = parseInt(timeMatch[2]);
+                
+                // التحقق من صحة الساعات (0-23)
+                if (hour24 < 0 || hour24 > 23) hour24 = 12;
+                if (minute < 0 || minute > 59) minute = 0;
+                
+                // تحويل إلى صيغة 12 ساعة للعرض
+                displayTime = convertTo12HourFormat(hour24, minute);
+                console.log(`   ✓ الوقت المستخرج: ${hour24}:${minute} -> ${displayTime}`);
             } else {
-                // تنسيق HH:MM
-                timeParts = cleanTime.match(/(\d{1,2}):(\d{2})/);
-                if (timeParts) {
-                    hour = parseInt(timeParts[1]);
-                    minute = parseInt(timeParts[2]);
-                    let displayHour = hour % 12 || 12;
-                    let ampm = hour >= 12 ? 'م' : 'ص';
-                    displayTime = `${displayHour}:${minute.toString().padStart(2, '0')} ${ampm}`;
+                // محاولة استخراج ساعات فقط
+                let hourOnly = parseInt(cleanTime);
+                if (!isNaN(hourOnly) && hourOnly >= 1 && hourOnly <= 12) {
+                    // إذا كان الوقت مكتوباً كـ "10" فقط، نفترض أنها 10 صباحاً
+                    hour24 = hourOnly;
+                    if (hour24 === 12) hour24 = 0; // 12 تعني 12 صباحاً
+                    minute = 0;
+                    displayTime = convertTo12HourFormat(hour24, minute);
+                    console.log(`   ✓ ساعة فقط: ${hourOnly} -> ${displayTime}`);
+                } else {
+                    console.log(`   ⚠ لم يتم التعرف على تنسيق الوقت: "${timeStr}" سيتم استخدام 12:00 م`);
                 }
             }
         }
         
-        let dateObj = new Date(year, month, day, hour, minute);
+        // إنشاء كائن التاريخ مع الوقت الصحيح
+        let dateObj = new Date(year, month, day, hour24, minute);
+        
         if (!isNaN(dateObj.getTime())) {
+            console.log(`   ✅ تم إنشاء التاريخ: ${dateObj.toLocaleString('ar-EG')}`);
             return { date: dateObj, displayTime: displayTime };
         }
         
+        console.log(`   ❌ فشل إنشاء التاريخ`);
         return null;
     }
     
@@ -326,6 +329,7 @@
                             notes: generalNotes || 'لا توجد ملاحظات'
                         });
                         appCount++;
+                        console.log(`   ✅ معاينة: ${name} - ${result.displayTime}`);
                     }
                 }
                 
@@ -417,12 +421,10 @@
         // إشعار لمواعيد اليوم
         if (todayApps > 0 && !lastNotifiedDates.has(`today_app_${today.toDateString()}`)) {
             lastNotifiedDates.add(`today_app_${today.toDateString()}`);
-            showSafeNotification(`🏢 معاينات اليوم`, `${todayApps} معاينة عقار اليوم`);
             addToNotificationsList(`🏢 معاينات اليوم`, `${todayApps} معاينة عقار اليوم`, 'appointment');
         }
         if (todayCbs > 0 && !lastNotifiedDates.has(`today_cb_${today.toDateString()}`)) {
             lastNotifiedDates.add(`today_cb_${today.toDateString()}`);
-            showSafeNotification(`📞 متابعات اليوم`, `${todayCbs} متابعة عميل اليوم`);
             addToNotificationsList(`📞 متابعات اليوم`, `${todayCbs} متابعة عميل اليوم`, 'callback');
         }
     }
@@ -432,6 +434,18 @@
         notifications.unshift({ id, title, message, type, time: new Date(), read: false });
         if (notifications.length > 50) notifications.pop();
         updateNotificationUI();
+        
+        // Toast إشعار
+        Swal.fire({
+            text: message,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true,
+            background: '#fff',
+            didOpen: (toast) => { toast.style.direction = 'rtl'; }
+        });
     }
     
     function updateNotificationUI() {
@@ -499,19 +513,6 @@
         document.getElementById('notificationsPanel').style.display = 'none';
     }
     
-    function showToast(message) {
-        Swal.fire({
-            text: message,
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 2000,
-            timerProgressBar: true,
-            background: '#fff',
-            didOpen: (toast) => { toast.style.direction = 'rtl'; }
-        });
-    }
-    
     function renderUpcomingList(events) {
         const container = document.getElementById('upcomingEventsList');
         if (events.length === 0) {
@@ -538,7 +539,7 @@
         let html = '';
         for (const ev of upcoming) {
             const dateStr = ev.start.toLocaleDateString('ar-EG', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
-            const timeStr = ev.displayTime || ev.start.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
+            const timeStr = ev.displayTime || convertTo12HourFormat(ev.start.getHours(), ev.start.getMinutes());
             const isCallback = ev.type === TYPE_CALLBACK;
             
             html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${ev.phone || ''}', '${(ev.notes || '').replace(/'/g, "\\'")}', '${ev.type}', '${(ev.city || '').replace(/'/g, "\\'")}', '${(ev.address || '').replace(/'/g, "\\'")}', '${timeStr}')">
@@ -592,9 +593,14 @@
         }
         
         const fcEvents = events.map(ev => {
+            let displayTime = ev.displayTime;
+            if (!displayTime && ev.type === TYPE_APPOINTMENT) {
+                displayTime = convertTo12HourFormat(ev.start.getHours(), ev.start.getMinutes());
+            }
+            
             let titleWithTime = ev.title;
-            if (ev.type === TYPE_APPOINTMENT && ev.displayTime) {
-                titleWithTime = `${ev.title} (${ev.displayTime})`;
+            if (ev.type === TYPE_APPOINTMENT && displayTime) {
+                titleWithTime = `${ev.title} (${displayTime})`;
             }
             
             return {
@@ -609,7 +615,7 @@
                     type: ev.type, 
                     city: ev.city || '', 
                     address: ev.address || '',
-                    displayTime: ev.displayTime
+                    displayTime: displayTime
                 }
             };
         });
@@ -681,7 +687,6 @@
                 statusSpan.innerHTML = `✅ ${realEvents.length} موعد`;
                 statusSpan.className = 'status-badge success';
                 
-                // إضافة إشعار نجاح
                 addToNotificationsList('✅ تحديث البيانات', `تم جلب ${realEvents.length} موعد من Google Sheets`, 'info');
             } else {
                 throw new Error("لم يتم العثور على بيانات");
@@ -692,7 +697,6 @@
             statusSpan.innerHTML = '❌ فشل الجلب';
             statusSpan.className = 'status-badge error';
             
-            // عرض خطأ للمستخدم
             Swal.fire({
                 title: '⚠️ خطأ في جلب البيانات',
                 html: `<div style="text-align:right">
