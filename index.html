@@ -128,26 +128,23 @@
     const TYPE_CALLBACK_AFTER_CALL = 'متابعة بعد المكالمة';
     const TYPE_CALLBACK_AFTER_APPT = 'متابعة بعد المعاينة';
     
-    // دالة متقدمة لتحويل التاريخ - تدعم جميع التنسيقات
+    // دالة متقدمة لتحويل التاريخ
     function parseDate(dateStr) {
         if (!dateStr) return null;
         
         let original = dateStr.toString().trim();
         if (original === 'FALSE' || original === 'TRUE' || original === '') return null;
         
-        // إزالة اسم اليوم إذا وجد
         let cleaned = original.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
         
         let day, month, year;
         
-        // التنسيق 1: DD/MM/YYYY
         let parts = cleaned.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
         if (parts) {
             day = parseInt(parts[1]);
             month = parseInt(parts[2]) - 1;
             year = parseInt(parts[3]);
         }
-        // التنسيق 2: YYYY/MM/DD
         else {
             parts = cleaned.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
             if (parts) {
@@ -155,7 +152,6 @@
                 month = parseInt(parts[2]) - 1;
                 day = parseInt(parts[3]);
             }
-            // التنسيق 3: YYYY-MM-DD
             else {
                 parts = cleaned.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
                 if (parts) {
@@ -163,7 +159,6 @@
                     month = parseInt(parts[2]) - 1;
                     day = parseInt(parts[3]);
                 }
-                // التنسيق 4: DD-MM-YYYY
                 else {
                     parts = cleaned.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
                     if (parts) {
@@ -181,21 +176,83 @@
         return !isNaN(dateObj.getTime()) ? dateObj : null;
     }
     
-    // تنسيق الوقت
-    function formatTime(timeStr) {
-        if (!timeStr) return '';
-        let clean = timeStr.toString().trim();
-        if (clean === 'FALSE' || clean === 'TRUE') return '';
+    // دالة متقدمة لتحويل الوقت - تدعم جميع التنسيقات
+    function parseTime(timeStr) {
+        if (!timeStr) return { hour24: 12, minute: 0, display: '12:00 م' };
         
-        let match = clean.match(/(\d{1,2}):(\d{2})/);
+        let clean = timeStr.toString().trim();
+        if (clean === 'FALSE' || clean === 'TRUE' || clean === '') {
+            return { hour24: 12, minute: 0, display: '12:00 م' };
+        }
+        
+        let hour24 = 12;
+        let minute = 0;
+        let displayTime = '';
+        
+        // تنسيق: "2:00:00 م" أو "3:00:00 م" أو "10:00:00 ص"
+        let match = clean.match(/(\d{1,2}):(\d{2}):(\d{2})\s*([مص])/);
         if (match) {
             let hour = parseInt(match[1]);
-            let minute = parseInt(match[2]);
-            let hour12 = hour % 12 || 12;
-            let period = hour < 12 ? 'ص' : 'م';
-            return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+            minute = parseInt(match[2]);
+            let period = match[4];
+            
+            if (period === 'م') {
+                hour24 = hour === 12 ? 12 : hour + 12;
+            } else {
+                hour24 = hour === 12 ? 0 : hour;
+            }
+            
+            let hour12 = hour24 % 12 || 12;
+            let displayPeriod = hour24 < 12 ? 'ص' : 'م';
+            displayTime = `${hour12}:${minute.toString().padStart(2, '0')} ${displayPeriod}`;
+            
+            return { hour24, minute, display: displayTime };
         }
-        return clean;
+        
+        // تنسيق: "2:00 م" أو "3:00 م" (بدون ثواني)
+        match = clean.match(/(\d{1,2}):(\d{2})\s*([مص])/);
+        if (match) {
+            let hour = parseInt(match[1]);
+            minute = parseInt(match[2]);
+            let period = match[3];
+            
+            if (period === 'م') {
+                hour24 = hour === 12 ? 12 : hour + 12;
+            } else {
+                hour24 = hour === 12 ? 0 : hour;
+            }
+            
+            let hour12 = hour24 % 12 || 12;
+            let displayPeriod = hour24 < 12 ? 'ص' : 'م';
+            displayTime = `${hour12}:${minute.toString().padStart(2, '0')} ${displayPeriod}`;
+            
+            return { hour24, minute, display: displayTime };
+        }
+        
+        // تنسيق: "14:30" (24 ساعة)
+        match = clean.match(/^(\d{1,2}):(\d{2})$/);
+        if (match) {
+            hour24 = parseInt(match[1]);
+            minute = parseInt(match[2]);
+            let hour12 = hour24 % 12 || 12;
+            let period = hour24 < 12 ? 'ص' : 'م';
+            displayTime = `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+            
+            return { hour24, minute, display: displayTime };
+        }
+        
+        // تنسيق: "12:00:00 ص" (منتصف الليل)
+        if (clean.includes('12:00:00 ص')) {
+            return { hour24: 0, minute: 0, display: '12:00 ص' };
+        }
+        
+        // تنسيق: "12:00:00 م" (الظهر)
+        if (clean.includes('12:00:00 م')) {
+            return { hour24: 12, minute: 0, display: '12:00 م' };
+        }
+        
+        // افتراضي
+        return { hour24: 12, minute: 0, display: '12:00 م' };
     }
     
     async function fetchData() {
@@ -229,20 +286,25 @@
                 const address = row[COL_ADDRESS] || '';
                 const notes = row[COL_NOTES] || '';
                 
-                // ========== المعاينات من العمود O ==========
+                // ========== المعاينات من العمود O و P ==========
                 const appointmentDate = row[COL_APPOINTMENT_DATE];
-                const appointmentTime = row[COL_APPOINTMENT_TIME] || '';
+                const appointmentTimeRaw = row[COL_APPOINTMENT_TIME] || '';
                 
                 if (appointmentDate && appointmentDate.toString().trim() && appointmentDate !== 'FALSE') {
                     const dateObj = parseDate(appointmentDate);
                     if (dateObj) {
+                        // تحويل الوقت
+                        const timeInfo = parseTime(appointmentTimeRaw);
+                        
+                        // تحديث كائن التاريخ بالوقت الصحيح
+                        dateObj.setHours(timeInfo.hour24, timeInfo.minute, 0);
+                        
                         events.push({
                             id: `app_${i}`,
                             title: name,
                             type: TYPE_APPOINTMENT,
-                            typeKey: 'appointment',
                             date: dateObj,
-                            time: formatTime(appointmentTime),
+                            displayTime: timeInfo.display,
                             phone: phone,
                             city: city,
                             address: address,
@@ -263,9 +325,8 @@
                             id: `cbL_${i}`,
                             title: name,
                             type: TYPE_CALLBACK_AFTER_CALL,
-                            typeKey: 'callback-after-call',
                             date: dateObj,
-                            time: '',
+                            displayTime: '',
                             phone: callbackAfterCallPhone || phone,
                             city: city,
                             address: address,
@@ -285,9 +346,8 @@
                             id: `cbS_${i}`,
                             title: name,
                             type: TYPE_CALLBACK_AFTER_APPT,
-                            typeKey: 'callback-after-appt',
                             date: dateObj,
-                            time: '',
+                            displayTime: '',
                             phone: phone,
                             city: city,
                             address: address,
@@ -351,13 +411,15 @@
             if (ev.type === TYPE_CALLBACK_AFTER_CALL) typeDisplay = '📞 متابعة بعد المكالمة';
             if (ev.type === TYPE_CALLBACK_AFTER_APPT) typeDisplay = '📋 متابعة بعد المعاينة';
             
-            html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="alert('${ev.title}\\n📅 ${dateStr}${ev.time ? ' 🕐 ' + ev.time : ''}\\n📞 ${ev.phone || 'غير متوفر'}\\n📍 ${ev.city || ''} ${ev.address || ''}\\n📝 ${ev.notes || ''}')">
+            const timeDisplay = ev.displayTime ? `🕐 ${ev.displayTime}` : '';
+            
+            html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="alert('${ev.title}\\n📅 ${dateStr}\\n${timeDisplay}\\n📞 ${ev.phone || 'غير متوفر'}\\n📍 ${ev.city || ''} ${ev.address || ''}\\n📝 ${ev.notes || ''}')">
                 <div class="event-title">
                     <span><i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i> ${ev.title}</span>
                     <span class="event-type ${isCallback ? 'callback-badge' : ''}">${typeDisplay}</span>
                 </div>
                 <div class="event-details">
-                    📅 ${dateStr} ${ev.time ? `🕐 ${ev.time}` : ''}<br>
+                    📅 ${dateStr} ${timeDisplay}<br>
                     📞 ${ev.phone || 'غير متوفر'}
                 </div>
             </div>`;
@@ -386,12 +448,17 @@
                 icon = '📋';
             }
             
+            let titleWithTime = ev.title;
+            if (ev.displayTime && ev.displayTime !== '') {
+                titleWithTime = `${ev.title} (${ev.displayTime})`;
+            }
+            
             return {
                 id: ev.id,
-                title: `${icon} ${ev.title}`,
+                title: `${icon} ${titleWithTime}`,
                 start: ev.date,
                 backgroundColor: color,
-                extendedProps: { phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, type: ev.type, time: ev.time }
+                extendedProps: { phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, type: ev.type, displayTime: ev.displayTime }
             };
         });
         
@@ -409,7 +476,8 @@
             eventClick: (info) => {
                 const ev = info.event;
                 const ext = ev.extendedProps;
-                alert(`${ev.title}\n📅 ${ev.start.toLocaleDateString('ar-EG')}${ext.time ? ' 🕐 ' + ext.time : ''}\n📞 ${ext.phone || 'غير متوفر'}\n📍 ${ext.city || ''} ${ext.address || ''}\n📝 ${ext.notes || ''}`);
+                const timeDisplay = ext.displayTime ? `🕐 ${ext.displayTime}` : '';
+                alert(`${ev.title}\n📅 ${ev.start.toLocaleDateString('ar-EG')}\n${timeDisplay}\n📞 ${ext.phone || 'غير متوفر'}\n📍 ${ext.city || ''} ${ext.address || ''}\n📝 ${ext.notes || ''}`);
             },
             height: 'auto',
             firstDay: 6
