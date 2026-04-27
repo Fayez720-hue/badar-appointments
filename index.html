@@ -9,406 +9,76 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ar.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Cairo', 'Segoe UI', sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 100%);
-            min-height: 100vh;
-            padding: 15px;
-            direction: rtl;
-        }
-
-        .dashboard-container {
-            max-width: 1600px;
-            margin: 0 auto;
-        }
-
-        /* Header */
-        .header {
-            background: rgba(255, 255, 255, 0.97);
-            border-radius: 24px;
-            padding: 15px 24px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        h1 {
-            font-size: 1.3rem;
-            background: linear-gradient(135deg, #c9a03d, #8b6914);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* Filter Buttons */
-        .filter-group {
-            display: flex;
-            gap: 8px;
-            background: rgba(0, 0, 0, 0.05);
-            padding: 5px;
-            border-radius: 50px;
-        }
-
-        .filter-btn {
-            padding: 6px 18px;
-            border-radius: 40px;
-            border: none;
-            cursor: pointer;
-            font-size: 0.75rem;
-            font-weight: 600;
-            background: transparent;
-            transition: all 0.2s;
-        }
-
-        .filter-btn.active {
-            background: linear-gradient(135deg, #c9a03d, #8b6914);
-            color: white;
-        }
-
-        .refresh-btn {
-            background: linear-gradient(135deg, #c9a03d, #8b6914);
-            border: none;
-            color: white;
-            padding: 6px 16px;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-left: 10px;
-            transition: all 0.2s;
-        }
-
-        .refresh-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .status-badge {
-            background: #eef2ff;
-            padding: 4px 12px;
-            border-radius: 25px;
-            font-size: 0.7rem;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', sans-serif; }
+        body { background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 100%); min-height: 100vh; padding: 15px; direction: rtl; }
+        .dashboard-container { max-width: 1600px; margin: 0 auto; }
+        
+        .header { background: rgba(255,255,255,0.97); border-radius: 24px; padding: 15px 24px; margin-bottom: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { font-size: 1.3rem; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; gap: 10px; }
+        
+        .filter-group { display: flex; gap: 8px; background: rgba(0,0,0,0.05); padding: 5px; border-radius: 50px; }
+        .filter-btn { padding: 6px 18px; border-radius: 40px; border: none; cursor: pointer; font-size: 0.75rem; font-weight: 600; background: transparent; transition: all 0.2s; }
+        .filter-btn.active { background: linear-gradient(135deg, #c9a03d, #8b6914); color: white; }
+        .refresh-btn { background: linear-gradient(135deg, #c9a03d, #8b6914); border: none; color: white; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 0.75rem; font-weight: 600; margin-left: 10px; transition: all 0.2s; }
+        .refresh-btn:hover { transform: translateY(-2px); }
+        .status-badge { background: #eef2ff; padding: 4px 12px; border-radius: 25px; font-size: 0.7rem; }
+        
         /* Date Range Filter */
-        .date-range-filter {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 12px 20px;
-            margin-bottom: 20px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            border: 1px solid rgba(201, 160, 61, 0.3);
-        }
-
-        .date-range-filter label {
-            font-size: 0.75rem;
-            color: #8b6914;
-            font-weight: bold;
-        }
-
-        .date-range-filter input {
-            padding: 6px 12px;
-            border-radius: 12px;
-            border: 1px solid #ddd;
-            font-size: 0.75rem;
-        }
-
-        .date-range-filter button {
-            background: linear-gradient(135deg, #c9a03d, #8b6914);
-            border: none;
-            color: white;
-            padding: 6px 16px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 0.7rem;
-        }
-
-        .date-range-filter .clear-btn {
-            background: #6c7a74;
-        }
-
-        .range-info {
-            font-size: 0.7rem;
-            color: #c9a03d;
-            background: #fef8e7;
-            padding: 4px 12px;
-            border-radius: 20px;
-        }
-
-        /* Stats Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        @media (min-width: 768px) {
-            .stats-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 18px;
-            padding: 15px;
-            border-right: 4px solid #c9a03d;
-            transition: all 0.2s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .stat-card h3 {
-            font-size: 0.75rem;
-            color: #6c7a74;
-            margin-bottom: 8px;
-        }
-
-        .stat-number {
-            font-size: 1.6rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #c9a03d, #8b6914);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        /* Two Columns */
-        .two-columns {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        @media (min-width: 768px) {
-            .two-columns {
-                flex-direction: row;
-            }
-        }
-
-        .calendar-panel,
-        .events-panel {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 24px;
-            padding: 20px;
-        }
-
-        .calendar-panel {
-            flex: 2;
-        }
-
-        .events-panel {
-            flex: 1.2;
-        }
-
-        .section-title {
-            font-size: 1rem;
-            font-weight: 700;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #e2e8f0;
-            color: #8b6914;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .events-count {
-            background: #c9a03d;
-            color: white;
-            padding: 2px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-        }
-
-        /* Event List */
-        .event-list {
-            max-height: 550px;
-            overflow-y: auto;
-        }
-
-        .event-list::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .event-list::-webkit-scrollbar-track {
-            background: #f0f0f0;
-            border-radius: 10px;
-        }
-
-        .event-list::-webkit-scrollbar-thumb {
-            background: #c9a03d;
-            border-radius: 10px;
-        }
-
-        .event-item {
-            background: white;
-            margin-bottom: 12px;
-            padding: 14px;
-            border-radius: 16px;
-            border-right: 4px solid #c9a03d;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-        }
-
-        .event-item.callback {
-            border-right-color: #e67e22;
-            background: #fffbf0;
-        }
-
-        .event-item:hover {
-            transform: translateX(-5px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .event-title {
-            font-weight: 700;
-            font-size: 0.9rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-
-        .event-name {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .event-type {
-            font-size: 0.6rem;
-            padding: 3px 10px;
-            border-radius: 20px;
-            background: #fef8e7;
-        }
-
-        .event-type.callback-badge {
-            background: #ffecb3;
-            color: #b45f06;
-        }
-
-        .event-details {
-            font-size: 0.7rem;
-            color: #4a5b54;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 5px;
-        }
-
-        .event-details span {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .event-phone {
-            direction: ltr;
-            font-family: monospace;
-            background: #f0f0f0;
-            padding: 2px 6px;
-            border-radius: 8px;
-        }
-
-        /* Calendar */
-        .fc {
-            direction: rtl;
-        }
-
-        .fc .fc-toolbar {
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        @media (min-width: 768px) {
-            .fc .fc-toolbar {
-                flex-direction: row;
-            }
-        }
-
-        .fc .fc-button {
-            background: #c9a03d !important;
-            border: none !important;
-        }
-
-        .fc .fc-button:hover {
-            background: #8b6914 !important;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid #fef8e7;
-            border-top: 3px solid #c9a03d;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .footer-note {
-            margin-top: 20px;
-            text-align: center;
-            font-size: 0.65rem;
-            color: rgba(255, 255, 255, 0.8);
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px;
-            border-radius: 25px;
-        }
-
-        .error-message {
-            text-align: center;
-            padding: 40px;
-            background: #fee2e2;
-            border-radius: 16px;
-            margin: 20px;
-        }
-
-        .error-message i {
-            font-size: 2rem;
-            color: #dc2626;
-            margin-bottom: 15px;
-            display: block;
-        }
-
-        .error-message button {
-            background: #c9a03d;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 25px;
-            color: white;
-            cursor: pointer;
-            margin-top: 15px;
-        }
+        .date-range-filter { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 12px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; border: 1px solid rgba(201,160,61,0.3); }
+        .date-range-filter label { font-size: 0.75rem; color: #8b6914; font-weight: bold; }
+        .date-range-filter input { padding: 6px 12px; border-radius: 12px; border: 1px solid #ddd; font-size: 0.75rem; }
+        .date-range-filter button { background: linear-gradient(135deg, #c9a03d, #8b6914); border: none; color: white; padding: 6px 16px; border-radius: 25px; cursor: pointer; font-size: 0.7rem; }
+        .date-range-filter .clear-btn { background: #6c7a74; }
+        .range-info { font-size: 0.7rem; color: #c9a03d; background: #fef8e7; padding: 4px 12px; border-radius: 20px; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
+        @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+        
+        .stat-card { background: rgba(255,255,255,0.95); border-radius: 18px; padding: 15px; border-right: 4px solid #c9a03d; transition: all 0.2s; }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .stat-card h3 { font-size: 0.75rem; color: #6c7a74; margin-bottom: 8px; }
+        .stat-number { font-size: 1.6rem; font-weight: 800; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .two-columns { display: flex; flex-direction: column; gap: 20px; }
+        @media (min-width: 768px) { .two-columns { flex-direction: row; } }
+        
+        .calendar-panel, .events-panel { background: rgba(255,255,255,0.95); border-radius: 24px; padding: 20px; }
+        .calendar-panel { flex: 2; }
+        .events-panel { flex: 1.2; }
+        
+        .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; color: #8b6914; display: flex; justify-content: space-between; align-items: center; }
+        .events-count { background: #c9a03d; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; }
+        
+        .event-list { max-height: 550px; overflow-y: auto; }
+        .event-list::-webkit-scrollbar { width: 4px; }
+        .event-list::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 10px; }
+        .event-list::-webkit-scrollbar-thumb { background: #c9a03d; border-radius: 10px; }
+        
+        .event-item { background: white; margin-bottom: 12px; padding: 14px; border-radius: 16px; border-right: 4px solid #c9a03d; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .event-item.callback { border-right-color: #e67e22; background: #fffbf0; }
+        .event-item:hover { transform: translateX(-5px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .event-title { font-weight: 700; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .event-name { display: flex; align-items: center; gap: 8px; }
+        .event-type { font-size: 0.6rem; padding: 3px 10px; border-radius: 20px; background: #fef8e7; }
+        .event-type.callback-badge { background: #ffecb3; color: #b45f06; }
+        .event-details { font-size: 0.7rem; color: #4a5b54; display: flex; flex-wrap: wrap; gap: 12px; margin-top: 5px; }
+        .event-details span { display: inline-flex; align-items: center; gap: 4px; }
+        .event-phone { direction: ltr; font-family: monospace; background: #f0f0f0; padding: 2px 6px; border-radius: 8px; }
+        
+        .fc { direction: rtl; }
+        .fc .fc-toolbar { flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        @media (min-width: 768px) { .fc .fc-toolbar { flex-direction: row; } }
+        .fc .fc-button { background: #c9a03d !important; border: none !important; }
+        .fc .fc-button:hover { background: #8b6914 !important; }
+        
+        .loading { text-align: center; padding: 40px; }
+        .spinner { width: 40px; height: 40px; border: 3px solid #fef8e7; border-top: 3px solid #c9a03d; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .footer-note { margin-top: 20px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 25px; }
+        .error-message { text-align: center; padding: 40px; background: #fee2e2; border-radius: 16px; margin: 20px; }
+        .error-message i { font-size: 2rem; color: #dc2626; margin-bottom: 15px; display: block; }
+        .error-message button { background: #c9a03d; border: none; padding: 8px 20px; border-radius: 25px; color: white; cursor: pointer; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -431,28 +101,16 @@
         <input type="date" id="startDate" value="2026-04-01">
         <label>إلى:</label>
         <input type="date" id="endDate" value="2026-04-30">
-        <button id="applyDateRangeBtn"><i class="fas fa-filter"></i> تطبيق</button>
-        <button id="clearDateRangeBtn" class="clear-btn"><i class="fas fa-times"></i> إلغاء</button>
-        <span id="rangeInfo" class="range-info"></span>
+        <button id="applyDateRangeBtn"><i class="fas fa-filter"></i> تطبيق الفلتر</button>
+        <button id="clearDateRangeBtn" class="clear-btn"><i class="fas fa-times"></i> إلغاء الفلتر</button>
+        <span id="rangeInfo" class="range-info">📅 1/4/2026 - 30/4/2026</span>
     </div>
 
     <div class="stats-grid">
-        <div class="stat-card">
-            <h3><i class="fas fa-building"></i> إجمالي المعاينات</h3>
-            <div class="stat-number" id="totalApp">0</div>
-        </div>
-        <div class="stat-card">
-            <h3><i class="fas fa-phone-alt"></i> إجمالي المتابعات</h3>
-            <div class="stat-number" id="totalCb">0</div>
-        </div>
-        <div class="stat-card">
-            <h3><i class="fas fa-calendar-day"></i> معاينات اليوم</h3>
-            <div class="stat-number" id="todayApp">0</div>
-        </div>
-        <div class="stat-card">
-            <h3><i class="fas fa-clock"></i> متابعات اليوم</h3>
-            <div class="stat-number" id="todayCb">0</div>
-        </div>
+        <div class="stat-card"><h3><i class="fas fa-building"></i> إجمالي المعاينات</h3><div class="stat-number" id="totalApp">0</div></div>
+        <div class="stat-card"><h3><i class="fas fa-phone-alt"></i> إجمالي المتابعات</h3><div class="stat-number" id="totalCb">0</div></div>
+        <div class="stat-card"><h3><i class="fas fa-calendar-day"></i> معاينات اليوم</h3><div class="stat-number" id="todayApp">0</div></div>
+        <div class="stat-card"><h3><i class="fas fa-clock"></i> متابعات اليوم</h3><div class="stat-number" id="todayCb">0</div></div>
     </div>
 
     <div class="two-columns">
@@ -497,86 +155,93 @@
     let filteredEvents = [];
     let calendar = null;
     let currentFilter = 'all';
-    let dateRange = { start: null, end: null };
+    let currentDateRange = { start: null, end: null };
 
     const TYPE_APPOINTMENT = 'معاينة';
     const TYPE_CALLBACK_L = 'متابعة المكالمة';
     const TYPE_CALLBACK_S = 'متابعة المعاينة';
 
-    function applyDateRangeFilter() {
-        const startInput = document.getElementById('startDate');
-        const endInput = document.getElementById('endDate');
-        const rangeInfo = document.getElementById('rangeInfo');
-
-        if (startInput.value) {
-            dateRange.start = new Date(startInput.value);
-            dateRange.start.setHours(0, 0, 0, 0);
-        } else {
-            dateRange.start = null;
-        }
-
-        if (endInput.value) {
-            dateRange.end = new Date(endInput.value);
-            dateRange.end.setHours(23, 59, 59, 999);
-        } else {
-            dateRange.end = null;
-        }
-
-        if (dateRange.start && dateRange.end) {
-            rangeInfo.innerHTML = `📅 ${dateRange.start.toLocaleDateString('ar-EG')} - ${dateRange.end.toLocaleDateString('ar-EG')}`;
-        } else if (dateRange.start) {
-            rangeInfo.innerHTML = `📅 من ${dateRange.start.toLocaleDateString('ar-EG')}`;
-        } else if (dateRange.end) {
-            rangeInfo.innerHTML = `📅 حتى ${dateRange.end.toLocaleDateString('ar-EG')}`;
-        } else {
-            rangeInfo.innerHTML = '📅 الكل';
-        }
-
-        applyFilters();
-    }
-
-    function clearDateRangeFilter() {
-        document.getElementById('startDate').value = '';
-        document.getElementById('endDate').value = '';
-        dateRange = { start: null, end: null };
-        document.getElementById('rangeInfo').innerHTML = '📅 الكل';
-        applyFilters();
-    }
-
-    function applyFilters() {
+    // دالة رئيسية لتطبيق جميع الفلاتر
+    function applyAllFilters() {
         let result = [...allEvents];
 
+        // 1. فلتر حسب النوع
         if (currentFilter === 'appointment') {
             result = result.filter(e => e.type === TYPE_APPOINTMENT);
         } else if (currentFilter === 'callback') {
             result = result.filter(e => e.type !== TYPE_APPOINTMENT);
         }
 
-        if (dateRange.start) {
+        // 2. فلتر حسب نطاق التاريخ
+        if (currentDateRange.start) {
             result = result.filter(e => {
-                const evDate = new Date(e.date);
-                evDate.setHours(0, 0, 0, 0);
-                const startDate = new Date(dateRange.start);
+                const eventDate = new Date(e.date);
+                eventDate.setHours(0, 0, 0, 0);
+                const startDate = new Date(currentDateRange.start);
                 startDate.setHours(0, 0, 0, 0);
-                return evDate >= startDate;
+                return eventDate >= startDate;
             });
         }
 
-        if (dateRange.end) {
+        if (currentDateRange.end) {
             result = result.filter(e => {
-                const evDate = new Date(e.date);
-                evDate.setHours(0, 0, 0, 0);
-                const endDate = new Date(dateRange.end);
+                const eventDate = new Date(e.date);
+                eventDate.setHours(0, 0, 0, 0);
+                const endDate = new Date(currentDateRange.end);
                 endDate.setHours(0, 0, 0, 0);
-                return evDate <= endDate;
+                return eventDate <= endDate;
             });
         }
 
         filteredEvents = result;
+        
+        // تحديث الواجهة
         document.getElementById('eventsCount').innerText = filteredEvents.length;
         updateStats(filteredEvents);
         renderEventList(filteredEvents);
         initCalendar(filteredEvents);
+    }
+
+    // تطبيق فلتر التاريخ
+    function applyDateRangeFilter() {
+        const startInput = document.getElementById('startDate');
+        const endInput = document.getElementById('endDate');
+        const rangeInfo = document.getElementById('rangeInfo');
+
+        if (startInput.value) {
+            currentDateRange.start = new Date(startInput.value);
+            currentDateRange.start.setHours(0, 0, 0, 0);
+        } else {
+            currentDateRange.start = null;
+        }
+
+        if (endInput.value) {
+            currentDateRange.end = new Date(endInput.value);
+            currentDateRange.end.setHours(23, 59, 59, 999);
+        } else {
+            currentDateRange.end = null;
+        }
+
+        // تحديث النص التوضيحي
+        if (currentDateRange.start && currentDateRange.end) {
+            rangeInfo.innerHTML = `📅 ${currentDateRange.start.toLocaleDateString('ar-EG')} - ${currentDateRange.end.toLocaleDateString('ar-EG')}`;
+        } else if (currentDateRange.start) {
+            rangeInfo.innerHTML = `📅 من ${currentDateRange.start.toLocaleDateString('ar-EG')}`;
+        } else if (currentDateRange.end) {
+            rangeInfo.innerHTML = `📅 حتى ${currentDateRange.end.toLocaleDateString('ar-EG')}`;
+        } else {
+            rangeInfo.innerHTML = '📅 جميع المواعيد';
+        }
+
+        applyAllFilters();
+    }
+
+    function clearDateRangeFilter() {
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        currentDateRange = { start: null, end: null };
+        document.getElementById('rangeInfo').innerHTML = '📅 جميع المواعيد';
+        applyAllFilters();
     }
 
     function parseDate(dateStr) {
@@ -801,17 +466,16 @@
             const dateStr = ev.date.toLocaleDateString('ar-EG', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
             const timeDisplay = ev.displayTime ? `🕐 ${ev.displayTime}` : '';
             const isCallback = (ev.type !== TYPE_APPOINTMENT);
-            let typeIcon = isCallback ? '📞' : '🏢';
-            let typeDisplay = ev.type;
+            let typeIcon = isCallback ? (ev.type === TYPE_CALLBACK_L ? '📞' : '📋') : '🏢';
 
             html += `
-                <div class="event-item ${isCallback ? 'callback' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${dateStr}', '${timeDisplay}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${typeDisplay}')">
+                <div class="event-item ${isCallback ? 'callback' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${dateStr}', '${timeDisplay}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${ev.type}')">
                     <div class="event-title">
                         <div class="event-name">
                             <i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i>
                             <span>${ev.title}</span>
                         </div>
-                        <span class="event-type ${isCallback ? 'callback-badge' : ''}">${typeIcon} ${typeDisplay}</span>
+                        <span class="event-type ${isCallback ? 'callback-badge' : ''}">${typeIcon} ${ev.type}</span>
                     </div>
                     <div class="event-details">
                         <span><i class="far fa-calendar-alt"></i> ${dateStr}</span>
@@ -852,7 +516,7 @@
         if (calendar) calendar.destroy();
 
         if (events.length === 0) {
-            calendarEl.innerHTML = '<div class="loading"><p>لا توجد مواعيد</p></div>';
+            calendarEl.innerHTML = '<div class="loading"><p>لا توجد مواعيد في النطاق المحدد</p></div>';
             return;
         }
 
@@ -883,8 +547,7 @@
                 const ext = info.event.extendedProps;
                 const dateStr = info.event.start.toLocaleDateString('ar-EG', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
                 const timeDisplay = ext.displayTime ? `🕐 ${ext.displayTime}` : '';
-                let typeDisplay = ext.type;
-                showDetails(info.event.title.replace(/^[🏢📞📋] /, '').replace(/\([^)]*\)/, '').trim(), dateStr, timeDisplay, ext.phone, ext.city, ext.address, ext.notes, typeDisplay);
+                showDetails(info.event.title.replace(/^[🏢📞📋] /, '').replace(/\([^)]*\)/, '').trim(), dateStr, timeDisplay, ext.phone, ext.city, ext.address, ext.notes, ext.type);
             },
             height: 'auto', firstDay: 6
         });
@@ -896,14 +559,14 @@
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.filter === filter);
         });
-        applyFilters();
+        applyAllFilters();
     }
 
     async function refreshDashboard() {
         const events = await fetchData();
         if (events.length > 0) {
             allEvents = events;
-            applyFilters();
+            applyAllFilters();
         }
     }
 
@@ -916,9 +579,14 @@
         document.getElementById('applyDateRangeBtn').addEventListener('click', applyDateRangeFilter);
         document.getElementById('clearDateRangeBtn').addEventListener('click', clearDateRangeFilter);
 
+        // تعيين الفلتر الافتراضي لأبريل 2026
         document.getElementById('startDate').value = '2026-04-01';
         document.getElementById('endDate').value = '2026-04-30';
-        applyDateRangeFilter();
+        currentDateRange = {
+            start: new Date(2026, 3, 1),  // 1 أبريل 2026
+            end: new Date(2026, 3, 30, 23, 59, 59)  // 30 أبريل 2026
+        };
+        document.getElementById('rangeInfo').innerHTML = '📅 1/4/2026 - 30/4/2026';
 
         refreshDashboard();
         setInterval(refreshDashboard, 300000);
