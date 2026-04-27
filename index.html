@@ -44,21 +44,25 @@
         .section-title { font-size: 1rem; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #eee; color: #8b6914; display: flex; justify-content: space-between; align-items: center; }
         .events-count { background: #c9a03d; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; }
         
+        /* قائمة اليوميات - مجمعة حسب اليوم */
+        .day-group { margin-bottom: 20px; border-right: 3px solid #c9a03d; padding-right: 12px; }
+        .day-header { font-weight: bold; font-size: 0.9rem; color: #8b6914; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed #ddd; display: flex; align-items: center; gap: 8px; }
+        .day-header span { background: #c9a03d20; padding: 3px 8px; border-radius: 20px; font-size: 0.7rem; color: #c9a03d; }
+        
         .event-list { max-height: 550px; overflow-y: auto; }
         .event-list::-webkit-scrollbar { width: 4px; }
         .event-list::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 10px; }
         .event-list::-webkit-scrollbar-thumb { background: #c9a03d; border-radius: 10px; }
         
-        .event-item { background: #f9fbfa; margin-bottom: 12px; padding: 12px; border-radius: 14px; border-right: 4px solid #c9a03d; transition: all 0.2s; }
+        .event-item { background: #f9fbfa; margin-bottom: 8px; padding: 10px; border-radius: 12px; border-right: 3px solid #c9a03d; transition: all 0.2s; cursor: pointer; }
         .event-item.callback { border-right-color: #e67e22; background: #fffbf0; }
         .event-item:hover { transform: translateX(-5px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .event-title { font-weight: bold; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .event-name { display: flex; align-items: center; gap: 8px; }
-        .event-type { font-size: 0.6rem; padding: 3px 10px; border-radius: 20px; background: #fef8e7; }
-        .event-details { font-size: 0.7rem; color: #666; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px; }
-        .event-phone { direction: ltr; font-family: monospace; background: #f0f0f0; padding: 2px 6px; border-radius: 8px; }
-        .event-location { font-size: 0.7rem; color: #666; margin-top: 5px; display: flex; align-items: center; gap: 5px; }
-        .event-notes { font-size: 0.7rem; color: #888; margin-top: 5px; }
+        .event-title { font-weight: bold; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .event-name { display: flex; align-items: center; gap: 6px; }
+        .event-type { font-size: 0.6rem; padding: 2px 8px; border-radius: 20px; background: #fef8e7; }
+        .event-details { font-size: 0.65rem; color: #666; display: flex; flex-wrap: wrap; gap: 8px; }
+        .event-phone { direction: ltr; font-family: monospace; background: #f0f0f0; padding: 1px 4px; border-radius: 6px; font-size: 0.6rem; }
+        .event-location { font-size: 0.65rem; color: #666; margin-top: 3px; display: flex; align-items: center; gap: 4px; }
         
         .fc { direction: rtl; }
         .fc .fc-toolbar { flex-direction: column; gap: 10px; margin-bottom: 15px; }
@@ -146,14 +150,12 @@
         
         let filtered = [...allEvents];
         
-        // فلتر النوع
         if (currentType === 'appointment') {
             filtered = filtered.filter(e => e.type === TYPE_APP);
         } else if (currentType === 'callback') {
             filtered = filtered.filter(e => e.type !== TYPE_APP);
         }
         
-        // فلتر التاريخ
         if (startDate) {
             const startTime = startDate.getTime();
             filtered = filtered.filter(e => new Date(e.date).getTime() >= startTime);
@@ -163,10 +165,9 @@
             filtered = filtered.filter(e => new Date(e.date).getTime() <= endTime);
         }
         
-        // تحديث الواجهة
         document.getElementById('eventsCount').innerText = filtered.length;
         updateStats(filtered);
-        renderList(filtered);
+        renderGroupedList(filtered);
         renderCalendar(filtered);
     }
 
@@ -191,7 +192,6 @@
             month = parseInt(parts[2]) - 1;
             year = parseInt(parts[3]);
         }
-        
         let d = new Date(year, month, day, 12, 0);
         return !isNaN(d.getTime()) ? d : null;
     }
@@ -200,7 +200,6 @@
         if (!str) return { hour: 12, minute: 0, display: '12:00 م' };
         let s = str.toString().trim();
         if (s === 'FALSE' || s === 'TRUE' || s === '') return { hour: 12, minute: 0, display: '12:00 م' };
-        
         let match = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*([مص])/);
         if (match) {
             let hour = parseInt(match[1]), minute = parseInt(match[2]), period = match[3];
@@ -233,7 +232,6 @@
                 const address = row[COL_ADDRESS] || '';
                 const notes = row[COL_NOTES] || '';
                 
-                // المعاينات
                 const appDate = row[COL_APP_DATE];
                 const appTime = row[COL_APP_TIME] || '';
                 if (appDate && appDate !== 'FALSE' && appDate.toString().trim()) {
@@ -244,13 +242,13 @@
                         events.push({ id: `app_${i}`, title: name, type: TYPE_APP, date: d, displayTime: t.display, phone, city, address, notes });
                     }
                 }
-                // متابعات من العمود L
+                
                 const cbL = row[COL_CB_L_DATE];
                 if (cbL && cbL !== 'FALSE' && cbL.toString().trim()) {
                     const d = parseDate(cbL);
                     if (d) events.push({ id: `cbL_${i}`, title: name, type: TYPE_CB_L, date: d, displayTime: '', phone, city, address, notes: row[COL_CB_L_NOTES] || notes });
                 }
-                // متابعات من العمود S
+                
                 const cbS = row[COL_CB_S_DATE];
                 if (cbS && cbS !== 'FALSE' && cbS.toString().trim()) {
                     const d = parseDate(cbS);
@@ -281,50 +279,89 @@
         document.getElementById('todayCb').innerText = todayCb;
     }
 
-    function renderList(events) {
+    // عرض المواعيد مجمعة حسب اليوم
+    function renderGroupedList(events) {
         const container = document.getElementById('eventList');
         if (!events.length) { 
             container.innerHTML = '<div class="loading">✨ لا توجد مواعيد في النطاق المحدد</div>'; 
             return; 
         }
         
-        let html = '';
-        const sorted = [...events].sort((a, b) => a.date - b.date);
+        // تجميع الأحداث حسب التاريخ
+        const grouped = {};
+        for (const ev of events) {
+            const dateKey = ev.date.toDateString();
+            if (!grouped[dateKey]) {
+                grouped[dateKey] = [];
+            }
+            grouped[dateKey].push(ev);
+        }
         
-        for (const ev of sorted) {
-            const dateStr = ev.date.toLocaleDateString('ar-EG');
-            const isCallback = ev.type !== TYPE_APP;
-            const icon = isCallback ? (ev.type === TYPE_CB_L ? '📞' : '📋') : '🏢';
+        // ترتيب الأيام
+        const sortedDays = Object.keys(grouped).sort((a, b) => new Date(a) - new Date(b));
+        
+        let html = '';
+        for (const dayKey of sortedDays) {
+            const dayEvents = grouped[dayKey].sort((a, b) => a.date - b.date);
+            const firstEvent = dayEvents[0];
+            const dateObj = new Date(dayKey);
+            const dayName = dateObj.toLocaleDateString('ar-EG', { weekday: 'long' });
+            const dateStr = dateObj.toLocaleDateString('ar-EG', { day: 'numeric', month: 'numeric', year: 'numeric' });
             
-            html += `
-                <div class="event-item ${isCallback ? 'callback' : ''}">
-                    <div class="event-title">
-                        <div class="event-name">
-                            <i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i>
-                            <span>${ev.title}</span>
+            html += `<div class="day-group">
+                <div class="day-header">
+                    <i class="fas fa-calendar-day"></i> ${dayName}
+                    <span>${dateStr}</span>
+                    <span style="margin-right: auto; background: #c9a03d; color: white;">${dayEvents.length} مواعيد</span>
+                </div>`;
+            
+            for (const ev of dayEvents) {
+                const isCallback = ev.type !== TYPE_APP;
+                const icon = isCallback ? (ev.type === TYPE_CB_L ? '📞' : '📋') : '🏢';
+                const timeDisplay = ev.displayTime ? `🕐 ${ev.displayTime}` : '';
+                
+                html += `
+                    <div class="event-item ${isCallback ? 'callback' : ''}" onclick="showEventDetails('${ev.title.replace(/'/g, "\\'")}', '${dateStr}', '${ev.displayTime || ''}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${ev.type}')">
+                        <div class="event-title">
+                            <div class="event-name">
+                                <i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i>
+                                <span>${ev.title}</span>
+                            </div>
+                            <span class="event-type">${icon} ${ev.type}</span>
                         </div>
-                        <span class="event-type">${icon} ${ev.type}</span>
+                        <div class="event-details">
+                            ${timeDisplay ? `<span>${timeDisplay}</span>` : ''}
+                            <span>📞 <span class="event-phone">${ev.phone || 'غير متوفر'}</span></span>
+                        </div>
+                        ${(ev.city || ev.address) ? `<div class="event-location"><i class="fas fa-map-marker-alt"></i> ${ev.city || ''} ${ev.address || ''}</div>` : ''}
                     </div>
-                    <div class="event-details">
-                        <span>📅 ${dateStr}</span>
-                        ${ev.displayTime ? `<span>🕐 ${ev.displayTime}</span>` : ''}
-                        <span>📞 <span class="event-phone">${ev.phone || 'غير متوفر'}</span></span>
-                    </div>
-                    ${(ev.city || ev.address) ? `<div class="event-location"><i class="fas fa-map-marker-alt"></i> ${ev.city || ''} ${ev.address || ''}</div>` : ''}
-                    ${ev.notes ? `<div class="event-notes"><i class="fas fa-sticky-note"></i> ${ev.notes.length > 80 ? ev.notes.substring(0, 80) + '...' : ev.notes}</div>` : ''}
-                </div>
-            `;
+                `;
+            }
+            html += `</div>`;
         }
         container.innerHTML = html;
     }
 
+    function showEventDetails(title, date, time, phone, city, address, notes, type) {
+        Swal.fire({
+            title: title,
+            html: `<div style="text-align:right">
+                <p><strong>📋 النوع:</strong> ${type}</p>
+                <p><strong>📅 التاريخ:</strong> ${date}</p>
+                ${time ? `<p><strong>🕐 الوقت:</strong> ${time}</p>` : ''}
+                <p><strong>📞 الهاتف:</strong> ${phone || 'غير متوفر'}</p>
+                <p><strong>📍 الموقع:</strong> ${city || ''} ${address || ''}</p>
+                <p><strong>📝 الملاحظات:</strong> ${notes || 'لا توجد'}</p>
+            </div>`,
+            icon: type === TYPE_APP ? 'info' : 'warning',
+            confirmButtonColor: '#c9a03d',
+            confirmButtonText: 'إغلاق'
+        });
+    }
+
     function renderCalendar(events) {
         const el = document.getElementById('calendar');
-        
-        if (calendar) {
-            calendar.destroy();
-            calendar = null;
-        }
+        if (calendar) { calendar.destroy(); calendar = null; }
         
         if (!events.length) { 
             el.innerHTML = '<div class="loading">📅 لا توجد مواعيد في النطاق المحدد</div>'; 
@@ -339,18 +376,10 @@
         }));
         
         calendar = new FullCalendar.Calendar(el, {
-            initialView: 'dayGridMonth', 
-            locale: 'ar', 
-            direction: 'rtl',
-            headerToolbar: { 
-                left: 'prev,next today', 
-                center: 'title', 
-                right: window.innerWidth < 768 ? '' : 'dayGridMonth' 
-            },
+            initialView: 'dayGridMonth', locale: 'ar', direction: 'rtl',
+            headerToolbar: { left: 'prev,next today', center: 'title', right: window.innerWidth < 768 ? '' : 'dayGridMonth' },
             buttonText: { today: 'اليوم', month: 'شهر' },
-            events: fcEvents, 
-            height: 'auto', 
-            firstDay: 6
+            events: fcEvents, height: 'auto', firstDay: 6
         });
         calendar.render();
     }
@@ -359,30 +388,16 @@
         const start = document.getElementById('startDate').value;
         const end = document.getElementById('endDate').value;
         
-        if (start) {
-            startDate = new Date(start);
-            startDate.setHours(0, 0, 0, 0);
-        } else {
-            startDate = null;
-        }
-        
-        if (end) {
-            endDate = new Date(end);
-            endDate.setHours(23, 59, 59, 999);
-        } else {
-            endDate = null;
-        }
+        startDate = start ? new Date(start) : null;
+        endDate = end ? new Date(end) : null;
+        if (startDate) startDate.setHours(0, 0, 0, 0);
+        if (endDate) endDate.setHours(23, 59, 59, 999);
         
         const info = document.getElementById('rangeInfo');
-        if (startDate && endDate) {
-            info.innerText = `${startDate.toLocaleDateString('ar-EG')} - ${endDate.toLocaleDateString('ar-EG')}`;
-        } else if (startDate) {
-            info.innerText = `من ${startDate.toLocaleDateString('ar-EG')}`;
-        } else if (endDate) {
-            info.innerText = `حتى ${endDate.toLocaleDateString('ar-EG')}`;
-        } else {
-            info.innerText = 'جميع المواعيد';
-        }
+        if (startDate && endDate) info.innerText = `${startDate.toLocaleDateString('ar-EG')} - ${endDate.toLocaleDateString('ar-EG')}`;
+        else if (startDate) info.innerText = `من ${startDate.toLocaleDateString('ar-EG')}`;
+        else if (endDate) info.innerText = `حتى ${endDate.toLocaleDateString('ar-EG')}`;
+        else info.innerText = 'جميع المواعيد';
         
         updateDisplay();
     }
@@ -390,8 +405,7 @@
     function clearDateFilter() {
         document.getElementById('startDate').value = '';
         document.getElementById('endDate').value = '';
-        startDate = null;
-        endDate = null;
+        startDate = null; endDate = null;
         document.getElementById('rangeInfo').innerText = 'جميع المواعيد';
         updateDisplay();
     }
