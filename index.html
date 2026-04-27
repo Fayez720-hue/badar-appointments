@@ -62,6 +62,10 @@
             background: #dcfce7;
             color: #16a34a;
         }
+        .status-badge.warning {
+            background: #fed7aa;
+            color: #9a3412;
+        }
         .refresh-btn {
             background: #1e5f4b;
             border: none;
@@ -201,6 +205,13 @@
             text-align: center;
             margin: 20px;
         }
+        .error-message h4 {
+            margin: 0 0 10px 0;
+        }
+        .error-message ul {
+            text-align: right;
+            margin: 10px 20px;
+        }
         @media (max-width: 780px) {
             body { padding: 12px; }
         }
@@ -220,10 +231,10 @@
     </div>
 
     <div class="stats-grid" id="statsGrid">
-        <div class="stat-card"><h3>🏠 إجمالي المعاينات</h3><div class="stat-number" id="totalAppointments">-</div></div>
-        <div class="stat-card"><h3>📞 إجمالي المتابعات (Callbacks)</h3><div class="stat-number" id="totalCallbacks">-</div></div>
-        <div class="stat-card"><h3>🗓️ المعاينات القادمة</h3><div class="stat-number" id="upcomingAppointments">-</div></div>
-        <div class="stat-card"><h3>⏰ متابعات هذا الأسبوع</h3><div class="stat-number" id="weekCallbacks">-</div></div>
+        <div class="stat-card"><h3>🏠 إجمالي المعاينات</h3><div class="stat-number" id="totalAppointments">0</div></div>
+        <div class="stat-card"><h3>📞 إجمالي المتابعات (Callbacks)</h3><div class="stat-number" id="totalCallbacks">0</div></div>
+        <div class="stat-card"><h3>🗓️ المعاينات القادمة</h3><div class="stat-number" id="upcomingAppointments">0</div></div>
+        <div class="stat-card"><h3>⏰ متابعات هذا الأسبوع</h3><div class="stat-number" id="weekCallbacks">0</div></div>
     </div>
 
     <div class="two-columns">
@@ -260,7 +271,7 @@
     const TYPE_APPOINTMENT = 'معاينة';
     const TYPE_CALLBACK = 'متابعة';
     
-    // جلب البيانات الحقيقية فقط من Google Sheets (بدون بيانات تجريبية)
+    // جلب البيانات الحقيقية فقط من Google Sheets (بدون أي بيانات تجريبية)
     async function fetchRealSheetData() {
         const statusSpan = document.getElementById('syncStatus');
         statusSpan.innerHTML = '⏳ جلب البيانات من Google Sheets...';
@@ -270,30 +281,47 @@
             const range = `${SHEET_NAME}!A1:V1000`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
             
-            console.log("جاري الاتصال بـ:", url);
+            console.log("🌐 جاري الاتصال بـ Google Sheets API...");
             const response = await fetch(url);
             
             if (!response.ok) {
-                throw new Error(`خطأ HTTP ${response.status}: ${response.statusText}`);
+                if (response.status === 403) {
+                    throw new Error("❌ خطأ في الصلاحيات: تأكد من مشاركة الجدول مع 'أي شخص لديه الرابط' كـ 'يمكنه العرض'");
+                } else if (response.status === 404) {
+                    throw new Error("❌ لم يتم العثور على الجدول. تأكد من معرف الجدول (SPREADSHEET_ID) صحيح");
+                } else {
+                    throw new Error(`❌ خطأ HTTP ${response.status}: ${response.statusText}`);
+                }
             }
             
             const data = await response.json();
             const rows = data.values;
             
             if (!rows || rows.length < 2) {
-                throw new Error("لا توجد بيانات في الجدول. تأكد من أن الورقة تحتوي على بيانات");
+                throw new Error("❌ لا توجد بيانات في الجدول. تأكد من أن الورقة تحتوي على بيانات في الصفوف");
             }
             
-            console.log(`تم العثور على ${rows.length} صف (بما في ذلك العنوان)`);
+            console.log(`✅ تم العثور على ${rows.length} صف (بما في ذلك العنوان)`);
             
             const events = [];
             let appointmentCount = 0;
             let callbackCount = 0;
+            let skippedRows = 0;
+            
+            // عرض العناوين لمساعدتك في التحقق
+            if (rows[0]) {
+                console.log("📋 العناوين الموجودة في الصف الأول:", rows[0]);
+                console.log("📍 العمود O (تاريخ المعاينة) فهرسه 14", rows[0][14] || "غير موجود");
+                console.log("📍 العمود L (Callback Date) فهرسه 11", rows[0][11] || "غير موجود");
+            }
             
             // تخطي الصف الأول (العناوين)
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
-                if (!row || row.length < 15) continue;
+                if (!row || row.length < 15) {
+                    skippedRows++;
+                    continue;
+                }
                 
                 const name = row[1] || 'غير محدد';
                 const phone = row[2] || row[12] || '';
@@ -319,7 +347,7 @@
                         });
                         appointmentCount++;
                     } else {
-                        console.warn(`الصف ${i}: لا يمكن تحويل تاريخ المعاينة: ${appointmentDateRaw}`);
+                        console.warn(`⚠️ الصف ${i+1}: لا يمكن تحويل تاريخ المعاينة: "${appointmentDateRaw}"`);
                     }
                 }
                 
@@ -339,15 +367,15 @@
                         });
                         callbackCount++;
                     } else {
-                        console.warn(`الصف ${i}: لا يمكن تحويل تاريخ المتابعة: ${callbackDateRaw}`);
+                        console.warn(`⚠️ الصف ${i+1}: لا يمكن تحويل تاريخ المتابعة: "${callbackDateRaw}"`);
                     }
                 }
             }
             
-            console.log(`تم استخراج: ${appointmentCount} معاينة, ${callbackCount} متابعة`);
+            console.log(`📊 النتائج: ${appointmentCount} معاينة, ${callbackCount} متابعة, تخطي ${skippedRows} صف غير مكتمل`);
             
             if (events.length === 0) {
-                throw new Error("لم يتم العثور على أي مواعيد صالحة في الجدول. تأكد من وجود تواريخ في عمود 'تاريخ المعاينة' أو 'Callback Date'");
+                throw new Error(`❌ لم يتم العثور على أي مواعيد صالحة في الجدول.\n\nتأكد من وجود تواريخ في:\n- عمود "تاريخ المعاينة" (العمود O)\n- أو عمود "Callback Date" (العمود L)\n\nتم فحص ${rows.length-1} صف.`);
             }
             
             statusSpan.innerHTML = `✅ تم جلب ${events.length} حدث (${appointmentCount} معاينة، ${callbackCount} متابعة)`;
@@ -355,26 +383,48 @@
             return events;
             
         } catch (error) {
-            console.error("فشل الجلب:", error);
-            statusSpan.innerHTML = `❌ خطأ: ${error.message}`;
+            console.error("❌ فشل الجلب:", error);
+            statusSpan.innerHTML = `❌ فشل الجلب`;
             statusSpan.className = 'status-badge error';
             
-            // عرض رسالة خطأ واضحة للمستخدم
-            const container = document.getElementById('upcomingEventsList');
-            container.innerHTML = `
-                <div class="error-message">
-                    <strong>⚠️ لا يمكن جلب البيانات</strong><br><br>
-                    ${error.message}<br><br>
-                    تأكد من:<br>
-                    1. أن Spreadsheet ID صحيح<br>
-                    2. أن API Key صالح ومفعل له Google Sheets API<br>
-                    3. أن الجدول مشترك مع "أي شخص لديه الرابط" على الأقل للقراءة<br>
-                    4. أن اسم الورقة "${SHEET_NAME}" صحيح
-                </div>
-            `;
+            // عرض رسالة خطأ واضحة للمستخدم - بدون أي بيانات تجريبية
+            const errorMessage = error.message || "خطأ غير معروف";
+            showErrorMessage(errorMessage);
             
             return [];
         }
+    }
+    
+    // عرض رسالة خطأ في جميع أجزاء الواجهة
+    function showErrorMessage(errorMessage) {
+        const container = document.getElementById('upcomingEventsList');
+        const calendarEl = document.getElementById('calendar');
+        
+        const errorHtml = `
+            <div class="error-message">
+                <h4>⚠️ لا يمكن جلب البيانات من Google Sheets</h4>
+                <p>${errorMessage}</p>
+                <hr>
+                <p><strong>🔧 خطوات الحل:</strong></p>
+                <ul>
+                    <li>تأكد من مشاركة الجدول: اضغط "مشاركة" → "عام" → "أي شخص لديه الرابط" → "يمكنه العرض"</li>
+                    <li>تأكد من تفعيل Google Sheets API في <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a></li>
+                    <li>تأكد من صحة معرف الجدول (SPREADSHEET_ID)</li>
+                    <li>تأكد من صحة مفتاح API (API_KEY)</li>
+                    <li>تأكد من وجود تواريخ في عمود "تاريخ المعاينة" (O) أو "Callback Date" (L)</li>
+                </ul>
+                <p>📞 للحصول على مساعدة، تأكد من عرض وحدة التحكم (F12) لمزيد من التفاصيل</p>
+            </div>
+        `;
+        
+        container.innerHTML = errorHtml;
+        calendarEl.innerHTML = errorHtml;
+        
+        // reset stats
+        document.getElementById('totalAppointments').innerText = '0';
+        document.getElementById('totalCallbacks').innerText = '0';
+        document.getElementById('upcomingAppointments').innerText = '0';
+        document.getElementById('weekCallbacks').innerText = '0';
     }
     
     // دالة لتحويل التاريخ من صيغ مختلفة
@@ -450,6 +500,12 @@
     // عرض قائمة الأحداث القادمة
     function renderUpcomingList(events) {
         const container = document.getElementById('upcomingEventsList');
+        
+        if (events.length === 0) {
+            container.innerHTML = '<div class="loading">✨ لا توجد أحداث لعرضها</div>';
+            return;
+        }
+        
         const now = new Date();
         now.setHours(0, 0, 0, 0);
         const limit = new Date(now);
@@ -494,7 +550,6 @@
         if (calendarInstance) calendarInstance.destroy();
         
         if (events.length === 0) {
-            calendarEl.innerHTML = '<div class="error-message">لا توجد بيانات لعرضها في التقويم</div>';
             return;
         }
         
@@ -543,12 +598,12 @@
             updateStats(eventsList);
             renderUpcomingList(eventsList);
             initCalendar(eventsList);
+            console.log(`✅ تم تحديث الواجهة بنجاح بـ ${realEvents.length} حدث حقيقي`);
         } else {
-            // مسح أي بيانات سابقة
+            // مسح أي بيانات سابقة وعرض رسالة خطأ
             eventsList = [];
             updateStats([]);
-            renderUpcomingList([]);
-            initCalendar([]);
+            // رسالة الخطأ تم عرضها بالفعل في fetchRealSheetData
         }
     }
     
@@ -558,7 +613,9 @@
         document.getElementById('refreshDataBtn').addEventListener('click', refreshDashboard);
     });
     
-    console.log("✅ التطبيق يعمل - يعرض البيانات الحقيقية فقط من Google Sheets");
+    console.log("🚀 التطبيق يعمل - يعرض البيانات الحقيقية فقط من Google Sheets");
+    console.log("📋 معرف الجدول:", SPREADSHEET_ID);
+    console.log("📄 اسم الورقة:", SHEET_NAME);
 </script>
 </body>
 </html>
