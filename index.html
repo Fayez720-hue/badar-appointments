@@ -154,6 +154,7 @@
     let currentFilterType = 'all';
     let currentStartDate = null;
     let currentEndDate = null;
+    let calendar = null;  // تعريف المتغير calendar
 
     const TYPE_APPOINTMENT = 'معاينة';
     const TYPE_CALLBACK_L = 'متابعة المكالمة';
@@ -318,7 +319,7 @@
             let hour12 = hour24 % 12 || 12;
             let displayPeriod = hour24 < 12 ? 'ص' : 'م';
             displayTime = `${hour12}:${minute.toString().padStart(2, '0')} ${displayPeriod}`;
-            return { hour24, minute, display: displayTime};
+            return { hour24, minute, display: displayTime };
         }
 
         if (clean.includes('12:00:00 ص')) return { hour24: 0, minute: 0, display: '12:00 ص' };
@@ -508,7 +509,12 @@
 
     function initCalendar(events) {
         const calendarEl = document.getElementById('calendar');
-        if (calendar) calendar.destroy();
+        
+        // تدمير التقويم القديم إذا كان موجوداً
+        if (calendar) {
+            calendar.destroy();
+            calendar = null;
+        }
 
         if (events.length === 0) {
             calendarEl.innerHTML = '<div class="loading"><p>لا توجد مواعيد في النطاق المحدد</p></div>';
@@ -546,6 +552,7 @@
             },
             height: 'auto', firstDay: 6
         });
+        
         calendar.render();
     }
 
