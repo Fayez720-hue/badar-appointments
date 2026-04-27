@@ -2,160 +2,79 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>نظام إدارة العقارات - معاينات ومتابعات</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>نظام إدارة العقارات - المعاينات</title>
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ar.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif; }
-        body { background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 50%, #1a472a 100%); min-height: 100vh; padding: 12px; direction: rtl; }
-        .dashboard-container { max-width: 1600px; margin: 0 auto; position: relative; z-index: 1; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', sans-serif; }
+        body { background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 100%); min-height: 100vh; padding: 12px; direction: rtl; }
+        .dashboard-container { max-width: 1400px; margin: 0 auto; }
         
-        .header { background: rgba(255,255,255,0.97); backdrop-filter: blur(10px); border-radius: 20px; padding: 12px 16px; margin-bottom: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); border: 1px solid rgba(218, 165, 32, 0.3); }
-        .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
-        h1 { font-size: 1.2rem; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; gap: 8px; }
-        h1 i { font-size: 1.3rem; -webkit-text-fill-color: #c9a03d; }
-        .header-actions { display: flex; gap: 8px; align-items: center; }
-        
-        .filter-group { display: flex; gap: 6px; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 40px; flex-wrap: wrap; }
-        .filter-btn { padding: 6px 12px; border-radius: 30px; border: none; cursor: pointer; font-weight: 600; font-size: 0.75rem; background: transparent; color: #5c6b66; display: flex; align-items: center; gap: 4px; transition: all 0.2s; }
-        .filter-btn.active { background: linear-gradient(135deg, #c9a03d, #8b6914); color: white; }
-        .refresh-btn { background: linear-gradient(135deg, #c9a03d, #8b6914); border: none; color: white; padding: 8px 14px; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: flex; align-items: center; gap: 6px; transition: all 0.3s; }
-        .refresh-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(201,160,61,0.4); }
+        .header { background: rgba(255,255,255,0.97); border-radius: 20px; padding: 12px 16px; margin-bottom: 16px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+        h1 { font-size: 1.2rem; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .refresh-btn { background: linear-gradient(135deg, #c9a03d, #8b6914); border: none; color: white; padding: 8px 14px; border-radius: 30px; cursor: pointer; margin-right: 10px; }
+        .status-badge { background: #eef2ff; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; }
         
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
-        .stat-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-radius: 16px; padding: 12px; border: 1px solid rgba(201,160,61,0.2); transition: all 0.3s; cursor: pointer; }
-        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-        .stat-card h3 { font-size: 0.7rem; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; color: #6c7a74; }
+        .stat-card { background: rgba(255,255,255,0.95); border-radius: 16px; padding: 12px; border-right: 3px solid #c9a03d; }
         .stat-number { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
         .two-columns { display: flex; flex-direction: column; gap: 16px; }
-        .calendar-panel, .events-panel { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-radius: 20px; padding: 16px; border: 1px solid rgba(201,160,61,0.2); transition: all 0.3s; }
+        @media (min-width: 768px) { .two-columns { flex-direction: row; } }
+        
+        .calendar-panel, .events-panel { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 16px; }
         .calendar-panel { flex: 2; }
         .events-panel { flex: 1.2; }
-        .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid rgba(201,160,61,0.3); color: #8b6914; display: flex; justify-content: space-between; align-items: center; }
         
         .event-list { max-height: 400px; overflow-y: auto; }
-        .event-item { background: #f9fbfa; margin-bottom: 10px; padding: 12px; border-radius: 14px; border-right: 3px solid #c9a03d; cursor: pointer; transition: all 0.2s; }
-        .event-item.callback { border-right-color: #e67e22; }
-        .event-item:hover { transform: translateX(-5px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .event-title { font-weight: 700; font-size: 0.85rem; display: flex; justify-content: space-between; margin-bottom: 6px; }
-        .event-type { font-size: 0.65rem; padding: 2px 8px; border-radius: 15px; background: #fef8e7; }
-        .event-details { font-size: 0.7rem; display: flex; flex-wrap: wrap; gap: 10px; color: #6c7a74; }
-        
-        .notifications-panel { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: none; flex-direction: column; overflow: hidden; }
-        .notifications-header { background: linear-gradient(135deg, #c9a03d, #8b6914); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; }
-        .clear-notifications { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 12px; border-radius: 20px; cursor: pointer; }
-        .notifications-list { flex: 1; overflow-y: auto; }
-        .notification-item { padding: 12px 15px; border-bottom: 1px solid #e5e7eb; display: flex; gap: 12px; cursor: pointer; }
-        .notification-item.unread { background: #fef8e7; }
-        .notification-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-        .notification-icon.appointment { background: #dcfce7; color: #16a34a; }
-        .notification-icon.callback { background: #ffecb3; color: #b45f06; }
-        
-        .notification-area { position: relative; cursor: pointer; }
-        .notification-bell { background: rgba(201,160,61,0.1); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-        .notification-badge { position: absolute; top: -5px; right: -5px; background: #dc2626; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.6rem; display: flex; align-items: center; justify-content: center; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+        .event-item { background: #f9fbfa; margin-bottom: 8px; padding: 10px; border-radius: 12px; border-right: 3px solid #c9a03d; cursor: pointer; }
+        .event-item:hover { transform: translateX(-5px); }
         
         .fc { direction: rtl; }
-        .fc .fc-toolbar { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
-        .fc .fc-toolbar-title { font-size: 1rem !important; }
-        .fc .fc-button { padding: 4px 8px !important; font-size: 0.7rem !important; background: #c9a03d !important; border: none !important; }
-        .fc-daygrid-day-number { font-size: 0.7rem !important; }
-        .fc-event-title { font-size: 0.65rem !important; }
+        .fc .fc-toolbar { flex-direction: column; gap: 8px; margin-bottom: 15px; }
+        @media (min-width: 768px) { .fc .fc-toolbar { flex-direction: row; } }
         
-        .footer-note { margin-top: 16px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 20px; }
-        .loading { text-align: center; padding: 40px; }
-        .spinner { width: 40px; height: 40px; border: 3px solid #fef8e7; border-top: 3px solid #c9a03d; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .status-badge { display: inline-block; background: #eef2ff; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; }
-        .status-badge.error { background: #fee2e2; color: #dc2626; }
-        .status-badge.success { background: #dcfce7; color: #16a34a; }
-        
-        /* Debug Panel */
-        .debug-panel { background: #1e1e2e; color: #a6e3a1; font-family: monospace; font-size: 11px; padding: 12px; margin-top: 16px; border-radius: 12px; max-height: 250px; overflow-y: auto; direction: ltr; text-align: left; border: 1px solid #c9a03d; }
-        .debug-panel h4 { color: #f9e2af; margin-bottom: 8px; text-align: right; font-size: 12px; }
-        .debug-line { border-bottom: 1px solid #313244; padding: 4px 0; font-family: monospace; }
+        .debug-panel { background: #1e1e2e; color: #a6e3a1; font-family: monospace; font-size: 11px; padding: 12px; margin-top: 16px; border-radius: 12px; max-height: 250px; overflow-y: auto; direction: ltr; }
         .debug-line.success { color: #a6e3a1; }
         .debug-line.error { color: #f38ba8; }
-        .debug-line.warning { color: #f9e2af; }
         
-        @media (min-width: 768px) {
-            body { padding: 20px; }
-            .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 18px; }
-            .two-columns { flex-direction: row; }
-            .notifications-panel { width: 400px; height: auto; max-height: 600px; top: 20px; left: 20px; border-radius: 20px; }
-            .fc .fc-toolbar { flex-direction: row; }
-        }
+        .loading { text-align: center; padding: 40px; }
+        .spinner { width: 40px; height: 40px; border: 3px solid #fef8e7; border-top: 3px solid #c9a03d; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        @media (max-width: 767px) {
-            .fc .fc-toolbar { flex-direction: column; }
-        }
+        .footer-note { margin-top: 16px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.2); padding: 8px; border-radius: 20px; }
     </style>
 </head>
 <body>
 <div class="dashboard-container">
     <div class="header">
-        <div class="header-top">
-            <h1><i class="fas fa-building"></i> نظام إدارة العقارات <small>معاينات ومتابعات</small></h1>
-            <div class="header-actions">
-                <div class="notification-area" id="notificationBell">
-                    <div class="notification-bell"><i class="fas fa-bell"></i></div>
-                    <span class="notification-badge" id="notificationCount" style="display: none;">0</span>
-                </div>
-            </div>
-        </div>
-        <div style="display: flex; gap: 8px; justify-content: space-between; flex-wrap: wrap;">
-            <div class="filter-group">
-                <button class="filter-btn active" data-filter="all"><i class="fas fa-globe"></i> الكل</button>
-                <button class="filter-btn" data-filter="appointment"><i class="fas fa-building"></i> معاينات</button>
-                <button class="filter-btn" data-filter="callback"><i class="fas fa-phone-alt"></i> متابعات</button>
-            </div>
-            <button class="refresh-btn" id="refreshDataBtn"><i class="fas fa-sync-alt"></i> تحديث</button>
-            <span class="status-badge" id="syncStatus">⏳ جاري التحميل...</span>
+        <h1><i class="fas fa-building"></i> نظام إدارة العقارات - المعاينات</h1>
+        <div>
+            <button class="refresh-btn" id="refreshBtn"><i class="fas fa-sync-alt"></i> تحديث</button>
+            <span class="status-badge" id="status">⏳ جاري...</span>
         </div>
     </div>
 
     <div class="stats-grid">
-        <div class="stat-card"><h3><i class="fas fa-building"></i> معاينات عقارات</h3><div class="stat-number" id="totalAppointments">--</div></div>
-        <div class="stat-card"><h3><i class="fas fa-phone-alt"></i> متابعات عملاء</h3><div class="stat-number" id="totalCallbacks">--</div></div>
-        <div class="stat-card"><h3><i class="fas fa-calendar-day"></i> معاينات اليوم</h3><div class="stat-number" id="todayAppointments">--</div></div>
-        <div class="stat-card"><h3><i class="fas fa-clock"></i> متابعات اليوم</h3><div class="stat-number" id="todayCallbacks">--</div></div>
+        <div class="stat-card"><h3>🏢 إجمالي المعاينات</h3><div class="stat-number" id="totalApp">0</div></div>
+        <div class="stat-card"><h3>📅 معاينات اليوم</h3><div class="stat-number" id="todayApp">0</div></div>
+        <div class="stat-card"><h3>🗓️ معاينات هذا الأسبوع</h3><div class="stat-number" id="weekApp">0</div></div>
+        <div class="stat-card"><h3>⏰ معاينات الشهر</h3><div class="stat-number" id="monthApp">0</div></div>
     </div>
 
     <div class="two-columns">
-        <div class="calendar-panel">
-            <div class="section-title"><span><i class="fas fa-calendar-alt"></i> تقويم المواعيد</span></div>
-            <div id="calendar"><div class="loading"><div class="spinner"></div><p>جاري التحميل...</p></div></div>
-        </div>
-        <div class="events-panel">
-            <div class="section-title"><span><i class="fas fa-list"></i> أقرب المواعيد (7 أيام)</span></div>
-            <div id="upcomingEventsList" class="event-list"><div class="loading"><div class="spinner"></div><p>جاري التحميل...</p></div></div>
-        </div>
+        <div class="calendar-panel"><div class="section-title">📆 تقويم المعاينات</div><div id="calendar"><div class="loading"><div class="spinner"></div></div></div></div>
+        <div class="events-panel"><div class="section-title">📋 قائمة المعاينات</div><div id="eventList"><div class="loading"><div class="spinner"></div></div></div></div>
     </div>
     
-    <div class="footer-note"><i class="fas fa-bell"></i> إشعارات | <i class="fas fa-clock"></i> الوقت من العمود P | <i class="fas fa-sync-alt"></i> تحديث تلقائي</div>
+    <div class="footer-note"><i class="fas fa-info-circle"></i> يتم استخراج البيانات من العمود O (تاريخ المعاينة)</div>
     
-    <!-- Debug Panel -->
-    <div class="debug-panel">
-        <h4><i class="fas fa-bug"></i> سجل التصحيح - يظهر هنا كل ما يحدث</h4>
-        <div id="debugLog">⏳ جاري تحميل البيانات...</div>
+    <div class="debug-panel" id="debugPanel">
+        <div id="debugLog">🔄 جاري تحميل البيانات...</div>
     </div>
-</div>
-
-<div class="notifications-panel" id="notificationsPanel">
-    <div class="notifications-header">
-        <button class="back-btn" id="closeNotificationsBtn"><i class="fas fa-arrow-right"></i></button>
-        <h3><i class="fas fa-bell"></i> الإشعارات</h3>
-        <button class="clear-notifications" id="clearNotifications">مسح الكل</button>
-    </div>
-    <div class="notifications-list" id="notificationsList"><div style="text-align:center;padding:40px;"><i class="fas fa-inbox" style="font-size:2rem;"></i><p>لا توجد إشعارات</p></div></div>
 </div>
 
 <script>
@@ -164,81 +83,62 @@
     const SHEET_NAME = 'مبيعات';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
     
-    let originalEvents = [];
-    let filteredEvents = [];
-    let calendarInstance = null;
-    let currentFilter = 'all';
-    let notifications = [];
-    let notificationId = 0;
-    let lastNotifiedDates = new Set();
+    let allEvents = [];
+    let calendar = null;
     
-    const TYPE_APPOINTMENT = 'معاينة عقار';
-    const TYPE_CALLBACK = 'متابعة عميل';
-    
-    function addDebugLog(message, type = 'info') {
-        const timestamp = new Date().toLocaleTimeString();
+    function log(message, type = 'info') {
         const logDiv = document.getElementById('debugLog');
-        const logEntry = document.createElement('div');
-        logEntry.className = `debug-line ${type}`;
-        logEntry.innerHTML = `[${timestamp}] ${message}`;
-        logDiv.appendChild(logEntry);
+        const timestamp = new Date().toLocaleTimeString();
+        const line = document.createElement('div');
+        line.className = `debug-line ${type}`;
+        line.innerHTML = `[${timestamp}] ${message}`;
+        logDiv.appendChild(line);
         logDiv.scrollTop = logDiv.scrollHeight;
         console.log(`[${timestamp}] ${message}`);
-        
-        // الاحتفاظ بآخر 50 سطر فقط
-        while (logDiv.children.length > 50) {
-            logDiv.removeChild(logDiv.firstChild);
-        }
+        while (logDiv.children.length > 50) logDiv.removeChild(logDiv.firstChild);
     }
     
-    function clearDebugLog() {
-        document.getElementById('debugLog').innerHTML = '';
-        addDebugLog('🔄 تم مسح سجل التصحيح', 'info');
-    }
-    
-    function convertToArabicTime(hour24, minute) {
-        if (hour24 === undefined) hour24 = 12;
-        if (minute === undefined) minute = 0;
-        let hour12 = hour24 % 12;
-        if (hour12 === 0) hour12 = 12;
-        let period = (hour24 < 12) ? 'ص' : 'م';
-        return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
-    }
-    
-    function parseDateOnly(dateStr) {
+    // تحويل التاريخ من تنسيق "الجمعة, 27/02/2026" إلى Date object
+    function parseDate(dateStr) {
         if (!dateStr) return null;
-        let cleaned = dateStr.toString().trim();
-        cleaned = cleaned.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
         
+        let original = dateStr.toString().trim();
+        log(`📅 تحويل: "${original}"`, 'info');
+        
+        // إزالة اسم اليوم
+        let cleaned = original.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
+        
+        // تنسيق DD/MM/YYYY
         let parts = cleaned.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
         if (parts) {
-            return { day: parseInt(parts[1]), month: parseInt(parts[2]) - 1, year: parseInt(parts[3]) };
+            let day = parseInt(parts[1]);
+            let month = parseInt(parts[2]) - 1;
+            let year = parseInt(parts[3]);
+            let dateObj = new Date(year, month, day, 12, 0);
+            if (!isNaN(dateObj.getTime())) {
+                log(`   ✅ ${day}/${month+1}/${year} -> ${dateObj.toLocaleDateString('ar-EG')}`, 'success');
+                return dateObj;
+            }
         }
-        parts = cleaned.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
-        if (parts) {
-            return { day: parseInt(parts[1]), month: parseInt(parts[2]) - 1, year: parseInt(parts[3]) };
-        }
+        
+        log(`   ❌ فشل تحويل: "${original}"`, 'error');
         return null;
     }
     
-    async function fetchRealSheetData() {
-        addDebugLog('════════════════════════════════════════', 'info');
-        addDebugLog('🚀 بدء جلب البيانات من Google Sheets...', 'info');
-        addDebugLog(`📋 معرف الجدول: ${SPREADSHEET_ID}`, 'info');
-        addDebugLog(`📄 اسم الورقة: ${SHEET_NAME}`, 'info');
+    async function fetchData() {
+        log('════════════════════════════════════════', 'info');
+        log('🚀 بدء جلب البيانات من Google Sheets', 'info');
+        
+        const statusSpan = document.getElementById('status');
+        statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري...';
         
         try {
-            const range = `${SHEET_NAME}!A1:V100`;
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
-            
-            addDebugLog(`🌐 إرسال طلب إلى: ${url.substring(0, 80)}...`, 'info');
-            
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:V500?key=${API_KEY}`;
             const response = await fetch(url);
             
             if (!response.ok) {
-                addDebugLog(`❌ خطأ HTTP ${response.status}: ${response.statusText}`, 'error');
                 if (response.status === 403) {
-                    addDebugLog(`🔧 الحل: اضغط مشاركة في Google Sheets → عام → أي شخص لديه الرابط`, 'warning');
+                    throw new Error("خطأ 403: تأكد من مشاركة الجدول كـ 'عام'");
                 }
                 throw new Error(`HTTP ${response.status}`);
             }
@@ -246,398 +146,172 @@
             const data = await response.json();
             const rows = data.values;
             
-            addDebugLog(`✅ تم جلب ${rows ? rows.length : 0} صف من البيانات`, 'success');
-            
             if (!rows || rows.length < 2) {
-                addDebugLog(`❌ لا توجد بيانات كافية في الجدول`, 'error');
-                throw new Error("لا توجد بيانات");
+                throw new Error("لا توجد بيانات في الجدول");
             }
             
-            // عرض العناوين
-            if (rows[0]) {
-                addDebugLog(`📋 العناوين الموجودة:`, 'info');
-                addDebugLog(`   العمود B (الاسم): "${rows[0][1] || 'فارغ'}"`, 'info');
-                addDebugLog(`   العمود O (تاريخ المعاينة): "${rows[0][14] || 'فارغ'}"`, 'info');
-                addDebugLog(`   العمود L (متابعة): "${rows[0][11] || 'فارغ'}"`, 'info');
-                addDebugLog(`   العمود S (متابعة إضافية): "${rows[0][18] || 'فارغ'}"`, 'info');
-            }
+            log(`✅ تم جلب ${rows.length} صف من البيانات`, 'success');
             
             const events = [];
-            let appCount = 0;
-            let callbackCount = 0;
-            let rowsWithAppointments = 0;
-            let rowsWithCallbacksL = 0;
-            let rowsWithCallbacksS = 0;
+            let count = 0;
             
+            // البدء من الصف 2 (تخطي العناوين)
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 if (!row) continue;
                 
-                const name = row[1] || 'غير محدد';
-                const phone = row[2] || '';
-                const city = row[6] || '';
-                const address = row[7] || '';
-                const generalNotes = row[8] || '';
+                const name = row[1] || 'غير محدد';      // العمود B
+                const phone = row[2] || '';             // العمود C
+                const city = row[6] || '';              // العمود G
+                const address = row[7] || '';           // العمود H
+                const notes = row[8] || '';             // العمود I
                 
-                // معاينة من العمود O (index 14)
-                const appointmentDateRaw = row[14] || '';
+                // تاريخ المعاينة من العمود O (index 14)
+                const appointmentDate = row[14];
+                const appointmentTime = row[15] || '';   // الوقت من العمود P
                 
-                if (appointmentDateRaw && appointmentDateRaw.toString().trim() !== '') {
-                    rowsWithAppointments++;
-                    addDebugLog(`🔍 الصف ${i}: "${name}" - تاريخ المعاينة: "${appointmentDateRaw}"`, 'info');
-                    
-                    const dateResult = parseDateOnly(appointmentDateRaw);
-                    if (dateResult) {
-                        let dateObj = new Date(dateResult.year, dateResult.month, dateResult.day, 12, 0);
-                        if (!isNaN(dateObj.getTime())) {
-                            events.push({
-                                id: `app_${i}`,
-                                title: name,
-                                type: TYPE_APPOINTMENT,
-                                start: dateObj,
-                                displayTime: "12:00 م",
-                                phone: phone,
-                                city: city,
-                                address: address,
-                                notes: generalNotes || 'لا توجد ملاحظات'
-                            });
-                            appCount++;
-                            addDebugLog(`   ✅ تمت إضافة معاينة: ${name}`, 'success');
-                        }
-                    } else {
-                        addDebugLog(`   ❌ فشل تحويل التاريخ: "${appointmentDateRaw}"`, 'error');
-                    }
-                }
-                
-                // متابعة من العمود L (index 11)
-                const callbackDateL = row[11] || '';
-                const callbackNotesL = row[13] || '';
-                
-                if (callbackDateL && callbackDateL.toString().trim() !== '') {
-                    rowsWithCallbacksL++;
-                    addDebugLog(`🔍 الصف ${i}: "${name}" - متابعة L: "${callbackDateL}"`, 'info');
-                    
-                    const dateResult = parseDateOnly(callbackDateL);
-                    if (dateResult) {
-                        let dateObj = new Date(dateResult.year, dateResult.month, dateResult.day, 12, 0);
-                        if (!isNaN(dateObj.getTime())) {
-                            events.push({
-                                id: `cbL_${i}`,
-                                title: name,
-                                type: TYPE_CALLBACK,
-                                start: dateObj,
-                                displayTime: "",
-                                phone: phone,
-                                city: city,
-                                address: address,
-                                notes: callbackNotesL || generalNotes || 'متابعة'
-                            });
-                            callbackCount++;
-                            addDebugLog(`   ✅ تمت إضافة متابعة L: ${name}`, 'success');
-                        }
-                    } else {
-                        addDebugLog(`   ❌ فشل تحويل تاريخ متابعة L: "${callbackDateL}"`, 'error');
-                    }
-                }
-                
-                // متابعة من العمود S (index 18)
-                const callbackDateS = row[18] || '';
-                const callbackNotesS = row[19] || '';
-                
-                if (callbackDateS && callbackDateS.toString().trim() !== '') {
-                    rowsWithCallbacksS++;
-                    addDebugLog(`🔍 الصف ${i}: "${name}" - متابعة S: "${callbackDateS}"`, 'info');
-                    
-                    const dateResult = parseDateOnly(callbackDateS);
-                    if (dateResult) {
-                        let dateObj = new Date(dateResult.year, dateResult.month, dateResult.day, 12, 0);
-                        if (!isNaN(dateObj.getTime())) {
-                            events.push({
-                                id: `cbS_${i}`,
-                                title: name,
-                                type: TYPE_CALLBACK,
-                                start: dateObj,
-                                displayTime: "",
-                                phone: phone,
-                                city: city,
-                                address: address,
-                                notes: callbackNotesS || generalNotes || 'متابعة إضافية'
-                            });
-                            callbackCount++;
-                            addDebugLog(`   ✅ تمت إضافة متابعة S: ${name}`, 'success');
-                        }
-                    } else {
-                        addDebugLog(`   ❌ فشل تحويل تاريخ متابعة S: "${callbackDateS}"`, 'error');
+                if (appointmentDate && appointmentDate.toString().trim()) {
+                    const dateObj = parseDate(appointmentDate);
+                    if (dateObj) {
+                        events.push({
+                            id: i,
+                            title: name,
+                            date: dateObj,
+                            time: appointmentTime,
+                            phone: phone,
+                            city: city,
+                            address: address,
+                            notes: notes
+                        });
+                        count++;
+                        log(`✅ المعاينة ${count}: ${name} - ${appointmentDate}`, 'success');
                     }
                 }
             }
             
-            addDebugLog('════════════════════════════════════════', 'info');
-            addDebugLog(`📊 التقرير النهائي:`, 'info');
-            addDebugLog(`   • صفوف تحتوي على معاينات: ${rowsWithAppointments}`, 'info');
-            addDebugLog(`   • معاينات تمت إضافتها: ${appCount}`, 'success');
-            addDebugLog(`   • متابعات من العمود L: ${rowsWithCallbacksL} (تمت إضافة: ${callbackCount > 0 ? '✓' : '✗'})`, 'info');
-            addDebugLog(`   • متابعات من العمود S: ${rowsWithCallbacksS}`, 'info');
-            addDebugLog(`   • إجمالي الأحداث: ${events.length}`, 'success');
-            addDebugLog('════════════════════════════════════════', 'info');
+            log(`📊 النتائج: تم العثور على ${count} معاينة`, 'success');
             
-            if (events.length === 0) {
-                addDebugLog(`⚠️ لم يتم العثور على أي مواعيد! تأكد من وجود تواريخ في الأعمدة O, L, S`, 'warning');
+            if (count === 0) {
+                log(`⚠️ لم يتم العثور على أي معاينات!`, 'error');
             }
             
+            statusSpan.innerHTML = `✅ ${count} معاينة`;
             return events;
             
         } catch (error) {
-            addDebugLog(`❌ خطأ فادح: ${error.message}`, 'error');
+            log(`❌ خطأ: ${error.message}`, 'error');
+            statusSpan.innerHTML = '❌ فشل الجلب';
             return [];
         }
     }
     
     function updateStats(events) {
-        const totalApp = events.filter(e => e.type === TYPE_APPOINTMENT).length;
-        const totalCb = events.filter(e => e.type === TYPE_CALLBACK).length;
-        
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        const todayApps = events.filter(e => {
-            if (e.type !== TYPE_APPOINTMENT) return false;
-            const evDate = new Date(e.start);
+        const weekLater = new Date(today);
+        weekLater.setDate(today.getDate() + 7);
+        
+        const monthLater = new Date(today);
+        monthLater.setDate(today.getDate() + 30);
+        
+        const total = events.length;
+        const todayCount = events.filter(e => {
+            const evDate = new Date(e.date);
             evDate.setHours(0, 0, 0, 0);
             return evDate.getTime() === today.getTime();
         }).length;
         
-        const todayCbs = events.filter(e => {
-            if (e.type !== TYPE_CALLBACK) return false;
-            const evDate = new Date(e.start);
+        const weekCount = events.filter(e => {
+            const evDate = new Date(e.date);
             evDate.setHours(0, 0, 0, 0);
-            return evDate.getTime() === today.getTime();
+            return evDate >= today && evDate <= weekLater;
         }).length;
         
-        document.getElementById('totalAppointments').innerText = totalApp;
-        document.getElementById('totalCallbacks').innerText = totalCb;
-        document.getElementById('todayAppointments').innerText = todayApps;
-        document.getElementById('todayCallbacks').innerText = todayCbs;
+        const monthCount = events.filter(e => {
+            const evDate = new Date(e.date);
+            evDate.setHours(0, 0, 0, 0);
+            return evDate >= today && evDate <= monthLater;
+        }).length;
         
-        addDebugLog(`📈 الإحصائيات: معاينات=${totalApp}, متابعات=${totalCb}, معاينات اليوم=${todayApps}, متابعات اليوم=${todayCbs}`, 'info');
-        
-        const statusSpan = document.getElementById('syncStatus');
-        statusSpan.innerHTML = `✅ ${events.length} موعد`;
-        statusSpan.className = 'status-badge success';
+        document.getElementById('totalApp').innerText = total;
+        document.getElementById('todayApp').innerText = todayCount;
+        document.getElementById('weekApp').innerText = weekCount;
+        document.getElementById('monthApp').innerText = monthCount;
     }
     
-    function renderUpcomingList(events) {
-        const container = document.getElementById('upcomingEventsList');
+    function renderEventList(events) {
+        const container = document.getElementById('eventList');
         if (events.length === 0) {
-            container.innerHTML = '<div class="loading"><i class="fas fa-calendar-times" style="font-size:2rem;"></i><p>لا توجد مواعيد</p></div>';
+            container.innerHTML = '<div class="loading"><p>لا توجد معاينات</p></div>';
             return;
         }
         
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const limit = new Date(now);
-        limit.setDate(now.getDate() + 7);
-        
-        const upcoming = events.filter(ev => {
-            const evDate = new Date(ev.start);
-            evDate.setHours(0, 0, 0, 0);
-            return evDate >= now && evDate <= limit;
-        }).sort((a, b) => a.start - b.start);
-        
-        if (upcoming.length === 0) {
-            container.innerHTML = '<div class="loading"><i class="fas fa-smile-wink"></i><p>لا توجد مواعيد قريبة</p></div>';
-            return;
-        }
+        // ترتيب حسب التاريخ
+        const sorted = [...events].sort((a, b) => a.date - b.date);
         
         let html = '';
-        for (const ev of upcoming) {
-            const dateStr = ev.start.toLocaleDateString('ar-EG', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
-            const isCallback = ev.type === TYPE_CALLBACK;
-            html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${ev.phone || ''}', '${(ev.notes || '').replace(/'/g, "\\'")}', '${ev.type}', '${(ev.city || '').replace(/'/g, "\\'")}', '${(ev.address || '').replace(/'/g, "\\'")}')">
-                <div class="event-title"><span><i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i> ${ev.title}</span><span class="event-type">${ev.type === TYPE_APPOINTMENT ? '🏢 معاينة' : '📞 متابعة'}</span></div>
-                <div class="event-details">
-                    <span><i class="far fa-calendar-alt"></i> ${dateStr}</span>
-                    <span><i class="fas fa-phone"></i> ${ev.phone || 'غير متوفر'}</span>
-                </div>
+        for (const ev of sorted) {
+            const dateStr = ev.date.toLocaleDateString('ar-EG', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+            html += `<div class="event-item" onclick="alert('${ev.title}\\n📅 ${dateStr}\\n📞 ${ev.phone || 'غير متوفر'}\\n📍 ${ev.city || ''} ${ev.address || ''}\\n📝 ${ev.notes || ''}')">
+                <div class="event-title"><span><i class="fas fa-building"></i> ${ev.title}</span></div>
+                <div class="event-details">📅 ${dateStr} ${ev.time ? `🕐 ${ev.time}` : ''}<br>📞 ${ev.phone || 'غير متوفر'}</div>
             </div>`;
         }
         container.innerHTML = html;
     }
     
-    window.showDetails = function(title, phone, notes, type, city = '', address = '') {
-        let locationHtml = '';
-        if (city || address) {
-            locationHtml = `<hr><p><i class="fas fa-map-marker-alt"></i> <strong>الموقع:</strong></p>
-                ${city ? `<p><i class="fas fa-city"></i> المدينة: ${city}</p>` : ''}
-                ${address ? `<p><i class="fas fa-location-dot"></i> العنوان: ${address}</p>` : ''}`;
-        }
-        
-        Swal.fire({ 
-            title: title, 
-            html: `<div style="text-align:right">
-                <p><i class="fas fa-tag"></i> <strong>النوع:</strong> ${type}</p>
-                <p><i class="fas fa-phone"></i> <strong>الهاتف:</strong> ${phone || 'غير متوفر'}</p>
-                ${locationHtml}
-                <hr><p><i class="fas fa-sticky-note"></i> <strong>الملاحظات:</strong> ${notes || 'لا توجد'}</p>
-            </div>`, 
-            icon: type === TYPE_APPOINTMENT ? 'info' : 'warning', 
-            confirmButtonColor: '#c9a03d',
-            confirmButtonText: 'إغلاق'
-        });
-    };
-    
     function initCalendar(events) {
         const calendarEl = document.getElementById('calendar');
-        if (calendarInstance) calendarInstance.destroy();
+        if (calendar) calendar.destroy();
         
         if (events.length === 0) {
-            calendarEl.innerHTML = '<div class="loading"><i class="fas fa-calendar-times" style="font-size:3rem;"></i><p>لا توجد مواعيد</p></div>';
+            calendarEl.innerHTML = '<div class="loading"><p>لا توجد معاينات</p></div>';
             return;
         }
         
         const fcEvents = events.map(ev => ({
-            id: ev.id, 
-            title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : '📞'} ${ev.title}`,
-            start: ev.start, 
-            backgroundColor: ev.type === TYPE_APPOINTMENT ? '#c9a03d' : '#e67e22',
-            extendedProps: { phone: ev.phone, notes: ev.notes, type: ev.type, city: ev.city || '', address: ev.address || '' }
+            id: ev.id,
+            title: ev.title,
+            start: ev.date,
+            backgroundColor: '#c9a03d',
+            extendedProps: { phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes }
         }));
         
-        calendarInstance = new FullCalendar.Calendar(calendarEl, {
+        calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
-            locale: 'ar', direction: 'rtl',
+            locale: 'ar',
+            direction: 'rtl',
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
-                right: window.innerWidth < 768 ? '' : 'dayGridMonth,timeGridWeek'
+                right: 'dayGridMonth,listWeek'
             },
-            buttonText: { today: 'اليوم', month: 'شهر', week: 'أسبوع' },
+            buttonText: { today: 'اليوم', month: 'شهر', week: 'أسبوع', list: 'قائمة' },
             events: fcEvents,
-            eventClick: (info) => { 
-                const ext = info.event.extendedProps; 
-                showDetails(info.event.title.replace(/^[🏢📞] /, ''), ext.phone, ext.notes, ext.type, ext.city, ext.address);
+            eventClick: (info) => {
+                const ev = info.event;
+                const ext = ev.extendedProps;
+                alert(`${ev.title}\n📅 ${ev.start.toLocaleDateString('ar-EG')}\n📞 ${ext.phone || 'غير متوفر'}\n📍 ${ext.city || ''} ${ext.address || ''}\n📝 ${ext.notes || ''}`);
             },
-            height: 'auto', firstDay: 6
+            height: 'auto',
+            firstDay: 6
         });
-        calendarInstance.render();
-        addDebugLog(`📅 تم تحديث التقويم بـ ${fcEvents.length} حدث`, 'success');
-    }
-    
-    function addToNotificationsList(title, message, type) {
-        const id = notificationId++;
-        notifications.unshift({ id, title, message, type, time: new Date(), read: false });
-        if (notifications.length > 50) notifications.pop();
-        updateNotificationUI();
-    }
-    
-    function updateNotificationUI() {
-        const unreadCount = notifications.filter(n => !n.read).length;
-        const badge = document.getElementById('notificationCount');
-        badge.style.display = unreadCount > 0 ? 'flex' : 'none';
-        if (unreadCount > 0) badge.innerText = unreadCount > 9 ? '9+' : unreadCount;
-        
-        const container = document.getElementById('notificationsList');
-        if (notifications.length === 0) {
-            container.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-inbox" style="font-size:2rem;"></i><p>لا توجد إشعارات</p></div>';
-            return;
-        }
-        
-        let html = '';
-        for (const n of notifications) {
-            const timeStr = formatTimeAgo(n.time);
-            let iconHtml = '<i class="fas fa-info-circle"></i>';
-            if (n.type === 'appointment') iconHtml = '<i class="fas fa-building"></i>';
-            else if (n.type === 'callback') iconHtml = '<i class="fas fa-phone-alt"></i>';
-            html += `<div class="notification-item ${!n.read ? 'unread' : ''}" onclick="markAsRead(${n.id})">
-                <div class="notification-icon ${n.type || 'info'}">${iconHtml}</div>
-                <div class="notification-content">
-                    <div class="notification-title">${n.title}</div>
-                    <div style="font-size:0.8rem;">${n.message}</div>
-                    <div class="notification-time">${timeStr}</div>
-                </div>
-            </div>`;
-        }
-        container.innerHTML = html;
-    }
-    
-    function formatTimeAgo(date) {
-        const seconds = Math.floor((new Date() - date) / 1000);
-        if (seconds < 60) return 'الآن';
-        const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) return `منذ ${minutes} دقيقة`;
-        const hours = Math.floor(minutes / 60);
-        if (hours < 24) return `منذ ${hours} ساعة`;
-        return `منذ ${Math.floor(hours / 24)} يوم`;
-    }
-    
-    window.markAsRead = function(id) {
-        const n = notifications.find(n => n.id === id);
-        if (n) { n.read = true; updateNotificationUI(); }
-    };
-    
-    function clearAllNotifications() {
-        notifications = [];
-        updateNotificationUI();
-    }
-    
-    function toggleNotifications() {
-        const panel = document.getElementById('notificationsPanel');
-        panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
-    }
-    
-    function closeNotifications() {
-        document.getElementById('notificationsPanel').style.display = 'none';
-    }
-    
-    function setFilter(filter) {
-        currentFilter = filter;
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.filter === filter);
-        });
-        applyFilter();
-        renderUpcomingList(filteredEvents);
-        initCalendar(filteredEvents);
-    }
-    
-    function applyFilter() {
-        if (currentFilter === 'all') filteredEvents = [...originalEvents];
-        else if (currentFilter === 'appointment') filteredEvents = originalEvents.filter(e => e.type === TYPE_APPOINTMENT);
-        else filteredEvents = originalEvents.filter(e => e.type === TYPE_CALLBACK);
-        updateStats(filteredEvents);
+        calendar.render();
+        log(`📅 تم تحديث التقويم بـ ${fcEvents.length} معاينة`, 'success');
     }
     
     async function refreshDashboard() {
-        addDebugLog('🔄 بدء تحديث لوحة التحكم...', 'info');
-        const realEvents = await fetchRealSheetData();
-        
-        if (realEvents && realEvents.length > 0) {
-            originalEvents = realEvents;
-            applyFilter();
-            addDebugLog(`✅ تم تحديث الواجهة بـ ${realEvents.length} موعد بنجاح`, 'success');
-        } else {
-            originalEvents = [];
-            filteredEvents = [];
-            updateStats([]);
-            renderUpcomingList([]);
-            initCalendar([]);
-            addDebugLog(`⚠️ لم يتم العثور على مواعيد بعد التحديث`, 'warning');
-        }
+        const events = await fetchData();
+        allEvents = events;
+        updateStats(events);
+        renderEventList(events);
+        initCalendar(events);
     }
     
     window.addEventListener('load', () => {
-        addDebugLog('🚀 بدء تشغيل التطبيق - نظام إدارة العقارات', 'success');
-        addDebugLog(`📅 التاريخ الحالي: ${new Date().toLocaleString('ar-EG')}`, 'info');
-        addDebugLog(`📍 انتظار جلب البيانات من Google Sheets...`, 'info');
-        
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => setFilter(btn.dataset.filter));
-        });
-        
-        document.getElementById('refreshDataBtn').addEventListener('click', refreshDashboard);
-        document.getElementById('notificationBell').addEventListener('click', toggleNotifications);
-        document.getElementById('closeNotificationsBtn').addEventListener('click', closeNotifications);
-        document.getElementById('clearNotifications').addEventListener('click', clearAllNotifications);
-        
+        log('🚀 بدء تشغيل التطبيق - نظام إدارة العقارات', 'success');
+        document.getElementById('refreshBtn').addEventListener('click', refreshDashboard);
         refreshDashboard();
         setInterval(refreshDashboard, 300000);
     });
