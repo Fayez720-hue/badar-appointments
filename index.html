@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ar.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', sans-serif; }
         body { background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 100%); min-height: 100vh; padding: 15px; direction: rtl; }
@@ -22,7 +23,6 @@
         .refresh-btn { background: #c9a03d; border: none; color: white; padding: 5px 15px; border-radius: 25px; cursor: pointer; margin-right: 10px; }
         .status-badge { background: #eef2ff; padding: 5px 12px; border-radius: 25px; font-size: 0.7rem; }
         
-        .warning-badge { background: #fee2e2; color: #dc2626; margin-left: 10px; }
         .date-range-filter { background: white; border-radius: 18px; padding: 12px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; border: 1px solid #eee; }
         .date-range-filter input { padding: 6px 10px; border-radius: 10px; border: 1px solid #ddd; }
         .date-range-filter button { background: #c9a03d; border: none; color: white; padding: 6px 15px; border-radius: 25px; cursor: pointer; }
@@ -32,7 +32,7 @@
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
         @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
         
-        .stat-card { background: white; border-radius: 16px; padding: 15px; border-right: 4px solid #c9a03d; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .stat-card { background: white; border-radius: 16px; padding: 15px; border-right: 4px solid #c9a03d; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; }
         .stat-card h3 { font-size: 0.75rem; color: #666; margin-bottom: 8px; }
         .stat-number { font-size: 1.6rem; font-weight: bold; color: #c9a03d; }
         
@@ -50,7 +50,7 @@
         .day-header span { background: #c9a03d20; padding: 2px 8px; border-radius: 20px; font-size: 0.65rem; color: #c9a03d; }
         .day-count { background: #c9a03d; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.6rem; }
         
-        .event-list { max-height: 550px; overflow-y: auto; }
+        .event-list { max-height: 550px; overflow-y: auto; cursor: pointer; }
         .event-list::-webkit-scrollbar { width: 4px; }
         .event-list::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 10px; }
         .event-list::-webkit-scrollbar-thumb { background: #c9a03d; border-radius: 10px; }
@@ -69,7 +69,8 @@
         .fc { direction: rtl; }
         .fc .fc-toolbar { flex-direction: column; gap: 10px; margin-bottom: 15px; }
         @media (min-width: 768px) { .fc .fc-toolbar { flex-direction: row; } }
-        .fc .fc-button { background: #c9a03d !important; border: none !important; }
+        .fc .fc-button { background: #c9a03d !important; border: none !important; cursor: pointer; }
+        .fc-event { cursor: pointer; }
         .fc-event.overlap-event { border: 2px solid #dc2626 !important; box-shadow: 0 0 5px rgba(220,38,38,0.5); }
         
         .loading { text-align: center; padding: 40px; }
@@ -122,7 +123,7 @@
         </div>
         <div class="events-panel">
             <div class="section-title">
-                <span>📋 قائمة المواعيد</span>
+                <span>📋 قائمة المواعيد (انقر لعرض التفاصيل)</span>
                 <span class="events-count" id="eventsCount">0</span>
             </div>
             <div id="eventList" class="event-list"><div class="loading"><div class="spinner"></div><p>جاري تحميل البيانات...</p></div></div>
@@ -157,7 +158,30 @@
     const TYPE_CB_L = 'متابعة مكالمة';
     const TYPE_CB_S = 'متابعة معاينة';
 
-    // عرض إشعار Toast
+    // دالة عرض التفاصيل - تعريفها كدالة عامة
+    window.showEventDetails = function(title, date, time, phone, city, address, notes, type) {
+        let locationHtml = '';
+        if (city || address) {
+            locationHtml = `<p><strong>📍 الموقع:</strong> ${city || ''} ${address || ''}</p>`;
+        }
+        
+        Swal.fire({
+            title: title,
+            html: `<div style="text-align:right">
+                <p><strong>📋 النوع:</strong> ${type}</p>
+                <p><strong>📅 التاريخ:</strong> ${date}</p>
+                ${time ? `<p><strong>🕐 الوقت:</strong> ${time}</p>` : ''}
+                <p><strong>📞 الهاتف:</strong> ${phone || 'غير متوفر'}</p>
+                ${locationHtml}
+                <p><strong>📝 الملاحظات:</strong> ${notes || 'لا توجد'}</p>
+            </div>`,
+            icon: type === TYPE_APP ? 'info' : 'warning',
+            confirmButtonColor: '#c9a03d',
+            confirmButtonText: 'إغلاق'
+        });
+    };
+
+    // إظهار Toast
     function showToast(message, type = 'warning') {
         const toast = document.createElement('div');
         toast.className = 'toast-notification';
@@ -169,9 +193,6 @@
     // كشف تداخل المواعيد
     function detectOverlaps(events) {
         const overlaps = [];
-        const eventMap = new Map();
-        
-        // تجميع الأحداث حسب التاريخ والوقت
         for (let i = 0; i < events.length; i++) {
             for (let j = i + 1; j < events.length; j++) {
                 const event1 = events[i];
@@ -197,51 +218,38 @@
                 }
             }
         }
-        
         return overlaps;
     }
 
-    // عرض تنبيه للمواعيد المتداخلة
     function showOverlapAlerts(overlaps) {
         if (overlaps.length === 0) return;
         
-        // تجنب تكرار الإشعارات
         const alertKey = overlaps.map(o => `${o.event1.id}_${o.event2.id}`).join(',');
         if (shownOverlapAlerts.has(alertKey)) return;
         shownOverlapAlerts.add(alertKey);
         
-        // إنشاء رسالة مفصلة
-        let message = `⚠️ تنبيه: تم العثور على ${overlaps.length} حالة تداخل في المواعيد!\n\n`;
+        let message = `<div style="text-align:right">`;
         for (const ov of overlaps) {
             const dateStr = ov.date.toLocaleDateString('ar-EG');
             const time1Str = ov.event1.displayTime || `${ov.event1.date.getHours()}:${ov.event1.date.getMinutes().toString().padStart(2, '0')}`;
             const time2Str = ov.event2.displayTime || `${ov.event2.date.getHours()}:${ov.event2.date.getMinutes().toString().padStart(2, '0')}`;
-            message += `📅 ${dateStr}\n   🕐 ${time1Str} - ${ov.event1.title}\n   🕐 ${time2Str} - ${ov.event2.title}\n\n`;
+            message += `<div style="background:#fee2e2; margin:10px 0; padding:10px; border-radius:8px;">
+                <strong>📅 ${dateStr}</strong><br>
+                🕐 ${time1Str} - ${ov.event1.title}<br>
+                🕐 ${time2Str} - ${ov.event2.title}
+            </div>`;
         }
+        message += `</div>`;
         
-        // SweetAlert منبثق
         Swal.fire({
             title: '⚠️ تداخل في المواعيد',
-            html: `<div style="text-align:right; direction:rtl;">
-                <p>تم اكتشاف <strong>${overlaps.length}</strong> حالة تداخل في المواعيد:</p>
-                <hr>
-                ${overlaps.map(ov => `
-                    <div style="background:#fee2e2; margin:10px 0; padding:10px; border-radius:8px;">
-                        <strong>📅 ${ov.date.toLocaleDateString('ar-EG')}</strong><br>
-                        🕐 ${ov.event1.displayTime || ov.event1.date.toLocaleTimeString('ar-EG')} - ${ov.event1.title}<br>
-                        🕐 ${ov.event2.displayTime || ov.event2.date.toLocaleTimeString('ar-EG')} - ${ov.event2.title}
-                    </div>
-                `).join('')}
-                <p style="margin-top:15px;">يرجى مراجعة هذه المواعيد وإعادة جدولتها.</p>
-            </div>`,
+            html: message,
             icon: 'warning',
             confirmButtonColor: '#dc2626',
-            confirmButtonText: 'فهمت',
-            showCancelButton: false
+            confirmButtonText: 'فهمت'
         });
         
-        // Toast إشعار
-        showToast(`🚨 تنبيه: يوجد ${overlaps.length} حالة تداخل في المواعيد! رجاء المراجعة.`);
+        showToast(`🚨 يوجد ${overlaps.length} حالة تداخل في المواعيد!`);
     }
 
     function parseDate(dateStr) {
@@ -429,7 +437,6 @@
             });
         }
         
-        // كشف التداخلات في البيانات المفلترة
         const overlaps = detectOverlaps(filtered);
         if (overlaps.length > 0) {
             showOverlapAlerts(overlaps);
@@ -476,7 +483,6 @@
             return;
         }
         
-        // إنشاء مجموعة من معرفات الأحداث المتداخلة
         const overlapEventIds = new Set();
         for (const ov of overlaps) {
             overlapEventIds.add(ov.event1.id);
@@ -511,9 +517,17 @@
                 const icon = isCallback ? (ev.type === TYPE_CB_L ? '📞' : '📋') : '🏢';
                 const timeDisplay = ev.displayTime ? `🕐 ${ev.displayTime}` : '';
                 const isOverlap = overlapEventIds.has(ev.id);
+                const safeTitle = ev.title.replace(/'/g, "\\'");
+                const safeDate = dateStr.replace(/'/g, "\\'");
+                const safeTime = (ev.displayTime || '').replace(/'/g, "\\'");
+                const safePhone = (ev.phone || '').replace(/'/g, "\\'");
+                const safeCity = (ev.city || '').replace(/'/g, "\\'");
+                const safeAddress = (ev.address || '').replace(/'/g, "\\'");
+                const safeNotes = (ev.notes || '').replace(/'/g, "\\'");
+                const safeType = ev.type.replace(/'/g, "\\'");
                 
                 html += `
-                    <div class="event-item ${isCallback ? 'callback' : ''} ${isOverlap ? 'overlap' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${dateStr}', '${ev.displayTime || ''}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${ev.type}')">
+                    <div class="event-item ${isCallback ? 'callback' : ''} ${isOverlap ? 'overlap' : ''}" onclick="showEventDetails('${safeTitle}', '${safeDate}', '${safeTime}', '${safePhone}', '${safeCity}', '${safeAddress}', '${safeNotes}', '${safeType}')">
                         ${isOverlap ? '<div class="overlap-warning" title="تداخل في المواعيد">!</div>' : ''}
                         <div class="event-title">
                             <div class="event-name">
@@ -558,7 +572,17 @@
             title: `${ev.type === TYPE_APP ? '🏢' : (ev.type === TYPE_CB_L ? '📞' : '📋')} ${ev.title}${ev.displayTime ? ` (${ev.displayTime})` : ''}`,
             start: ev.date,
             backgroundColor: overlapEventIds.has(ev.id) ? '#dc2626' : (ev.type === TYPE_APP ? '#c9a03d' : (ev.type === TYPE_CB_L ? '#e67e22' : '#3b82f6')),
-            className: overlapEventIds.has(ev.id) ? 'overlap-event' : ''
+            className: overlapEventIds.has(ev.id) ? 'overlap-event' : '',
+            extendedProps: {
+                title: ev.title,
+                dateStr: ev.date.toLocaleDateString('ar-EG'),
+                time: ev.displayTime,
+                phone: ev.phone,
+                city: ev.city,
+                address: ev.address,
+                notes: ev.notes,
+                type: ev.type
+            }
         }));
         
         calendar = new FullCalendar.Calendar(calendarEl, {
@@ -574,11 +598,18 @@
             events: fcEvents,
             height: 'auto',
             firstDay: 6,
-            eventDidMount: function(info) {
-                if (info.event.extendedProps.isOverlap) {
-                    info.el.style.border = '2px solid #dc2626';
-                    info.el.style.boxShadow = '0 0 5px rgba(220,38,38,0.5)';
-                }
+            eventClick: function(info) {
+                const ext = info.event.extendedProps;
+                showEventDetails(
+                    ext.title,
+                    ext.dateStr,
+                    ext.time || '',
+                    ext.phone || '',
+                    ext.city || '',
+                    ext.address || '',
+                    ext.notes || '',
+                    ext.type
+                );
             }
         });
         
@@ -588,23 +619,6 @@
             const targetDate = new Date(filterStartDate);
             calendar.gotoDate(targetDate);
         }
-    }
-
-    function showDetails(title, date, time, phone, city, address, notes, type) {
-        Swal.fire({
-            title: title,
-            html: `<div style="text-align:right">
-                <p><strong>📋 النوع:</strong> ${type}</p>
-                <p><strong>📅 التاريخ:</strong> ${date}</p>
-                ${time ? `<p><strong>🕐 الوقت:</strong> ${time}</p>` : ''}
-                <p><strong>📞 الهاتف:</strong> ${phone || 'غير متوفر'}</p>
-                <p><strong>📍 الموقع:</strong> ${city || ''} ${address || ''}</p>
-                <p><strong>📝 الملاحظات:</strong> ${notes || 'لا توجد'}</p>
-            </div>`,
-            icon: type === TYPE_APP ? 'info' : 'warning',
-            confirmButtonColor: '#c9a03d',
-            confirmButtonText: 'إغلاق'
-        });
     }
 
     function applyDateFilter() {
