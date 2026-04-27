@@ -47,7 +47,7 @@
         .fc .fc-toolbar { flex-direction: column; gap: 8px; margin-bottom: 15px; }
         @media (min-width: 768px) { .fc .fc-toolbar { flex-direction: row; } }
         
-        .debug-panel { background: #1e1e2e; color: #a6e3a1; font-family: monospace; font-size: 11px; padding: 12px; margin-top: 16px; border-radius: 12px; max-height: 200px; overflow-y: auto; direction: ltr; }
+        .debug-panel { background: #1e1e2e; color: #a6e3a1; font-family: monospace; font-size: 11px; padding: 12px; margin-top: 16px; border-radius: 12px; max-height: 250px; overflow-y: auto; direction: ltr; }
         .debug-line.success { color: #a6e3a1; }
         .debug-line.error { color: #f38ba8; }
         .debug-line.warning { color: #f9e2af; }
@@ -114,7 +114,7 @@
     const COL_APPOINTMENT_DATE = 14; // O - تاريخ المعاينة
     const COL_APPOINTMENT_TIME = 15; // P - وقت المعاينة
     
-    // المتابعات - الأعمدة L و S
+    // المتابعات
     const COL_CALLBACK_L_DATE = 11;  // L - Callback Date
     const COL_CALLBACK_L_PHONE = 12; // M - Callback phone
     const COL_CALLBACK_L_NOTES = 13; // N - Callback Notes
@@ -142,12 +142,14 @@
         while (logDiv.children.length > 50) logDiv.removeChild(logDiv.firstChild);
     }
     
-    // تحويل التاريخ من تنسيق "الجمعة, 27/02/2026" أو "27/02/2026" إلى Date
+    // تحويل التاريخ من أي تنسيق
     function parseDate(dateStr) {
         if (!dateStr) return null;
         
         let original = dateStr.toString().trim();
-        if (original === 'FALSE' || original === 'TRUE') return null;
+        if (original === 'FALSE' || original === 'TRUE' || original === '') return null;
+        
+        log(`   📅 محاولة تحويل: "${original}"`, 'info');
         
         // إزالة اسم اليوم إذا وجد
         let cleaned = original.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
@@ -160,10 +162,25 @@
             let year = parseInt(parts[3]);
             let dateObj = new Date(year, month, day, 12, 0);
             if (!isNaN(dateObj.getTime())) {
+                log(`   ✅ تم التحويل: ${dateObj.toLocaleDateString('ar-EG')}`, 'success');
                 return dateObj;
             }
         }
         
+        // تنسيق D/M/YYYY
+        parts = cleaned.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (parts) {
+            let day = parseInt(parts[1]);
+            let month = parseInt(parts[2]) - 1;
+            let year = parseInt(parts[3]);
+            let dateObj = new Date(year, month, day, 12, 0);
+            if (!isNaN(dateObj.getTime())) {
+                log(`   ✅ تم التحويل: ${dateObj.toLocaleDateString('ar-EG')}`, 'success');
+                return dateObj;
+            }
+        }
+        
+        log(`   ❌ فشل تحويل: "${original}"`, 'error');
         return null;
     }
     
@@ -263,6 +280,8 @@
                 const callbackLNotes = row[COL_CALLBACK_L_NOTES] || '';
                 
                 if (callbackLDate && callbackLDate.toString().trim() && callbackLDate !== 'FALSE') {
+                    log(`🔍 فحص متابعة L للصف ${i}: "${name}" - التاريخ: "${callbackLDate}"`, 'info');
+                    
                     const dateObj = parseDate(callbackLDate);
                     if (dateObj) {
                         events.push({
@@ -278,9 +297,9 @@
                         });
                         callbackCount++;
                         callbackFromL++;
-                        log(`✅ متابعة (L): ${name} - ${callbackLDate}`, 'success');
+                        log(`   ✅ تمت إضافة متابعة L: ${name}`, 'success');
                     } else {
-                        log(`⚠️ فشل تحويل تاريخ متابعة L: "${callbackLDate}"`, 'warning');
+                        log(`   ❌ فشل تحويل تاريخ متابعة L: "${callbackLDate}"`, 'error');
                     }
                 }
                 
@@ -289,6 +308,8 @@
                 const callbackSNotes = row[COL_CALLBACK_S_NOTES] || '';
                 
                 if (callbackSDate && callbackSDate.toString().trim() && callbackSDate !== 'FALSE') {
+                    log(`🔍 فحص متابعة S للصف ${i}: "${name}" - التاريخ: "${callbackSDate}"`, 'info');
+                    
                     const dateObj = parseDate(callbackSDate);
                     if (dateObj) {
                         events.push({
@@ -304,19 +325,21 @@
                         });
                         callbackCount++;
                         callbackFromS++;
-                        log(`✅ متابعة (S): ${name} - ${callbackSDate}`, 'success');
+                        log(`   ✅ تمت إضافة متابعة S: ${name}`, 'success');
                     } else {
-                        log(`⚠️ فشل تحويل تاريخ متابعة S: "${callbackSDate}"`, 'warning');
+                        log(`   ❌ فشل تحويل تاريخ متابعة S: "${callbackSDate}"`, 'error');
                     }
                 }
             }
             
+            log('════════════════════════════════════════', 'info');
             log(`📊 النتائج النهائية:`, 'info');
             log(`   • معاينات: ${appointmentCount}`, 'success');
             log(`   • متابعات من العمود L: ${callbackFromL}`, 'success');
             log(`   • متابعات من العمود S: ${callbackFromS}`, 'success');
             log(`   • إجمالي المتابعات: ${callbackCount}`, 'success');
             log(`   • إجمالي الأحداث: ${events.length}`, 'success');
+            log('════════════════════════════════════════', 'info');
             
             if (events.length === 0) {
                 log(`⚠️ لم يتم العثور على أي مواعيد!`, 'warning');
@@ -358,6 +381,10 @@
         document.getElementById('totalCb').innerText = totalCb;
         document.getElementById('todayApp').innerText = todayApp;
         document.getElementById('todayCb').innerText = todayCb;
+        
+        if (todayCb > 0) {
+            log(`🔔 لديك ${todayCb} متابعة اليوم!`, 'warning');
+        }
     }
     
     function renderEventList(events) {
@@ -367,7 +394,6 @@
             return;
         }
         
-        // ترتيب حسب التاريخ
         const sorted = [...events].sort((a, b) => a.date - b.date);
         
         let html = '';
