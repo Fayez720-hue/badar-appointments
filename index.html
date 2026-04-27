@@ -2,8 +2,8 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>نظام إدارة العملاء - مواعيد المعاينات والمتابعات</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>نظام إدارة العملاء - معاينات ومتابعات</title>
     <!-- FullCalendar CSS & JS -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
@@ -22,25 +22,11 @@
         body {
             background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 50%, #1a472a 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 12px;
             direction: rtl;
         }
 
-        /* Real Estate Pattern Overlay */
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.05"><path fill="white" d="M50,5 L95,30 L95,70 L50,95 L5,70 L5,30 Z"/><rect x="35" y="40" width="30" height="30" fill="white"/><rect x="42" y="48" width="6" height="6" fill="%231a472a"/><rect x="52" y="48" width="6" height="6" fill="%231a472a"/></svg>');
-            background-repeat: repeat;
-            background-size: 60px;
-            pointer-events: none;
-            z-index: 0;
-        }
-
+        /* Mobile First Design */
         .dashboard-container {
             max-width: 1600px;
             margin: 0 auto;
@@ -48,39 +34,423 @@
             z-index: 1;
         }
 
-        /* Header */
+        /* Header - Mobile Optimized */
         .header {
             background: rgba(255,255,255,0.97);
             backdrop-filter: blur(10px);
-            border-radius: 28px;
-            padding: 20px 32px;
-            margin-bottom: 24px;
-            box-shadow: 0 20px 35px -10px rgba(0,0,0,0.2);
+            border-radius: 20px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
             display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 12px;
             border: 1px solid rgba(218, 165, 32, 0.3);
         }
 
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
         h1 {
-            font-size: 1.6rem;
+            font-size: 1.2rem;
             background: linear-gradient(135deg, #c9a03d, #8b6914);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
         }
 
         h1 i {
-            background: none;
+            font-size: 1.3rem;
             -webkit-text-fill-color: #c9a03d;
-            font-size: 1.8rem;
         }
 
-        /* Notification Bell */
+        h1 small {
+            font-size: 0.6rem;
+            background: #fef8e7;
+            padding: 3px 8px;
+            border-radius: 20px;
+            -webkit-text-fill-color: #8b6914;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* Mobile Menu Button */
+        .menu-btn {
+            background: rgba(201,160,61,0.1);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .menu-btn i {
+            font-size: 1.2rem;
+            color: #c9a03d;
+        }
+
+        /* Side Menu */
+        .side-menu {
+            position: fixed;
+            top: 0;
+            right: -280px;
+            width: 280px;
+            height: 100vh;
+            background: white;
+            z-index: 2000;
+            transition: right 0.3s ease;
+            box-shadow: -5px 0 25px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .side-menu.open {
+            right: 0;
+        }
+
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1999;
+            display: none;
+        }
+
+        .menu-overlay.show {
+            display: block;
+        }
+
+        .menu-header {
+            background: linear-gradient(135deg, #c9a03d, #8b6914);
+            padding: 20px;
+            color: white;
+            text-align: center;
+        }
+
+        .menu-header i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .menu-items {
+            flex: 1;
+            padding: 20px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 8px;
+        }
+
+        .menu-item:hover {
+            background: #fef8e7;
+        }
+
+        .menu-item i {
+            width: 24px;
+            color: #c9a03d;
+        }
+
+        /* Filter Buttons - Mobile Optimized */
+        .filter-group {
+            display: flex;
+            gap: 6px;
+            background: rgba(0,0,0,0.05);
+            padding: 4px;
+            border-radius: 40px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.75rem;
+            transition: all 0.3s;
+            background: transparent;
+            color: #5c6b66;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .filter-btn i {
+            font-size: 0.8rem;
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, #c9a03d, #8b6914);
+            color: white;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #c9a03d, #8b6914);
+            border: none;
+            color: white;
+            padding: 8px 14px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Stats Cards - Mobile Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 12px;
+            transition: all 0.3s;
+            border: 1px solid rgba(201,160,61,0.2);
+        }
+
+        .stat-card h3 {
+            font-size: 0.7rem;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-card h3 i {
+            font-size: 0.8rem;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #c9a03d, #8b6914);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Main Content - Mobile Stacked */
+        .two-columns {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .calendar-panel, .events-panel {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 16px;
+            border: 1px solid rgba(201,160,61,0.2);
+        }
+
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(201,160,61,0.3);
+            color: #8b6914;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .event-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .event-item {
+            background: #f9fbfa;
+            margin-bottom: 10px;
+            padding: 12px;
+            border-radius: 14px;
+            border-right: 3px solid #c9a03d;
+        }
+
+        .event-title {
+            font-weight: 700;
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .event-type {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 15px;
+        }
+
+        .event-details {
+            font-size: 0.7rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        /* Calendar Mobile Overrides */
+        .fc .fc-toolbar {
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .fc .fc-toolbar-title {
+            font-size: 1rem !important;
+        }
+
+        .fc .fc-button {
+            padding: 4px 8px !important;
+            font-size: 0.7rem !important;
+        }
+
+        .fc-daygrid-day-number {
+            font-size: 0.7rem !important;
+        }
+
+        .fc-event-title {
+            font-size: 0.65rem !important;
+        }
+
+        /* Notifications Panel - Mobile */
+        .notifications-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            max-height: 100%;
+            border-radius: 0;
+            z-index: 2001;
+        }
+
+        /* Footer */
+        .footer-note {
+            margin-top: 16px;
+            text-align: center;
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.8);
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 20px;
+        }
+
+        /* Tablet Optimization */
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+            
+            .header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                padding: 16px 24px;
+            }
+            
+            .header-top {
+                flex: 1;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 18px;
+            }
+            
+            .two-columns {
+                flex-direction: row;
+            }
+            
+            .calendar-panel {
+                flex: 2;
+            }
+            
+            .events-panel {
+                flex: 1.2;
+            }
+            
+            h1 {
+                font-size: 1.4rem;
+            }
+            
+            .stat-number {
+                font-size: 2rem;
+            }
+        }
+
+        /* Desktop Optimization */
+        @media (min-width: 1024px) {
+            body {
+                padding: 24px;
+            }
+            
+            .stats-grid {
+                gap: 24px;
+            }
+            
+            .stat-card {
+                padding: 20px 24px;
+            }
+            
+            .stat-number {
+                font-size: 2.2rem;
+            }
+        }
+
+        /* Loading Spinner */
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #fef8e7;
+            border-top: 3px solid #c9a03d;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Notification Badge */
         .notification-area {
             position: relative;
             cursor: pointer;
@@ -88,19 +458,13 @@
 
         .notification-bell {
             background: rgba(201,160,61,0.1);
-            padding: 12px;
-            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: all 0.3s;
-        }
-
-        .notification-bell:hover {
-            background: rgba(201,160,61,0.2);
-            transform: scale(1.05);
-        }
-
-        .notification-bell i {
-            font-size: 1.3rem;
-            color: #c9a03d;
         }
 
         .notification-badge {
@@ -110,415 +474,126 @@
             background: #dc2626;
             color: white;
             border-radius: 50%;
-            width: 22px;
-            height: 22px;
-            font-size: 0.7rem;
+            width: 18px;
+            height: 18px;
+            font-size: 0.6rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-        }
-
-        /* Notifications Panel */
-        .notifications-panel {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            width: 380px;
-            max-height: 500px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            z-index: 1000;
-            display: none;
-            flex-direction: column;
-            overflow: hidden;
-            animation: slideInLeft 0.3s ease-out;
-        }
-
-        @keyframes slideInLeft {
-            from { transform: translateX(-100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .notifications-header {
-            background: linear-gradient(135deg, #c9a03d, #8b6914);
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .notifications-header h3 {
-            margin: 0;
-            font-size: 1.1rem;
-        }
-
-        .clear-notifications {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            cursor: pointer;
-        }
-
-        .notifications-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .notification-item {
-            padding: 12px 15px;
-            border-bottom: 1px solid #e5e7eb;
-            display: flex;
-            gap: 12px;
-            cursor: pointer;
-        }
-
-        .notification-item.unread {
-            background: #fef8e7;
-        }
-
-        .notification-icon.appointment {
-            background: #dcfce7;
-            color: #16a34a;
-        }
-
-        .notification-icon.callback {
-            background: #ffecb3;
-            color: #b45f06;
-        }
-
-        .notification-icon.info {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        /* Filter Buttons */
-        .filter-group {
-            display: flex;
-            gap: 10px;
-            background: rgba(0,0,0,0.05);
-            padding: 8px;
-            border-radius: 60px;
-        }
-
-        .filter-btn {
-            padding: 10px 24px;
-            border-radius: 40px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            background: transparent;
-            color: #5c6b66;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .filter-btn.active {
-            background: linear-gradient(135deg, #c9a03d, #8b6914);
-            color: white;
-            box-shadow: 0 4px 15px rgba(201,160,61,0.4);
-        }
-
-        .refresh-btn {
-            background: linear-gradient(135deg, #c9a03d, #8b6914);
-            border: none;
-            color: white;
-            padding: 10px 24px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s;
-        }
-
-        .refresh-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(201,160,61,0.4);
         }
 
         .status-badge {
             background: #eef2ff;
-            padding: 8px 16px;
-            border-radius: 32px;
-            font-size: 0.85rem;
-        }
-
-        /* Stats Cards - Real Estate Style */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 28px;
-        }
-
-        .stat-card {
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
-            padding: 22px 24px;
-            transition: all 0.3s;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(201,160,61,0.2);
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 4px;
-            height: 100%;
-            background: linear-gradient(135deg, #c9a03d, #8b6914);
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-        }
-
-        .stat-card h3 {
-            margin: 0 0 12px 0;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #6c7a74;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #c9a03d, #8b6914);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        /* Main Content */
-        .two-columns {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 24px;
-        }
-
-        .calendar-panel, .events-panel {
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 28px;
-            padding: 24px;
-            border: 1px solid rgba(201,160,61,0.2);
-        }
-
-        .calendar-panel { flex: 2; min-width: 300px; }
-        .events-panel { flex: 1.2; min-width: 280px; }
-
-        .section-title {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid rgba(201,160,61,0.3);
-            color: #8b6914;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .event-list {
-            max-height: 550px;
-            overflow-y: auto;
-        }
-
-        .event-item {
-            background: #f9fbfa;
-            margin-bottom: 14px;
-            padding: 16px;
-            border-radius: 20px;
-            border-right: 4px solid #c9a03d;
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-
-        .event-item.callback {
-            border-right-color: #e67e22;
-        }
-
-        .event-item:hover {
-            transform: translateX(-8px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-        }
-
-        .event-title {
-            font-weight: 700;
-            font-size: 1rem;
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-
-        .event-type {
+            padding: 6px 12px;
+            border-radius: 25px;
             font-size: 0.7rem;
-            background: #fef8e7;
-            padding: 4px 12px;
-            border-radius: 20px;
-            color: #8b6914;
-        }
-
-        .event-type.callback-badge {
-            background: #fff3e0;
-            color: #e67e22;
-        }
-
-        .event-details {
-            font-size: 0.8rem;
-            color: #4a5b54;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 60px;
-        }
-
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #fef8e7;
-            border-top: 4px solid #c9a03d;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .footer-note {
-            margin-top: 28px;
-            text-align: center;
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.8);
-            background: rgba(0,0,0,0.2);
-            padding: 15px;
-            border-radius: 30px;
-        }
-
-        /* Property Badge */
-        .property-badge {
-            display: inline-block;
-            background: rgba(201,160,61,0.1);
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            color: #c9a03d;
-            margin-right: 8px;
-        }
-
-        @media (max-width: 780px) {
-            .notifications-panel { width: 90%; left: 5%; right: 5%; }
-            .filter-btn { padding: 6px 14px; font-size: 0.8rem; }
         }
     </style>
 </head>
 <body>
 <div class="dashboard-container">
-    <div class="header">
-        <h1>
+    <!-- Side Menu -->
+    <div class="menu-overlay" id="menuOverlay"></div>
+    <div class="side-menu" id="sideMenu">
+        <div class="menu-header">
             <i class="fas fa-building"></i>
-            نظام إدارة العقارات
-            <small>معاينات ومتابعات</small>
-        </h1>
-        <div style="display: flex; gap: 12px; align-items: center;">
+            <h3>القائمة الرئيسية</h3>
+        </div>
+        <div class="menu-items">
+            <div class="menu-item" onclick="setFilter('all'); closeMenu();">
+                <i class="fas fa-globe"></i>
+                <span>جميع المواعيد</span>
+            </div>
+            <div class="menu-item" onclick="setFilter('appointment'); closeMenu();">
+                <i class="fas fa-building"></i>
+                <span>معاينات عقارات</span>
+            </div>
+            <div class="menu-item" onclick="setFilter('callback'); closeMenu();">
+                <i class="fas fa-phone-alt"></i>
+                <span>متابعات العملاء</span>
+            </div>
+            <div class="menu-item" onclick="refreshDashboard(); closeMenu();">
+                <i class="fas fa-sync-alt"></i>
+                <span>تحديث البيانات</span>
+            </div>
+            <div class="menu-item" onclick="toggleNotifications(); closeMenu();">
+                <i class="fas fa-bell"></i>
+                <span>الإشعارات</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-top">
+            <h1>
+                <i class="fas fa-building"></i>
+                نظام العقارات
+                <small>معاينات ومتابعات</small>
+            </h1>
+            <div class="header-actions">
+                <div class="notification-area" id="notificationBell">
+                    <div class="notification-bell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notificationCount" style="display: none;">0</span>
+                    </div>
+                </div>
+                <button class="menu-btn" id="menuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        <div style="display: flex; gap: 8px; justify-content: space-between; flex-wrap: wrap;">
             <div class="filter-group">
                 <button class="filter-btn active" data-filter="all"><i class="fas fa-globe"></i> الكل</button>
-                <button class="filter-btn" data-filter="appointment"><i class="fas fa-building"></i> معاينات عقارات</button>
-                <button class="filter-btn" data-filter="callback"><i class="fas fa-phone-alt"></i> متابعات عملاء</button>
+                <button class="filter-btn" data-filter="appointment"><i class="fas fa-building"></i> معاينات</button>
+                <button class="filter-btn" data-filter="callback"><i class="fas fa-phone-alt"></i> متابعات</button>
             </div>
             <button class="refresh-btn" id="refreshDataBtn"><i class="fas fa-sync-alt"></i> تحديث</button>
-            <div class="notification-area" id="notificationBell">
-                <div class="notification-bell">
-                    <i class="fas fa-bell"></i>
-                    <span class="notification-badge" id="notificationCount" style="display: none;">0</span>
-                </div>
-            </div>
-            <span class="status-badge" id="syncStatus"><i class="fas fa-spinner fa-spin"></i> جاري...</span>
+            <span class="status-badge" id="syncStatus"><i class="fas fa-spinner fa-spin"></i></span>
         </div>
     </div>
 
-    <!-- Notifications Panel -->
-    <div class="notifications-panel" id="notificationsPanel">
-        <div class="notifications-header">
-            <h3><i class="fas fa-bell"></i> الإشعارات</h3>
-            <button class="clear-notifications" id="clearNotifications">مسح الكل</button>
-        </div>
-        <div class="notifications-list" id="notificationsList">
-            <div style="text-align: center; padding: 40px; color: #9ca3af;">
-                <i class="fas fa-inbox" style="font-size: 3rem;"></i>
-                <p>لا توجد إشعارات</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Real Estate Stats Cards -->
+    <!-- Stats Cards -->
     <div class="stats-grid">
-        <div class="stat-card">
-            <h3><i class="fas fa-building"></i> إجمالي معاينات العقارات</h3>
-            <div class="stat-number" id="totalAppointments">0</div>
-        </div>
-        <div class="stat-card">
-            <h3><i class="fas fa-users"></i> إجمالي متابعات العملاء</h3>
-            <div class="stat-number" id="totalCallbacks">0</div>
-        </div>
-        <div class="stat-card">
-            <h3><i class="fas fa-calendar-day"></i> معاينات اليوم</h3>
-            <div class="stat-number" id="todayAppointments">0</div>
-        </div>
-        <div class="stat-card">
-            <h3><i class="fas fa-clock"></i> متابعات اليوم</h3>
-            <div class="stat-number" id="todayCallbacks">0</div>
-        </div>
+        <div class="stat-card"><h3><i class="fas fa-building"></i> معاينات عقارات</h3><div class="stat-number" id="totalAppointments">0</div></div>
+        <div class="stat-card"><h3><i class="fas fa-users"></i> متابعات عملاء</h3><div class="stat-number" id="totalCallbacks">0</div></div>
+        <div class="stat-card"><h3><i class="fas fa-calendar-day"></i> معاينات اليوم</h3><div class="stat-number" id="todayAppointments">0</div></div>
+        <div class="stat-card"><h3><i class="fas fa-clock"></i> متابعات اليوم</h3><div class="stat-number" id="todayCallbacks">0</div></div>
     </div>
 
+    <!-- Main Content -->
     <div class="two-columns">
         <div class="calendar-panel">
             <div class="section-title">
-                <span><i class="fas fa-calendar-alt"></i> تقويم معاينات العقارات</span>
-                <span class="filter-info" id="filterInfo"><i class="fas fa-eye"></i> عرض الكل</span>
+                <span><i class="fas fa-calendar-alt"></i> تقويم المواعيد</span>
             </div>
             <div id="calendar"></div>
         </div>
         <div class="events-panel">
             <div class="section-title">
-                <span><i class="fas fa-list"></i> المعاينات والمتابعات القادمة (7 أيام)</span>
+                <span><i class="fas fa-list"></i> أقرب المواعيد (7 أيام)</span>
             </div>
             <div id="upcomingEventsList" class="event-list">
-                <div class="loading"><div class="spinner"></div><p>جاري تحميل البيانات...</p></div>
+                <div class="loading"><div class="spinner"></div><p>جاري التحميل...</p></div>
             </div>
         </div>
     </div>
     <div class="footer-note">
-        <i class="fas fa-bell"></i> تنبيهات للمواعيد القادمة خلال 24 ساعة | 
-        <i class="fas fa-building"></i> نظام متكامل لإدارة معاينات العقارات ومتابعة العملاء |
-        <i class="fas fa-chart-line"></i> تحديث فوري للبيانات
+        <i class="fas fa-mobile-alt"></i> متوافق مع الجوال | 
+        <i class="fas fa-bell"></i> إشعارات للمواعيد القادمة |
+        <i class="fas fa-chart-line"></i> تحديث فوري
+    </div>
+</div>
+
+<!-- Notifications Panel -->
+<div class="notifications-panel" id="notificationsPanel" style="display: none;">
+    <div class="notifications-header">
+        <h3><i class="fas fa-bell"></i> الإشعارات</h3>
+        <button class="clear-notifications" id="clearNotifications">مسح الكل</button>
+    </div>
+    <div class="notifications-list" id="notificationsList">
+        <div style="text-align: center; padding: 40px;"><i class="fas fa-inbox" style="font-size: 2rem;"></i><p>لا توجد إشعارات</p></div>
     </div>
 </div>
 
@@ -538,74 +613,55 @@
     const TYPE_APPOINTMENT = 'معاينة عقار';
     const TYPE_CALLBACK = 'متابعة عميل';
     
-    // Request notification permission
+    // Mobile Menu Functions
+    function openMenu() {
+        document.getElementById('sideMenu').classList.add('open');
+        document.getElementById('menuOverlay').classList.add('show');
+    }
+    
+    function closeMenu() {
+        document.getElementById('sideMenu').classList.remove('open');
+        document.getElementById('menuOverlay').classList.remove('show');
+    }
+    
+    // Notification Functions
     function requestNotificationPermission() {
-        if ('Notification' in window) {
-            Notification.requestPermission();
-        }
+        if ('Notification' in window) Notification.requestPermission();
     }
     
-    function showBrowserNotification(title, body, type) {
-        if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(title, {
-                body: body,
-                icon: type === 'appointment' ? 'https://img.icons8.com/color/48/real-estate.png' : 'https://img.icons8.com/color/48/phone.png',
-                silent: false
-            });
-        }
-    }
-    
-    function addNotification(title, message, type, eventDate = null) {
+    function addNotification(title, message, type) {
         const id = notificationId++;
-        notifications.unshift({
-            id: id, title: title, message: message, type: type,
-            time: new Date(), read: false, eventDate: eventDate
-        });
+        notifications.unshift({ id, title, message, type, time: new Date(), read: false });
         updateNotificationUI();
-        showBrowserNotification(title, message, type);
-        showToast(message, type);
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(title, { body: message });
+        }
+        showToast(message);
     }
     
     function updateNotificationUI() {
         const count = notifications.filter(n => !n.read).length;
-        const countBadge = document.getElementById('notificationCount');
+        const badge = document.getElementById('notificationCount');
         if (count > 0) {
-            countBadge.style.display = 'flex';
-            countBadge.innerText = count > 9 ? '9+' : count;
+            badge.style.display = 'flex';
+            badge.innerText = count > 9 ? '9+' : count;
         } else {
-            countBadge.style.display = 'none';
+            badge.style.display = 'none';
         }
         
         const container = document.getElementById('notificationsList');
         if (notifications.length === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 40px; color: #9ca3af;"><i class="fas fa-inbox" style="font-size: 3rem;"></i><p>لا توجد إشعارات</p></div>';
+            container.innerHTML = '<div style="text-align: center; padding: 40px;"><i class="fas fa-inbox" style="font-size: 2rem;"></i><p>لا توجد إشعارات</p></div>';
             return;
         }
         
         let html = '';
-        for (const notif of notifications) {
-            const timeStr = formatTimeAgo(notif.time);
-            let iconClass = 'info';
-            let iconHtml = '<i class="fas fa-info-circle"></i>';
-            
-            if (notif.type === 'appointment') {
-                iconClass = 'appointment';
-                iconHtml = '<i class="fas fa-building"></i>';
-            } else if (notif.type === 'callback') {
-                iconClass = 'callback';
-                iconHtml = '<i class="fas fa-phone-alt"></i>';
-            }
-            
-            html += `
-                <div class="notification-item ${!notif.read ? 'unread' : ''}" onclick="markAsRead(${notif.id})">
-                    <div class="notification-icon ${iconClass}">${iconHtml}</div>
-                    <div class="notification-content">
-                        <div class="notification-title">${notif.title}</div>
-                        <div class="notification-title" style="font-size: 0.8rem; color: #4b5563;">${notif.message}</div>
-                        <div class="notification-time">${timeStr}</div>
-                    </div>
-                </div>
-            `;
+        for (const n of notifications) {
+            const timeStr = formatTimeAgo(n.time);
+            html += `<div class="notification-item ${!n.read ? 'unread' : ''}" onclick="markAsRead(${n.id})">
+                <div class="notification-icon ${n.type}"><i class="fas ${n.type === 'appointment' ? 'fa-building' : (n.type === 'callback' ? 'fa-phone-alt' : 'fa-info-circle')}"></i></div>
+                <div class="notification-content"><div class="notification-title">${n.title}</div><div class="notification-time">${timeStr}</div></div>
+            </div>`;
         }
         container.innerHTML = html;
     }
@@ -621,52 +677,26 @@
     }
     
     window.markAsRead = function(id) {
-        const notif = notifications.find(n => n.id === id);
-        if (notif) { notif.read = true; updateNotificationUI(); }
+        const n = notifications.find(n => n.id === id);
+        if (n) { n.read = true; updateNotificationUI(); }
     };
     
     function clearAllNotifications() {
         notifications = [];
         updateNotificationUI();
-        showToast('تم مسح جميع الإشعارات', 'info');
     }
     
-    function showToast(message, type = 'success') {
-        Swal.fire({
-            text: message,
-            icon: type === 'appointment' ? 'info' : (type === 'callback' ? 'warning' : 'success'),
-            toast: true,
-            position: 'top-end',
-            showConfirmButton: false,
-            timer: 3000,
-            timerProgressBar: true,
-            background: 'white',
-            didOpen: (toast) => { toast.style.direction = 'rtl'; }
-        });
+    function toggleNotifications() {
+        const panel = document.getElementById('notificationsPanel');
+        panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
     }
     
-    function checkAndNotifyUpcomingEvents(events) {
-        const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        
-        const todayEvents = events.filter(ev => new Date(ev.start).toDateString() === today.toDateString());
-        const tomorrowEvents = events.filter(ev => new Date(ev.start).toDateString() === tomorrow.toDateString());
-        
-        if (todayEvents.length > 0) {
-            const appointmentsToday = todayEvents.filter(e => e.type === TYPE_APPOINTMENT);
-            const callbacksToday = todayEvents.filter(e => e.type === TYPE_CALLBACK);
-            if (appointmentsToday.length > 0) addNotification('🏢 معاينات عقارات اليوم', `لديك ${appointmentsToday.length} معاينة عقار اليوم`, 'appointment');
-            if (callbacksToday.length > 0) addNotification('📞 متابعات العملاء اليوم', `لديك ${callbacksToday.length} متابعة عميل اليوم`, 'callback');
-        }
-        
-        if (tomorrowEvents.length > 0) {
-            const appointmentsTomorrow = tomorrowEvents.filter(e => e.type === TYPE_APPOINTMENT);
-            const callbacksTomorrow = tomorrowEvents.filter(e => e.type === TYPE_CALLBACK);
-            if (appointmentsTomorrow.length > 0) addNotification('⏰ تذكير معاينات غداً', `${appointmentsTomorrow.length} معاينة عقار غداً`, 'appointment');
-            if (callbacksTomorrow.length > 0) addNotification('⏰ تذكير متابعات غداً', `${callbacksTomorrow.length} متابعة عميل غداً`, 'callback');
-        }
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:20px;right:20px;left:20px;background:#333;color:white;padding:12px;border-radius:12px;text-align:center;z-index:3000;animation:fadeInUp 0.3s';
+        toast.innerText = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
     }
     
     function setFilter(filter) {
@@ -689,66 +719,51 @@
     
     async function fetchRealSheetData() {
         const statusSpan = document.getElementById('syncStatus');
-        statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جلب البيانات...';
-        
+        statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         try {
             const range = `${SHEET_NAME}!A1:V1000`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error(`خطأ ${response.status}`);
-            
             const data = await response.json();
             const rows = data.values;
             if (!rows || rows.length < 2) throw new Error("لا توجد بيانات");
             
             const events = [];
-            let appointmentCount = 0, callbackCount = 0;
+            let appCount = 0, cbCount = 0;
             
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 if (!row || row.length < 15) continue;
-                
                 const name = row[1] || 'غير محدد';
                 const phone = row[2] || row[12] || '';
-                const appointmentDateRaw = row[14] || '';
-                const appointmentTime = row[15] || '';
-                const callbackDateRaw = row[11] || '';
-                const callbackNotes = row[13] || '';
-                const generalNotes = row[8] || '';
+                const appDate = row[14] || '';
+                const appTime = row[15] || '';
+                const cbDate = row[11] || '';
+                const cbNotes = row[13] || '';
+                const notes = row[8] || '';
                 
-                if (appointmentDateRaw && appointmentDateRaw.toString().trim() !== '') {
-                    let fullDate = parseDate(appointmentDateRaw, appointmentTime);
-                    if (fullDate) {
-                        events.push({
-                            id: `app_${i}`, title: name, type: TYPE_APPOINTMENT,
-                            start: fullDate, dateStr: appointmentDateRaw, time: appointmentTime,
-                            phone: phone, notes: generalNotes || callbackNotes || 'لا توجد ملاحظات'
-                        });
-                        appointmentCount++;
+                if (appDate && appDate.trim()) {
+                    let date = parseDate(appDate, appTime);
+                    if (date) {
+                        events.push({ id: `app_${i}`, title: name, type: TYPE_APPOINTMENT, start: date, time: appTime, phone: phone, notes: notes || cbNotes });
+                        appCount++;
                     }
                 }
-                
-                if (callbackDateRaw && callbackDateRaw.toString().trim() !== '') {
-                    let fullDate = parseDate(callbackDateRaw, '');
-                    if (fullDate) {
-                        events.push({
-                            id: `cb_${i}`, title: name, type: TYPE_CALLBACK,
-                            start: fullDate, dateStr: callbackDateRaw, time: '',
-                            phone: row[12] || phone, notes: callbackNotes || generalNotes || 'لا توجد ملاحظات'
-                        });
-                        callbackCount++;
+                if (cbDate && cbDate.trim()) {
+                    let date = parseDate(cbDate, '');
+                    if (date) {
+                        events.push({ id: `cb_${i}`, title: name, type: TYPE_CALLBACK, start: date, time: '', phone: row[12] || phone, notes: cbNotes || notes });
+                        cbCount++;
                     }
                 }
             }
             
-            if (events.length === 0) throw new Error("لم يتم العثور على مواعيد");
-            
-            statusSpan.innerHTML = `<i class="fas fa-check-circle"></i> ${events.length} موعد`;
-            addNotification('✅ تحديث البيانات', `تم جلب ${appointmentCount} معاينة عقار و ${callbackCount} متابعة عميل`, 'info');
+            statusSpan.innerHTML = `<i class="fas fa-check-circle"></i> ${events.length}`;
+            addNotification('✅ تحديث البيانات', `تم جلب ${appCount} معاينة و ${cbCount} متابعة`, 'info');
             return events;
         } catch (error) {
-            statusSpan.innerHTML = `<i class="fas fa-exclamation-circle"></i> خطأ`;
-            addNotification('❌ خطأ في الاتصال', error.message, 'info');
+            statusSpan.innerHTML = '<i class="fas fa-exclamation-circle"></i>';
             return [];
         }
     }
@@ -757,7 +772,6 @@
         if (!dateStr) return null;
         let cleaned = dateStr.toString().trim();
         let year, month, day;
-        
         let match = cleaned.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
         if (match) {
             year = parseInt(match[1]); month = parseInt(match[2]) - 1; day = parseInt(match[3]);
@@ -765,19 +779,13 @@
             match = cleaned.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
             if (match) {
                 day = parseInt(match[1]); month = parseInt(match[2]) - 1; year = parseInt(match[3]);
-            } else {
-                let d = new Date(cleaned);
-                if (!isNaN(d.getTime())) return d;
-                return null;
-            }
+            } else return null;
         }
-        
         let hour = 12, minute = 0;
         if (timeStr && timeStr.trim()) {
-            let timeParts = timeStr.trim().match(/(\d{1,2}):(\d{2})/);
-            if (timeParts) { hour = parseInt(timeParts[1]); minute = parseInt(timeParts[2]); }
+            let tp = timeStr.trim().match(/(\d{1,2}):(\d{2})/);
+            if (tp) { hour = parseInt(tp[1]); minute = parseInt(tp[2]); }
         }
-        
         let dateObj = new Date(year, month, day, hour, minute);
         return isNaN(dateObj.getTime()) ? null : dateObj;
     }
@@ -785,103 +793,71 @@
     function updateStats(events) {
         const totalApp = events.filter(e => e.type === TYPE_APPOINTMENT).length;
         const totalCb = events.filter(e => e.type === TYPE_CALLBACK).length;
-        
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayApps = events.filter(e => e.type === TYPE_APPOINTMENT && new Date(e.start).toDateString() === today.toDateString()).length;
-        const todayCbs = events.filter(e => e.type === TYPE_CALLBACK && new Date(e.start).toDateString() === today.toDateString()).length;
+        const today = new Date().toDateString();
+        const todayApps = events.filter(e => e.type === TYPE_APPOINTMENT && new Date(e.start).toDateString() === today).length;
+        const todayCbs = events.filter(e => e.type === TYPE_CALLBACK && new Date(e.start).toDateString() === today).length;
         
         document.getElementById('totalAppointments').innerText = totalApp;
         document.getElementById('totalCallbacks').innerText = totalCb;
         document.getElementById('todayAppointments').innerText = todayApps;
         document.getElementById('todayCallbacks').innerText = todayCbs;
+        
+        // Check for today's events notification
+        if (todayApps > 0 || todayCbs > 0) {
+            addNotification('📅 مواعيد اليوم', `لديك ${todayApps} معاينة و ${todayCbs} متابعة اليوم`, 'info');
+        }
     }
     
     function renderUpcomingList(events) {
         const container = document.getElementById('upcomingEventsList');
         if (events.length === 0) {
-            container.innerHTML = '<div class="loading"><i class="fas fa-building" style="font-size: 3rem; opacity: 0.5;"></i><p>لا توجد معاينات أو متابعات</p></div>';
+            container.innerHTML = '<div class="loading"><i class="fas fa-calendar-times" style="font-size: 2rem;"></i><p>لا توجد مواعيد</p></div>';
             return;
         }
-        
         const now = new Date();
-        now.setHours(0, 0, 0, 0);
+        now.setHours(0,0,0,0);
         const limit = new Date(now);
         limit.setDate(now.getDate() + 7);
-        
         const upcoming = events.filter(ev => {
             const evDate = new Date(ev.start);
-            evDate.setHours(0, 0, 0, 0);
+            evDate.setHours(0,0,0,0);
             return evDate >= now && evDate <= limit;
-        }).sort((a, b) => a.start - b.start);
+        }).sort((a,b) => a.start - b.start);
         
         if (upcoming.length === 0) {
-            container.innerHTML = '<div class="loading"><i class="fas fa-smile-wink"></i><p>لا توجد مواعيد قريبة خلال 7 أيام</p></div>';
+            container.innerHTML = '<div class="loading"><i class="fas fa-smile-wink"></i><p>لا توجد مواعيد قريبة</p></div>';
             return;
         }
         
         let html = '';
         for (const ev of upcoming) {
-            const dateStr = ev.start.toLocaleDateString('ar-EG', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
-            const timeStr = ev.time || ev.start.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = ev.start.toLocaleDateString('ar-EG', { weekday:'short', month:'short', day:'numeric' });
+            const timeStr = ev.time || ev.start.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
             const isCallback = ev.type === TYPE_CALLBACK;
-            html += `
-                <div class="event-item ${isCallback ? 'callback' : ''}" onclick="showEventDetails('${ev.title.replace(/'/g, "\\'")}', '${ev.phone || 'غير متوفر'}', '${ev.notes.replace(/'/g, "\\'")}', '${ev.type}')">
-                    <div class="event-title">
-                        <span><i class="fas ${isCallback ? 'fa-user-friends' : 'fa-building'}"></i> ${ev.title}</span>
-                        <span class="event-type ${isCallback ? 'callback-badge' : ''}"><i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-home'}"></i> ${ev.type}</span>
-                    </div>
-                    <div class="event-details">
-                        <span><i class="far fa-calendar-alt"></i> ${dateStr}</span>
-                        <span><i class="far fa-clock"></i> ${timeStr}</span>
-                        <span><i class="fas fa-phone"></i> ${ev.phone || 'غير متوفر'}</span>
-                    </div>
-                </div>
-            `;
+            html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="showEventDetails('${ev.title.replace(/'/g, "\\'")}', '${ev.phone}', '${ev.notes.replace(/'/g, "\\'")}', '${ev.type}')">
+                <div class="event-title"><span><i class="fas ${isCallback ? 'fa-user-friends' : 'fa-building'}"></i> ${ev.title}</span><span class="event-type">${ev.type === TYPE_APPOINTMENT ? '🏢 معاينة' : '📞 متابعة'}</span></div>
+                <div class="event-details"><span><i class="far fa-calendar-alt"></i> ${dateStr}</span><span><i class="far fa-clock"></i> ${timeStr}</span></div>
+            </div>`;
         }
         container.innerHTML = html;
     }
     
     window.showEventDetails = function(title, phone, notes, type) {
-        Swal.fire({
-            title: title,
-            html: `<div style="text-align:right">
-                <p><i class="fas fa-tag"></i> <strong>نوع الموعد:</strong> ${type}</p>
-                <p><i class="fas fa-phone"></i> <strong>رقم العميل:</strong> ${phone}</p>
-                <p><i class="fas fa-sticky-note"></i> <strong>ملاحظات إضافية:</strong> ${notes}</p>
-                <hr>
-                <p><i class="fas fa-info-circle"></i> هذا الموعد مسجل في نظام إدارة العقارات</p>
-            </div>`,
-            icon: type === 'معاينة عقار' ? 'info' : 'warning',
-            confirmButtonText: 'إغلاق',
-            confirmButtonColor: '#c9a03d'
-        });
+        Swal.fire({ title, html: `<div style="text-align:right"><p><i class="fas fa-tag"></i> <strong>النوع:</strong> ${type}</p><p><i class="fas fa-phone"></i> <strong>الهاتف:</strong> ${phone || 'غير متوفر'}</p><p><i class="fas fa-sticky-note"></i> <strong>الملاحظات:</strong> ${notes || 'لا توجد'}</p></div>`, icon: type === TYPE_APPOINTMENT ? 'info' : 'warning', confirmButtonColor: '#c9a03d' });
     };
     
     function initCalendar(events) {
         const calendarEl = document.getElementById('calendar');
         if (calendarInstance) calendarInstance.destroy();
         if (events.length === 0) return;
-        
-        const fcEvents = events.map(ev => ({
-            id: ev.id,
-            title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : '📞'} ${ev.title}`,
-            start: ev.start,
-            backgroundColor: ev.type === TYPE_APPOINTMENT ? '#c9a03d' : '#e67e22',
-            borderColor: ev.type === TYPE_APPOINTMENT ? '#8b6914' : '#b45f06',
-            extendedProps: { phone: ev.phone, notes: ev.notes, type: ev.type }
-        }));
-        
+        const fcEvents = events.map(ev => ({ id: ev.id, title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : '📞'} ${ev.title}`, start: ev.start, backgroundColor: ev.type === TYPE_APPOINTMENT ? '#c9a03d' : '#e67e22', extendedProps: { phone: ev.phone, notes: ev.notes, type: ev.type } }));
         calendarInstance = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth', locale: 'ar', direction: 'rtl',
-            headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' },
+            initialView: window.innerWidth < 768 ? 'dayGridMonth' : 'dayGridMonth',
+            locale: 'ar', direction: 'rtl',
+            headerToolbar: { left: 'prev,next', center: 'title', right: window.innerWidth < 768 ? '' : 'dayGridMonth,timeGridWeek' },
             events: fcEvents,
-            eventClick: (info) => {
-                const ext = info.event.extendedProps;
-                showEventDetails(info.event.title.replace(/^[🏢📞] /, ''), ext.phone, ext.notes, ext.type);
-            },
-            height: 'auto', firstDay: 6,
-            buttonText: { today: 'اليوم', month: 'شهر', week: 'أسبوع' }
+            eventClick: (info) => { const ext = info.event.extendedProps; showEventDetails(info.event.title.replace(/^[🏢📞] /, ''), ext.phone, ext.notes, ext.type); },
+            height: 'auto', firstDay: 6
         });
         calendarInstance.render();
     }
@@ -891,10 +867,6 @@
         if (realEvents.length > 0) {
             originalEvents = realEvents;
             applyFilter();
-            checkAndNotifyUpcomingEvents(realEvents);
-        } else {
-            originalEvents = []; filteredEvents = [];
-            updateStats([]); renderUpcomingList([]); initCalendar([]);
         }
     }
     
@@ -905,18 +877,10 @@
             btn.addEventListener('click', () => setFilter(btn.dataset.filter));
         });
         document.getElementById('refreshDataBtn').addEventListener('click', refreshDashboard);
-        document.getElementById('notificationBell').addEventListener('click', () => {
-            const panel = document.getElementById('notificationsPanel');
-            panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
-        });
+        document.getElementById('menuBtn').addEventListener('click', openMenu);
+        document.getElementById('menuOverlay').addEventListener('click', closeMenu);
+        document.getElementById('notificationBell').addEventListener('click', toggleNotifications);
         document.getElementById('clearNotifications').addEventListener('click', clearAllNotifications);
-        document.addEventListener('click', (e) => {
-            const panel = document.getElementById('notificationsPanel');
-            const bell = document.getElementById('notificationBell');
-            if (!bell.contains(e.target) && !panel.contains(e.target)) {
-                panel.style.display = 'none';
-            }
-        });
         refreshDashboard();
         setInterval(refreshDashboard, 300000);
     });
