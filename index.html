@@ -44,12 +44,10 @@
         
         .event-item { background: #f9fbfa; margin-bottom: 8px; padding: 12px; border-radius: 12px; border-right: 3px solid #c9a03d; cursor: pointer; transition: all 0.2s; }
         .event-item.callback { border-right-color: #e67e22; background: #fffbf0; }
-        .event-item.callback-after-call { border-right-color: #3b82f6; background: #eff6ff; }
         .event-item:hover { transform: translateX(-5px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .event-title { font-weight: 700; font-size: 0.9rem; display: flex; justify-content: space-between; margin-bottom: 6px; }
         .event-type { font-size: 0.65rem; padding: 2px 8px; border-radius: 15px; background: #fef8e7; }
         .event-type.callback-badge { background: #ffecb3; color: #b45f06; }
-        .event-type.callback-after-call-badge { background: #dbeafe; color: #1e40af; }
         .event-details { font-size: 0.7rem; color: #4a5b54; line-height: 1.4; }
         
         .fc { direction: rtl; }
@@ -58,10 +56,11 @@
         .fc .fc-button { background: #c9a03d !important; border: none !important; }
         .fc .fc-button:hover { background: #8b6914 !important; }
         
-        .debug-panel { background: #1e1e2e; color: #a6e3a1; font-family: monospace; font-size: 11px; padding: 12px; margin-top: 16px; border-radius: 12px; max-height: 250px; overflow-y: auto; direction: ltr; }
+        .debug-panel { background: #1e1e2e; color: #a6e3a1; font-family: monospace; font-size: 11px; padding: 12px; margin-top: 16px; border-radius: 12px; max-height: 300px; overflow-y: auto; direction: ltr; }
         .debug-line.success { color: #a6e3a1; }
         .debug-line.error { color: #f38ba8; }
         .debug-line.warning { color: #f9e2af; }
+        .debug-line.today { color: #ffd700; font-weight: bold; }
         
         .loading { text-align: center; padding: 40px; }
         .spinner { width: 40px; height: 40px; border: 3px solid #fef8e7; border-top: 3px solid #c9a03d; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
@@ -97,7 +96,7 @@
         <div class="events-panel"><div class="section-title">📋 قائمة المواعيد</div><div id="eventList"><div class="loading"><div class="spinner"></div></div></div></div>
     </div>
     
-    <div class="footer-note"><i class="fas fa-info-circle"></i> 🏢 المعاينات: العمود O | 📞 متابعة بعد المكالمة: العمود L | 📋 متابعة بعد المعاينة: العمود S</div>
+    <div class="footer-note"><i class="fas fa-info-circle"></i> 🏢 المعاينات: العمود O | 📞 متابعات: العمود L (يدعم صيغ 27/04/2026 و 2026/04/27)</div>
     
     <div class="debug-panel" id="debugPanel">
         <div id="debugLog">🔄 جاري تحميل البيانات...</div>
@@ -110,7 +109,7 @@
     const SHEET_NAME = 'مبيعات';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
     
-    // الأعمدة المشتركة
+    // الأعمدة
     const COL_NAME = 1;              // B - الاسم
     const COL_PHONE = 2;             // C - الموبايل
     const COL_CITY = 6;              // G - المحافظة
@@ -121,14 +120,10 @@
     const COL_APPOINTMENT_DATE = 14; // O - تاريخ المعاينة
     const COL_APPOINTMENT_TIME = 15; // P - وقت المعاينة
     
-    // متابعة بعد المكالمة (النوع الأول)
-    const COL_CALLBACK_AFTER_CALL_DATE = 11;  // L - Callback Date (بعد المكالمة)
-    const COL_CALLBACK_AFTER_CALL_PHONE = 12; // M - Callback phone
-    const COL_CALLBACK_AFTER_CALL_NOTES = 13; // N - Callback Notes
-    
-    // متابعة بعد المعاينة (النوع الثاني)
-    const COL_CALLBACK_AFTER_APPT_DATE = 18;  // S - Callback Date Appointment (بعد المعاينة)
-    const COL_CALLBACK_AFTER_APPT_NOTES = 20; // U - ملاحظات المتابعة (index 20)
+    // المتابعات من العمود L
+    const COL_CALLBACK_DATE = 11;    // L - Callback Date
+    const COL_CALLBACK_PHONE = 12;   // M - Callback phone
+    const COL_CALLBACK_NOTES = 13;   // N - Callback Notes
     
     let allEvents = [];
     let filteredEvents = [];
@@ -136,8 +131,7 @@
     let currentFilter = 'all';
     
     const TYPE_APPOINTMENT = 'معاينة';
-    const TYPE_CALLBACK_AFTER_CALL = 'متابعة بعد المكالمة';
-    const TYPE_CALLBACK_AFTER_APPT = 'متابعة بعد المعاينة';
+    const TYPE_CALLBACK = 'متابعة';
     
     function log(message, type = 'info') {
         const logDiv = document.getElementById('debugLog');
@@ -151,28 +145,69 @@
         while (logDiv.children.length > 50) logDiv.removeChild(logDiv.firstChild);
     }
     
-    // تحويل التاريخ من تنسيق "الجمعة, 27/02/2026" أو "27/04/2026" إلى Date
+    // دالة متقدمة لتحويل التاريخ - تدعم جميع التنسيقات
     function parseDate(dateStr) {
         if (!dateStr) return null;
         
         let original = dateStr.toString().trim();
         if (original === 'FALSE' || original === 'TRUE' || original === '') return null;
         
+        log(`   📅 محاولة تحويل: "${original}"`, 'info');
+        
         // إزالة اسم اليوم إذا وجد
         let cleaned = original.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
         
-        // تنسيق DD/MM/YYYY
-        let parts = cleaned.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        let day, month, year;
+        
+        // التنسيق 1: DD/MM/YYYY (مثال: 27/04/2026)
+        let parts = cleaned.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
         if (parts) {
-            let day = parseInt(parts[1]);
-            let month = parseInt(parts[2]) - 1;
-            let year = parseInt(parts[3]);
-            let dateObj = new Date(year, month, day, 12, 0);
-            if (!isNaN(dateObj.getTime())) {
-                return dateObj;
+            day = parseInt(parts[1]);
+            month = parseInt(parts[2]) - 1;
+            year = parseInt(parts[3]);
+            log(`   ✓ تنسيق DD/MM/YYYY: يوم=${day}, شهر=${month+1}, سنة=${year}`, 'success');
+        }
+        // التنسيق 2: YYYY/MM/DD (مثال: 2026/04/27)
+        else {
+            parts = cleaned.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+            if (parts) {
+                year = parseInt(parts[1]);
+                month = parseInt(parts[2]) - 1;
+                day = parseInt(parts[3]);
+                log(`   ✓ تنسيق YYYY/MM/DD: سنة=${year}, شهر=${month+1}, يوم=${day}`, 'success');
+            }
+            // التنسيق 3: YYYY-MM-DD (مثال: 2026-04-27)
+            else {
+                parts = cleaned.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+                if (parts) {
+                    year = parseInt(parts[1]);
+                    month = parseInt(parts[2]) - 1;
+                    day = parseInt(parts[3]);
+                    log(`   ✓ تنسيق YYYY-MM-DD: سنة=${year}, شهر=${month+1}, يوم=${day}`, 'success');
+                }
+                // التنسيق 4: DD-MM-YYYY (مثال: 27-04-2026)
+                else {
+                    parts = cleaned.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+                    if (parts) {
+                        day = parseInt(parts[1]);
+                        month = parseInt(parts[2]) - 1;
+                        year = parseInt(parts[3]);
+                        log(`   ✓ تنسيق DD-MM-YYYY: يوم=${day}, شهر=${month+1}, سنة=${year}`, 'success');
+                    } else {
+                        log(`   ❌ فشل تحويل التاريخ: "${original}"`, 'error');
+                        return null;
+                    }
+                }
             }
         }
         
+        let dateObj = new Date(year, month, day, 12, 0);
+        if (!isNaN(dateObj.getTime())) {
+            log(`   ✅ تم التحويل: ${dateObj.toLocaleDateString('ar-EG')}`, 'success');
+            return dateObj;
+        }
+        
+        log(`   ❌ فشل إنشاء التاريخ`, 'error');
         return null;
     }
     
@@ -223,14 +258,12 @@
             // عرض العناوين للتأكد
             if (rows[0]) {
                 log(`📋 العمود O (تاريخ المعاينة): "${rows[0][COL_APPOINTMENT_DATE] || 'فارغ'}"`, 'info');
-                log(`📋 العمود L (متابعة بعد المكالمة): "${rows[0][COL_CALLBACK_AFTER_CALL_DATE] || 'فارغ'}"`, 'info');
-                log(`📋 العمود S (متابعة بعد المعاينة): "${rows[0][COL_CALLBACK_AFTER_APPT_DATE] || 'فارغ'}"`, 'info');
+                log(`📋 العمود L (Callback Date): "${rows[0][COL_CALLBACK_DATE] || 'فارغ'}"`, 'info');
             }
             
             const events = [];
             let appointmentCount = 0;
-            let callbackAfterCallCount = 0;
-            let callbackAfterApptCount = 0;
+            let callbackCount = 0;
             let todayCallbacks = [];
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -256,7 +289,6 @@
                             id: `app_${i}`,
                             title: name,
                             type: TYPE_APPOINTMENT,
-                            typeKey: 'appointment',
                             date: dateObj,
                             time: formatTime(appointmentTime),
                             phone: phone,
@@ -269,94 +301,59 @@
                     }
                 }
                 
-                // ========== 2. متابعة بعد المكالمة من العمود L ==========
-                const callbackAfterCallDate = row[COL_CALLBACK_AFTER_CALL_DATE];
-                const callbackAfterCallPhone = row[COL_CALLBACK_AFTER_CALL_PHONE] || '';
-                const callbackAfterCallNotes = row[COL_CALLBACK_AFTER_CALL_NOTES] || '';
+                // ========== 2. المتابعات من العمود L ==========
+                const callbackDate = row[COL_CALLBACK_DATE];
+                const callbackPhone = row[COL_CALLBACK_PHONE] || '';
+                const callbackNotes = row[COL_CALLBACK_NOTES] || '';
                 
-                if (callbackAfterCallDate && callbackAfterCallDate.toString().trim() && callbackAfterCallDate !== 'FALSE') {
-                    log(`🔍 فحص متابعة بعد المكالمة (L) للصف ${i}: "${name}" - التاريخ: "${callbackAfterCallDate}"`, 'info');
+                if (callbackDate && callbackDate.toString().trim() && callbackDate !== 'FALSE') {
+                    log(`🔍 فحص متابعة L للصف ${i}: "${name}" - التاريخ: "${callbackDate}"`, 'info');
                     
-                    const dateObj = parseDate(callbackAfterCallDate);
+                    const dateObj = parseDate(callbackDate);
                     if (dateObj) {
                         events.push({
-                            id: `cbL_${i}`,
+                            id: `cb_${i}`,
                             title: name,
-                            type: TYPE_CALLBACK_AFTER_CALL,
-                            typeKey: 'callback-after-call',
+                            type: TYPE_CALLBACK,
                             date: dateObj,
                             time: '',
-                            phone: callbackAfterCallPhone || phone,
+                            phone: callbackPhone || phone,
                             city: city,
                             address: address,
-                            notes: callbackAfterCallNotes || notes || 'متابعة بعد المكالمة'
+                            notes: callbackNotes || notes || 'متابعة'
                         });
-                        callbackAfterCallCount++;
+                        callbackCount++;
                         
+                        // التحقق من متابعات اليوم
                         const evDate = new Date(dateObj);
                         evDate.setHours(0, 0, 0, 0);
                         if (evDate.getTime() === today.getTime()) {
-                            todayCallbacks.push(`📞 ${name} (بعد المكالمة)`);
+                            todayCallbacks.push(`${name} - ${callbackDate}`);
+                            log(`   🔔 متابعة اليوم! ${name}`, 'today');
                         }
                         
-                        log(`   ✅ تمت إضافة متابعة بعد المكالمة: ${name}`, 'success');
+                        log(`   ✅ تمت إضافة متابعة: ${name}`, 'success');
                     } else {
-                        log(`   ❌ فشل تحويل تاريخ متابعة L: "${callbackAfterCallDate}"`, 'error');
-                    }
-                }
-                
-                // ========== 3. متابعة بعد المعاينة من العمود S ==========
-                const callbackAfterApptDate = row[COL_CALLBACK_AFTER_APPT_DATE];
-                const callbackAfterApptNotes = row[COL_CALLBACK_AFTER_APPT_NOTES] || '';
-                
-                if (callbackAfterApptDate && callbackAfterApptDate.toString().trim() && callbackAfterApptDate !== 'FALSE') {
-                    log(`🔍 فحص متابعة بعد المعاينة (S) للصف ${i}: "${name}" - التاريخ: "${callbackAfterApptDate}"`, 'info');
-                    
-                    const dateObj = parseDate(callbackAfterApptDate);
-                    if (dateObj) {
-                        events.push({
-                            id: `cbS_${i}`,
-                            title: name,
-                            type: TYPE_CALLBACK_AFTER_APPT,
-                            typeKey: 'callback-after-appt',
-                            date: dateObj,
-                            time: '',
-                            phone: phone,
-                            city: city,
-                            address: address,
-                            notes: callbackAfterApptNotes || notes || 'متابعة بعد المعاينة'
-                        });
-                        callbackAfterApptCount++;
-                        
-                        const evDate = new Date(dateObj);
-                        evDate.setHours(0, 0, 0, 0);
-                        if (evDate.getTime() === today.getTime()) {
-                            todayCallbacks.push(`📋 ${name} (بعد المعاينة)`);
-                        }
-                        
-                        log(`   ✅ تمت إضافة متابعة بعد المعاينة: ${name}`, 'success');
-                    } else {
-                        log(`   ❌ فشل تحويل تاريخ متابعة S: "${callbackAfterApptDate}"`, 'error');
+                        log(`   ❌ فشل تحويل تاريخ المتابعة: "${callbackDate}"`, 'error');
                     }
                 }
             }
             
-            const totalCallbacks = callbackAfterCallCount + callbackAfterApptCount;
-            
             log('════════════════════════════════════════', 'info');
             log(`📊 النتائج النهائية:`, 'info');
             log(`   • معاينات: ${appointmentCount}`, 'success');
-            log(`   • متابعات بعد المكالمة (العمود L): ${callbackAfterCallCount}`, 'success');
-            log(`   • متابعات بعد المعاينة (العمود S): ${callbackAfterApptCount}`, 'success');
-            log(`   • إجمالي المتابعات: ${totalCallbacks}`, 'success');
+            log(`   • متابعات من العمود L: ${callbackCount}`, 'success');
             if (todayCallbacks.length > 0) {
-                log(`   • متابعات اليوم (${todayCallbacks.length}): ${todayCallbacks.join(', ')}`, 'warning');
+                log(`   • متابعات اليوم (${todayCallbacks.length}): ${todayCallbacks.join(', ')}`, 'today');
+            } else {
+                log(`   • متابعات اليوم: 0`, 'warning');
             }
             log(`   • إجمالي الأحداث: ${events.length}`, 'success');
             log('════════════════════════════════════════', 'info');
             
             if (events.length === 0) {
                 log(`⚠️ لم يتم العثور على أي مواعيد!`, 'warning');
+                log(`💡 تأكد من وجود تواريخ في الأعمدة O (معاينات) أو L (متابعات)`, 'warning');
             }
             
             statusSpan.innerHTML = `✅ ${events.length} موعد`;
@@ -371,7 +368,7 @@
     
     function updateStats(events) {
         const totalApp = events.filter(e => e.type === TYPE_APPOINTMENT).length;
-        const totalCb = events.filter(e => e.type === TYPE_CALLBACK_AFTER_CALL || e.type === TYPE_CALLBACK_AFTER_APPT).length;
+        const totalCb = events.filter(e => e.type === TYPE_CALLBACK).length;
         
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -384,7 +381,7 @@
         }).length;
         
         const todayCb = events.filter(e => {
-            if (e.type !== TYPE_CALLBACK_AFTER_CALL && e.type !== TYPE_CALLBACK_AFTER_APPT) return false;
+            if (e.type !== TYPE_CALLBACK) return false;
             const evDate = new Date(e.date);
             evDate.setHours(0, 0, 0, 0);
             return evDate.getTime() === today.getTime();
@@ -396,20 +393,8 @@
         document.getElementById('todayCb').innerText = todayCb;
         
         if (todayCb > 0) {
-            log(`🔔 لديك ${todayCb} متابعة اليوم!`, 'warning');
+            log(`🔔 لديك ${todayCb} متابعة اليوم!`, 'today');
         }
-    }
-    
-    function getEventTypeBadgeClass(type) {
-        if (type === TYPE_CALLBACK_AFTER_CALL) return 'callback-badge';
-        if (type === TYPE_CALLBACK_AFTER_APPT) return 'callback-after-call-badge';
-        return '';
-    }
-    
-    function getEventItemClass(type) {
-        if (type === TYPE_CALLBACK_AFTER_CALL) return 'callback';
-        if (type === TYPE_CALLBACK_AFTER_APPT) return 'callback-after-call';
-        return '';
     }
     
     function renderEventList(events) {
@@ -420,19 +405,20 @@
         }
         
         const sorted = [...events].sort((a, b) => a.date - b.date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         
         let html = '';
         for (const ev of sorted) {
             const dateStr = ev.date.toLocaleDateString('ar-EG', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
-            const isCallback = (ev.type === TYPE_CALLBACK_AFTER_CALL || ev.type === TYPE_CALLBACK_AFTER_APPT);
-            let typeDisplay = ev.type;
-            if (ev.type === TYPE_CALLBACK_AFTER_CALL) typeDisplay = '📞 متابعة بعد المكالمة';
-            if (ev.type === TYPE_CALLBACK_AFTER_APPT) typeDisplay = '📋 متابعة بعد المعاينة';
+            const isCallback = ev.type === TYPE_CALLBACK;
+            const isToday = ev.date.getTime() === today.getTime();
+            const todayClass = isToday ? 'today-highlight' : '';
             
-            html += `<div class="event-item ${getEventItemClass(ev.type)}" onclick="alert('${ev.title}\\n📅 ${dateStr}${ev.time ? ' 🕐 ' + ev.time : ''}\\n📞 ${ev.phone || 'غير متوفر'}\\n📍 ${ev.city || ''} ${ev.address || ''}\\n📝 ${ev.notes || ''}')">
+            html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="alert('${ev.title}\\n📅 ${dateStr}${ev.time ? ' 🕐 ' + ev.time : ''}\\n📞 ${ev.phone || 'غير متوفر'}\\n📍 ${ev.city || ''} ${ev.address || ''}\\n📝 ${ev.notes || ''}')">
                 <div class="event-title">
                     <span><i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i> ${ev.title}</span>
-                    <span class="event-type ${getEventTypeBadgeClass(ev.type)}">${typeDisplay}</span>
+                    <span class="event-type ${isCallback ? 'callback-badge' : ''}">${ev.type}</span>
                 </div>
                 <div class="event-details">
                     📅 ${dateStr} ${ev.time ? `🕐 ${ev.time}` : ''}<br>
@@ -452,23 +438,13 @@
             return;
         }
         
-        const fcEvents = events.map(ev => {
-            let color = '#c9a03d'; // للمعاينات
-            if (ev.type === TYPE_CALLBACK_AFTER_CALL) color = '#e67e22'; // برتقالي
-            if (ev.type === TYPE_CALLBACK_AFTER_APPT) color = '#3b82f6'; // أزرق
-            
-            let icon = '🏢';
-            if (ev.type === TYPE_CALLBACK_AFTER_CALL) icon = '📞';
-            if (ev.type === TYPE_CALLBACK_AFTER_APPT) icon = '📋';
-            
-            return {
-                id: ev.id,
-                title: `${icon} ${ev.title}`,
-                start: ev.date,
-                backgroundColor: color,
-                extendedProps: { phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, type: ev.type, time: ev.time }
-            };
-        });
+        const fcEvents = events.map(ev => ({
+            id: ev.id,
+            title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : '📞'} ${ev.title}`,
+            start: ev.date,
+            backgroundColor: ev.type === TYPE_APPOINTMENT ? '#c9a03d' : '#e67e22',
+            extendedProps: { phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, type: ev.type, time: ev.time }
+        }));
         
         calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
@@ -501,7 +477,7 @@
         
         if (filter === 'all') filteredEvents = [...allEvents];
         else if (filter === 'appointment') filteredEvents = allEvents.filter(e => e.type === TYPE_APPOINTMENT);
-        else filteredEvents = allEvents.filter(e => e.type === TYPE_CALLBACK_AFTER_CALL || e.type === TYPE_CALLBACK_AFTER_APPT);
+        else filteredEvents = allEvents.filter(e => e.type === TYPE_CALLBACK);
         
         updateStats(filteredEvents);
         renderEventList(filteredEvents);
@@ -517,8 +493,8 @@
     window.addEventListener('load', () => {
         log('🚀 بدء تشغيل التطبيق - نظام إدارة العقارات', 'success');
         log(`📍 المعاينات: العمود O (index ${COL_APPOINTMENT_DATE})`, 'info');
-        log(`📍 متابعة بعد المكالمة: العمود L (index ${COL_CALLBACK_AFTER_CALL_DATE})`, 'info');
-        log(`📍 متابعة بعد المعاينة: العمود S (index ${COL_CALLBACK_AFTER_APPT_DATE})`, 'info');
+        log(`📍 المتابعات: العمود L (index ${COL_CALLBACK_DATE})`, 'info');
+        log(`📅 التاريخ الحالي: ${new Date().toLocaleDateString('ar-EG')}`, 'info');
         
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => setFilter(btn.dataset.filter));
