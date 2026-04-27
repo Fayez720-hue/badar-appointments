@@ -7,8 +7,6 @@
     <!-- FullCalendar CSS & JS -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -55,6 +53,14 @@
             padding: 8px 16px;
             border-radius: 32px;
             font-size: 0.85rem;
+        }
+        .status-badge.error {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .status-badge.success {
+            background: #dcfce7;
+            color: #16a34a;
         }
         .refresh-btn {
             background: #1e5f4b;
@@ -186,6 +192,15 @@
             padding: 40px;
             color: #2c7a5e;
         }
+        .error-message {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+            margin: 20px;
+        }
         @media (max-width: 780px) {
             body { padding: 12px; }
         }
@@ -196,7 +211,7 @@
     <div class="header">
         <h1>
             📊 نظام المعاينات والمتابعات
-            <small>معاينات | متابعات (Callbacks)</small>
+            <small>بيانات حقيقية</small>
         </h1>
         <div>
             <button class="refresh-btn" id="refreshDataBtn">🔄 تحديث البيانات</button>
@@ -205,7 +220,7 @@
     </div>
 
     <div class="stats-grid" id="statsGrid">
-        <div class="stat-card"><h3>🏡 إجمالي المعاينات</h3><div class="stat-number" id="totalAppointments">-</div></div>
+        <div class="stat-card"><h3>🏠 إجمالي المعاينات</h3><div class="stat-number" id="totalAppointments">-</div></div>
         <div class="stat-card"><h3>📞 إجمالي المتابعات (Callbacks)</h3><div class="stat-number" id="totalCallbacks">-</div></div>
         <div class="stat-card"><h3>🗓️ المعاينات القادمة</h3><div class="stat-number" id="upcomingAppointments">-</div></div>
         <div class="stat-card"><h3>⏰ متابعات هذا الأسبوع</h3><div class="stat-number" id="weekCallbacks">-</div></div>
@@ -228,26 +243,16 @@
         </div>
     </div>
     <div class="footer-note">
-        ✅ البيانات مستخرجة من Google Sheets حسب الأعمدة: "تاريخ المعاينة" للمواعيد، "Callback Date" للمتابعات.
-        📞 يتم عرض رقم الهاتف من عمود "الموبايل" أو "Callback phone".
+        ✅ يعرض هذا التطبيق البيانات الحقيقية من Google Sheets الخاصة بك فقط<br>
+        📍 الأعمدة المستخدمة: "تاريخ المعاينة" (عمود O) و "Callback Date" (عمود L)
     </div>
 </div>
 
 <script>
-    // ======================= الإعدادات =======================
-    // استبدل هذه القيم ببيانات جدول Google Sheets الخاص بك
-    const SPREADSHEET_ID = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';   // ضع معرف الجدول
-   const SHEET_NAME = 'مبيعات';                          // اسم الورقة
-    const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';                  // مفتاح API (يُفضل تقييده)
-    
-    // إذا لم ترغب في استخدام API مباشرة، يمكن استخدام Google Apps Script Web App.
-    // لكن لتجربة سريعة، سنقوم بإنشاء بيانات نموذجية تعكس هيكل الأعمدة الفعلية.
-    
-    // هيكل الأعمدة المتوقع (حسب وصفك):
-    // 0: رقم, 1: الاسم, 2: الموبايل, 3: التاريخ, 4: حالة العميل الاولى, 5: التصنيف, 6: محافظة, 7: العنوان, 
-    // 8: ملاحظات محمد, 9: تسجيل مكالمات, 10: Callback WhatsApp, 11: Callback Date, 12: Callback phone, 
-    // 13: Callback Notes, 14: تاريخ المعاينة, 15: وقت المعاينة, 16: لينك المقايسة, 17: التصنيف بعد المعاينة, 
-    // 18: Callback Date Appointment, 19: Callback after Appointment, 20: اشياء اخرى, 21: معاينات تمت
+    // ======================= إعدادات Google Sheets الخاصة بك =======================
+    const SPREADSHEET_ID = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
+    const SHEET_NAME = 'مبيعات';
+    const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
     
     let eventsList = [];
     let calendarInstance = null;
@@ -255,36 +260,51 @@
     const TYPE_APPOINTMENT = 'معاينة';
     const TYPE_CALLBACK = 'متابعة';
     
-    // جلب البيانات من Google Sheets
-    async function fetchSheetData() {
+    // جلب البيانات الحقيقية فقط من Google Sheets (بدون بيانات تجريبية)
+    async function fetchRealSheetData() {
         const statusSpan = document.getElementById('syncStatus');
-        statusSpan.innerHTML = '⏳ جلب البيانات من جوجل شيتس...';
+        statusSpan.innerHTML = '⏳ جلب البيانات من Google Sheets...';
+        statusSpan.className = 'status-badge';
+        
         try {
-            // نطاق واسع لجلب كل الأعمدة (حتى عمود 22)
             const range = `${SHEET_NAME}!A1:V1000`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
+            
+            console.log("جاري الاتصال بـ:", url);
             const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            if (!response.ok) {
+                throw new Error(`خطأ HTTP ${response.status}: ${response.statusText}`);
+            }
+            
             const data = await response.json();
             const rows = data.values;
-            if (!rows || rows.length < 2) throw new Error("لا توجد بيانات كافية");
+            
+            if (!rows || rows.length < 2) {
+                throw new Error("لا توجد بيانات في الجدول. تأكد من أن الورقة تحتوي على بيانات");
+            }
+            
+            console.log(`تم العثور على ${rows.length} صف (بما في ذلك العنوان)`);
             
             const events = [];
+            let appointmentCount = 0;
+            let callbackCount = 0;
+            
             // تخطي الصف الأول (العناوين)
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
-                // الأعمدة حسب الفهرس
-                const name = row[1] || 'غير محدد';           // الاسم
-                const phone = row[2] || row[12] || '';       // الموبايل أو Callback phone
-                const appointmentDateRaw = row[14] || '';    // تاريخ المعاينة
-                const appointmentTime = row[15] || '';       // وقت المعاينة
-                const callbackDateRaw = row[11] || '';       // Callback Date
-                const callbackPhone = row[12] || row[2] || '';
+                if (!row || row.length < 15) continue;
+                
+                const name = row[1] || 'غير محدد';
+                const phone = row[2] || row[12] || '';
+                const appointmentDateRaw = row[14] || '';    // تاريخ المعاينة - عمود O
+                const appointmentTime = row[15] || '';       // وقت المعاينة - عمود P
+                const callbackDateRaw = row[11] || '';       // Callback Date - عمود L
                 const callbackNotes = row[13] || '';
                 const generalNotes = row[8] || '';
                 
                 // إضافة معاينة إذا كان التاريخ موجوداً
-                if (appointmentDateRaw && appointmentDateRaw.trim() !== '') {
+                if (appointmentDateRaw && appointmentDateRaw.toString().trim() !== '') {
                     let fullDate = parseDate(appointmentDateRaw, appointmentTime);
                     if (fullDate) {
                         events.push({
@@ -295,14 +315,16 @@
                             dateStr: appointmentDateRaw,
                             time: appointmentTime,
                             phone: phone,
-                            notes: generalNotes || callbackNotes,
-                            extra: `📝 ${generalNotes || 'لا توجد ملاحظات'}`
+                            notes: generalNotes || callbackNotes || 'لا توجد ملاحظات'
                         });
+                        appointmentCount++;
+                    } else {
+                        console.warn(`الصف ${i}: لا يمكن تحويل تاريخ المعاينة: ${appointmentDateRaw}`);
                     }
                 }
                 
                 // إضافة متابعة (Callback) إذا كان التاريخ موجوداً
-                if (callbackDateRaw && callbackDateRaw.trim() !== '') {
+                if (callbackDateRaw && callbackDateRaw.toString().trim() !== '') {
                     let fullDate = parseDate(callbackDateRaw, '');
                     if (fullDate) {
                         events.push({
@@ -312,48 +334,80 @@
                             start: fullDate,
                             dateStr: callbackDateRaw,
                             time: '',
-                            phone: callbackPhone || phone,
-                            notes: callbackNotes || generalNotes,
-                            extra: `📞 متابعة: ${callbackNotes || generalNotes || ''}`
+                            phone: row[12] || phone,
+                            notes: callbackNotes || generalNotes || 'لا توجد ملاحظات'
                         });
+                        callbackCount++;
+                    } else {
+                        console.warn(`الصف ${i}: لا يمكن تحويل تاريخ المتابعة: ${callbackDateRaw}`);
                     }
                 }
             }
             
-            if (events.length === 0) throw new Error("لم يتم العثور على مواعيد");
-            statusSpan.innerHTML = '✅ تم التحديث من Google Sheets';
+            console.log(`تم استخراج: ${appointmentCount} معاينة, ${callbackCount} متابعة`);
+            
+            if (events.length === 0) {
+                throw new Error("لم يتم العثور على أي مواعيد صالحة في الجدول. تأكد من وجود تواريخ في عمود 'تاريخ المعاينة' أو 'Callback Date'");
+            }
+            
+            statusSpan.innerHTML = `✅ تم جلب ${events.length} حدث (${appointmentCount} معاينة، ${callbackCount} متابعة)`;
+            statusSpan.className = 'status-badge success';
             return events;
+            
         } catch (error) {
             console.error("فشل الجلب:", error);
-            statusSpan.innerHTML = '⚠️ عرض بيانات تجريبية (تعذر الاتصال)';
-            return generateMockDataFromStructure();
+            statusSpan.innerHTML = `❌ خطأ: ${error.message}`;
+            statusSpan.className = 'status-badge error';
+            
+            // عرض رسالة خطأ واضحة للمستخدم
+            const container = document.getElementById('upcomingEventsList');
+            container.innerHTML = `
+                <div class="error-message">
+                    <strong>⚠️ لا يمكن جلب البيانات</strong><br><br>
+                    ${error.message}<br><br>
+                    تأكد من:<br>
+                    1. أن Spreadsheet ID صحيح<br>
+                    2. أن API Key صالح ومفعل له Google Sheets API<br>
+                    3. أن الجدول مشترك مع "أي شخص لديه الرابط" على الأقل للقراءة<br>
+                    4. أن اسم الورقة "${SHEET_NAME}" صحيح
+                </div>
+            `;
+            
+            return [];
         }
     }
     
     // دالة لتحويل التاريخ من صيغ مختلفة
     function parseDate(dateStr, timeStr) {
         if (!dateStr) return null;
-        // محاولة تحويل صيغة YYYY-MM-DD أو DD/MM/YYYY أو غيرها
+        
         let cleaned = dateStr.toString().trim();
-        let parts = cleaned.includes('-') ? cleaned.split('-') : 
-                    cleaned.includes('/') ? cleaned.split('/') : null;
         let year, month, day;
-        if (parts && parts.length === 3) {
-            // افتراض YYYY-MM-DD أو DD/MM/YYYY
-            if (parts[0].length === 4) {
-                year = parseInt(parts[0]);
-                month = parseInt(parts[1]) - 1;
-                day = parseInt(parts[2]);
-            } else {
-                day = parseInt(parts[0]);
-                month = parseInt(parts[1]) - 1;
-                year = parseInt(parts[2]);
-            }
+        
+        // محاولة صيغة YYYY-MM-DD
+        let match = cleaned.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+        if (match) {
+            year = parseInt(match[1]);
+            month = parseInt(match[2]) - 1;
+            day = parseInt(match[3]);
         } else {
-            // محاولة new Date مباشرة
-            let d = new Date(cleaned);
-            if (!isNaN(d.getTime())) return d;
-            return null;
+            // محاولة صيغة DD/MM/YYYY
+            match = cleaned.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if (match) {
+                day = parseInt(match[1]);
+                month = parseInt(match[2]) - 1;
+                year = parseInt(match[3]);
+            } else {
+                // محاولة new Date مباشرة
+                let d = new Date(cleaned);
+                if (!isNaN(d.getTime())) {
+                    year = d.getFullYear();
+                    month = d.getMonth();
+                    day = d.getDate();
+                } else {
+                    return null;
+                }
+            }
         }
         
         let hour = 12, minute = 0;
@@ -364,26 +418,9 @@
                 minute = parseInt(timeParts[2]);
             }
         }
+        
         let dateObj = new Date(year, month, day, hour, minute);
         return isNaN(dateObj.getTime()) ? null : dateObj;
-    }
-    
-    // بيانات تجريبية تعكس هيكل الجدول الفعلي
-    function generateMockDataFromStructure() {
-        const today = new Date();
-        const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-        const day3 = new Date(today); day3.setDate(today.getDate() + 3);
-        const day5 = new Date(today); day5.setDate(today.getDate() + 5);
-        const weekLater = new Date(today); weekLater.setDate(today.getDate() + 8);
-        
-        return [
-            { id: 'm1', title: 'أحمد محمد', type: TYPE_APPOINTMENT, start: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 0), dateStr: '2025-04-27', time: '10:00', phone: '01001234567', notes: 'أول معاينة - خلع ضرس', extra: '' },
-            { id: 'm2', title: 'سارة خالد', type: TYPE_APPOINTMENT, start: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 11, 30), dateStr: '2025-04-28', time: '11:30', phone: '01112345678', notes: 'حشو تجميلي', extra: '' },
-            { id: 'm3', title: 'محمد علي', type: TYPE_CALLBACK, start: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 14, 0), dateStr: '2025-04-27', time: '', phone: '01223456789', notes: 'تذكير بمتابعة التقويم', extra: '' },
-            { id: 'm4', title: 'فاطمة حسن', type: TYPE_CALLBACK, start: new Date(day3.getFullYear(), day3.getMonth(), day3.getDate(), 9, 15), dateStr: '2025-04-30', time: '09:15', phone: '01098765432', notes: 'تأكيد موعد المعاينة', extra: '' },
-            { id: 'm5', title: 'يوسف رامي', type: TYPE_APPOINTMENT, start: new Date(day5.getFullYear(), day5.getMonth(), day5.getDate(), 13, 0), dateStr: '2025-05-02', time: '13:00', phone: '01567890123', notes: 'تركيب تقويم', extra: '' },
-            { id: 'm6', title: 'ليلى عماد', type: TYPE_CALLBACK, start: new Date(weekLater.getFullYear(), weekLater.getMonth(), weekLater.getDate(), 16, 45), dateStr: '2025-05-05', time: '16:45', phone: '01134567890', notes: 'متابعة بعد الحشو', extra: '' },
-        ];
     }
     
     // تحديث الإحصائيات
@@ -392,7 +429,7 @@
         const totalCb = events.filter(e => e.type === TYPE_CALLBACK).length;
         
         const now = new Date();
-        now.setHours(0,0,0,0);
+        now.setHours(0, 0, 0, 0);
         const upcomingApps = events.filter(e => {
             return e.type === TYPE_APPOINTMENT && new Date(e.start) >= now;
         }).length;
@@ -414,25 +451,25 @@
     function renderUpcomingList(events) {
         const container = document.getElementById('upcomingEventsList');
         const now = new Date();
-        now.setHours(0,0,0,0);
+        now.setHours(0, 0, 0, 0);
         const limit = new Date(now);
         limit.setDate(now.getDate() + 7);
         
         const upcoming = events.filter(ev => {
             const evDate = new Date(ev.start);
-            evDate.setHours(0,0,0,0);
+            evDate.setHours(0, 0, 0, 0);
             return evDate >= now && evDate <= limit;
-        }).sort((a,b) => a.start - b.start);
+        }).sort((a, b) => a.start - b.start);
         
         if (upcoming.length === 0) {
-            container.innerHTML = '<div style="text-align:center;padding:20px;">✨ لا توجد أحداث قريبة</div>';
+            container.innerHTML = '<div style="text-align:center;padding:20px;">✨ لا توجد أحداث قريبة خلال 7 أيام</div>';
             return;
         }
         
         let html = '';
         for (const ev of upcoming) {
-            const dateStr = ev.start.toLocaleDateString('ar-EG', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
-            const timeStr = ev.time || (ev.start.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' }));
+            const dateStr = ev.start.toLocaleDateString('ar-EG', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+            const timeStr = ev.time || (ev.start.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }));
             const isCallback = ev.type === TYPE_CALLBACK;
             html += `
                 <div class="event-item ${isCallback ? 'callback' : ''}">
@@ -456,9 +493,14 @@
         const calendarEl = document.getElementById('calendar');
         if (calendarInstance) calendarInstance.destroy();
         
+        if (events.length === 0) {
+            calendarEl.innerHTML = '<div class="error-message">لا توجد بيانات لعرضها في التقويم</div>';
+            return;
+        }
+        
         const fcEvents = events.map(ev => ({
             id: ev.id,
-            title: `${ev.type === TYPE_APPOINTMENT ? '🦷' : '📞'} ${ev.title}`,
+            title: `${ev.type === TYPE_APPOINTMENT ? '🏠' : '📞'} ${ev.title}`,
             start: ev.start,
             backgroundColor: ev.type === TYPE_APPOINTMENT ? '#2c9b77' : '#f4b942',
             borderColor: ev.type === TYPE_APPOINTMENT ? '#1e6b51' : '#dd9d2b',
@@ -492,24 +534,31 @@
     async function refreshDashboard() {
         const statusSpan = document.getElementById('syncStatus');
         statusSpan.innerHTML = '⏳ جاري التحديث...';
-        const rawEvents = await fetchSheetData();
-        eventsList = rawEvents;
-        updateStats(eventsList);
-        renderUpcomingList(eventsList);
-        initCalendar(eventsList);
-        statusSpan.innerHTML = '✅ تم التحديث بنجاح';
-        setTimeout(() => {
-            if (document.getElementById('syncStatus').innerHTML === '✅ تم التحديث بنجاح')
-                statusSpan.innerHTML = '✅ محدث';
-        }, 2000);
+        statusSpan.className = 'status-badge';
+        
+        const realEvents = await fetchRealSheetData();
+        
+        if (realEvents.length > 0) {
+            eventsList = realEvents;
+            updateStats(eventsList);
+            renderUpcomingList(eventsList);
+            initCalendar(eventsList);
+        } else {
+            // مسح أي بيانات سابقة
+            eventsList = [];
+            updateStats([]);
+            renderUpcomingList([]);
+            initCalendar([]);
+        }
     }
     
+    // بدء التطبيق
     window.addEventListener('load', () => {
         refreshDashboard();
         document.getElementById('refreshDataBtn').addEventListener('click', refreshDashboard);
     });
     
-    console.log("✅ النظام جاهز - يعمل مع هيكل الأعمدة: تاريخ المعاينة + Callback Date");
+    console.log("✅ التطبيق يعمل - يعرض البيانات الحقيقية فقط من Google Sheets");
 </script>
 </body>
 </html>
