@@ -22,6 +22,8 @@
         .refresh-btn { background: linear-gradient(135deg, #c9a03d, #8b6914); border: none; color: white; padding: 8px 14px; border-radius: 30px; cursor: pointer; margin-left: 8px; transition: all 0.2s; }
         .refresh-btn:hover { transform: translateY(-2px); }
         .status-badge { background: #eef2ff; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; }
+        .status-badge.error { background: #fee2e2; color: #dc2626; }
+        .status-badge.success { background: #dcfce7; color: #16a34a; }
         
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
         @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
@@ -61,6 +63,10 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         .footer-note { margin-top: 16px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.2); padding: 8px; border-radius: 20px; }
+        
+        .error-message { text-align: center; padding: 40px; background: #fee2e2; border-radius: 16px; margin: 20px; }
+        .error-message i { font-size: 2rem; color: #dc2626; margin-bottom: 15px; display: block; }
+        .error-message button { background: #c9a03d; border: none; padding: 8px 20px; border-radius: 25px; color: white; cursor: pointer; margin-top: 15px; }
     </style>
 </head>
 <body>
@@ -90,7 +96,7 @@
         <div class="events-panel"><div class="section-title">📋 قائمة المواعيد</div><div id="eventList"><div class="loading"><div class="spinner"></div></div></div></div>
     </div>
     
-    <div class="footer-note"><i class="fas fa-info-circle"></i> 🏢 المعاينات | 📞 متابعات بعد المكالمة (العمود L) | 📋 متابعات بعد المعاينة (العمود S)</div>
+    <div class="footer-note"><i class="fas fa-info-circle"></i> 🏢 المعاينات: العمود O | 📞 متابعات بعد المكالمة: العمود L | 📋 متابعات بعد المعاينة: العمود S</div>
 </div>
 
 <script>
@@ -99,24 +105,18 @@
     const SHEET_NAME = 'مبيعات';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
     
-    // الأعمدة المشتركة
-    const COL_NAME = 1;              // B - الاسم
-    const COL_PHONE = 2;             // C - الموبايل
-    const COL_CITY = 6;              // G - المحافظة
-    const COL_ADDRESS = 7;           // H - العنوان
-    const COL_NOTES = 8;             // I - ملاحظات محمد
-    
-    // المعاينات
-    const COL_APPOINTMENT_DATE = 14; // O - تاريخ المعاينة
-    const COL_APPOINTMENT_TIME = 15; // P - وقت المعاينة
-    
-    // متابعة بعد المكالمة (العمود L)
-    const COL_CALLBACK_AFTER_CALL_DATE = 11;  // L - Callback Date
-    const COL_CALLBACK_AFTER_CALL_NOTES = 13; // N - Callback Notes
-    
-    // متابعة بعد المعاينة (العمود S)
-    const COL_CALLBACK_AFTER_APPT_DATE = 18;  // S - Callback Date Appointment
-    const COL_CALLBACK_AFTER_APPT_NOTES = 20; // U - ملاحظات المتابعة
+    // الأعمدة
+    const COL_NAME = 1;
+    const COL_PHONE = 2;
+    const COL_CITY = 6;
+    const COL_ADDRESS = 7;
+    const COL_NOTES = 8;
+    const COL_APPOINTMENT_DATE = 14;
+    const COL_APPOINTMENT_TIME = 15;
+    const COL_CALLBACK_AFTER_CALL_DATE = 11;
+    const COL_CALLBACK_AFTER_CALL_NOTES = 13;
+    const COL_CALLBACK_AFTER_APPT_DATE = 18;
+    const COL_CALLBACK_AFTER_APPT_NOTES = 20;
     
     let allEvents = [];
     let filteredEvents = [];
@@ -127,38 +127,61 @@
     const TYPE_CALLBACK_AFTER_CALL = 'متابعة بعد المكالمة';
     const TYPE_CALLBACK_AFTER_APPT = 'متابعة بعد المعاينة';
     
-    // دالة متقدمة لتحويل التاريخ
+    function showError(message) {
+        const calendarEl = document.getElementById('calendar');
+        const eventListEl = document.getElementById('eventList');
+        const errorHtml = `
+            <div class="error-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p><strong>⚠️ ${message}</strong></p>
+                <p style="font-size: 0.8rem; margin-top: 10px;">تأكد من:</p>
+                <ul style="text-align: right; padding-right: 20px; font-size: 0.75rem;">
+                    <li>مشاركة الجدول: اضغط "مشاركة" → "عام" → "أي شخص لديه الرابط"</li>
+                    <li>تفعيل Google Sheets API في Google Cloud Console</li>
+                    <li>صحة معرف الجدول (Spreadsheet ID)</li>
+                    <li>وجود بيانات في الأعمدة O, L, S</li>
+                </ul>
+                <button onclick="location.reload()">🔄 إعادة المحاولة</button>
+            </div>
+        `;
+        calendarEl.innerHTML = errorHtml;
+        eventListEl.innerHTML = errorHtml;
+        
+        document.getElementById('totalApp').innerText = '0';
+        document.getElementById('totalCb').innerText = '0';
+        document.getElementById('todayApp').innerText = '0';
+        document.getElementById('todayCb').innerText = '0';
+        
+        const statusSpan = document.getElementById('status');
+        statusSpan.innerHTML = '❌ فشل الجلب';
+        statusSpan.className = 'status-badge error';
+    }
+    
     function parseDate(dateStr) {
         if (!dateStr) return null;
-        
         let original = dateStr.toString().trim();
         if (original === 'FALSE' || original === 'TRUE' || original === '') return null;
-        
         let cleaned = original.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
         
         let day, month, year;
-        
         let parts = cleaned.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
         if (parts) {
             day = parseInt(parts[1]);
             month = parseInt(parts[2]) - 1;
             year = parseInt(parts[3]);
-        }
-        else {
+        } else {
             parts = cleaned.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
             if (parts) {
                 year = parseInt(parts[1]);
                 month = parseInt(parts[2]) - 1;
                 day = parseInt(parts[3]);
-            }
-            else {
+            } else {
                 parts = cleaned.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
                 if (parts) {
                     year = parseInt(parts[1]);
                     month = parseInt(parts[2]) - 1;
                     day = parseInt(parts[3]);
-                }
-                else {
+                } else {
                     parts = cleaned.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
                     if (parts) {
                         day = parseInt(parts[1]);
@@ -175,94 +198,66 @@
         return !isNaN(dateObj.getTime()) ? dateObj : null;
     }
     
-    // دالة متقدمة لتحويل الوقت - تدعم جميع التنسيقات
     function parseTime(timeStr) {
         if (!timeStr) return { hour24: 12, minute: 0, display: '12:00 م' };
-        
         let clean = timeStr.toString().trim();
         if (clean === 'FALSE' || clean === 'TRUE' || clean === '') {
             return { hour24: 12, minute: 0, display: '12:00 م' };
         }
         
-        let hour24 = 12;
-        let minute = 0;
-        let displayTime = '';
+        let hour24 = 12, minute = 0, displayTime = '';
         
-        // تنسيق: "2:00:00 م" أو "3:00:00 م" أو "10:00:00 ص"
         let match = clean.match(/(\d{1,2}):(\d{2}):(\d{2})\s*([مص])/);
         if (match) {
             let hour = parseInt(match[1]);
             minute = parseInt(match[2]);
             let period = match[4];
-            
             if (period === 'م') {
                 hour24 = hour === 12 ? 12 : hour + 12;
             } else {
                 hour24 = hour === 12 ? 0 : hour;
             }
-            
             let hour12 = hour24 % 12 || 12;
             let displayPeriod = hour24 < 12 ? 'ص' : 'م';
             displayTime = `${hour12}:${minute.toString().padStart(2, '0')} ${displayPeriod}`;
-            
             return { hour24, minute, display: displayTime };
         }
         
-        // تنسيق: "2:00 م" أو "3:00 م" (بدون ثواني)
         match = clean.match(/(\d{1,2}):(\d{2})\s*([مص])/);
         if (match) {
             let hour = parseInt(match[1]);
             minute = parseInt(match[2]);
             let period = match[3];
-            
             if (period === 'م') {
                 hour24 = hour === 12 ? 12 : hour + 12;
             } else {
                 hour24 = hour === 12 ? 0 : hour;
             }
-            
             let hour12 = hour24 % 12 || 12;
             let displayPeriod = hour24 < 12 ? 'ص' : 'م';
             displayTime = `${hour12}:${minute.toString().padStart(2, '0')} ${displayPeriod}`;
-            
             return { hour24, minute, display: displayTime };
         }
         
-        // تنسيق: "14:30" (24 ساعة)
-        match = clean.match(/^(\d{1,2}):(\d{2})$/);
-        if (match) {
-            hour24 = parseInt(match[1]);
-            minute = parseInt(match[2]);
-            let hour12 = hour24 % 12 || 12;
-            let period = hour24 < 12 ? 'ص' : 'م';
-            displayTime = `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
-            
-            return { hour24, minute, display: displayTime };
-        }
+        if (clean.includes('12:00:00 ص')) return { hour24: 0, minute: 0, display: '12:00 ص' };
+        if (clean.includes('12:00:00 م')) return { hour24: 12, minute: 0, display: '12:00 م' };
         
-        // تنسيق: "12:00:00 ص" (منتصف الليل)
-        if (clean.includes('12:00:00 ص')) {
-            return { hour24: 0, minute: 0, display: '12:00 ص' };
-        }
-        
-        // تنسيق: "12:00:00 م" (الظهر)
-        if (clean.includes('12:00:00 م')) {
-            return { hour24: 12, minute: 0, display: '12:00 م' };
-        }
-        
-        // افتراضي
         return { hour24: 12, minute: 0, display: '12:00 م' };
     }
     
     async function fetchData() {
         const statusSpan = document.getElementById('status');
         statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري...';
+        statusSpan.className = 'status-badge';
         
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:Z500?key=${API_KEY}`;
             const response = await fetch(url);
             
             if (!response.ok) {
+                if (response.status === 403) {
+                    throw new Error("خطأ 403: يرجى مشاركة الجدول كـ 'عام'");
+                }
                 throw new Error(`HTTP ${response.status}`);
             }
             
@@ -270,7 +265,7 @@
             const rows = data.values;
             
             if (!rows || rows.length < 2) {
-                throw new Error("لا توجد بيانات");
+                throw new Error("لا توجد بيانات في الجدول");
             }
             
             const events = [];
@@ -285,83 +280,67 @@
                 const address = row[COL_ADDRESS] || '';
                 const notes = row[COL_NOTES] || '';
                 
-                // ========== المعاينات من العمود O و P ==========
+                // المعاينات
                 const appointmentDate = row[COL_APPOINTMENT_DATE];
                 const appointmentTimeRaw = row[COL_APPOINTMENT_TIME] || '';
                 
                 if (appointmentDate && appointmentDate.toString().trim() && appointmentDate !== 'FALSE') {
                     const dateObj = parseDate(appointmentDate);
                     if (dateObj) {
-                        // تحويل الوقت
                         const timeInfo = parseTime(appointmentTimeRaw);
-                        
-                        // تحديث كائن التاريخ بالوقت الصحيح
                         dateObj.setHours(timeInfo.hour24, timeInfo.minute, 0);
-                        
                         events.push({
-                            id: `app_${i}`,
-                            title: name,
-                            type: TYPE_APPOINTMENT,
-                            date: dateObj,
-                            displayTime: timeInfo.display,
-                            phone: phone,
-                            city: city,
-                            address: address,
-                            notes: notes
+                            id: `app_${i}`, title: name, type: TYPE_APPOINTMENT,
+                            date: dateObj, displayTime: timeInfo.display,
+                            phone: phone, city: city, address: address, notes: notes
                         });
                     }
                 }
                 
-                // ========== متابعة بعد المكالمة من العمود L ==========
-                const callbackAfterCallDate = row[COL_CALLBACK_AFTER_CALL_DATE];
-                const callbackAfterCallPhone = row[COL_CALLBACK_AFTER_CALL_PHONE] || '';
-                const callbackAfterCallNotes = row[COL_CALLBACK_AFTER_CALL_NOTES] || '';
+                // متابعة بعد المكالمة من العمود L
+                const callbackDate = row[COL_CALLBACK_AFTER_CALL_DATE];
+                const callbackNotes = row[COL_CALLBACK_AFTER_CALL_NOTES] || '';
                 
-                if (callbackAfterCallDate && callbackAfterCallDate.toString().trim() && callbackAfterCallDate !== 'FALSE') {
-                    const dateObj = parseDate(callbackAfterCallDate);
+                if (callbackDate && callbackDate.toString().trim() && callbackDate !== 'FALSE') {
+                    const dateObj = parseDate(callbackDate);
                     if (dateObj) {
                         events.push({
-                            id: `cbL_${i}`,
-                            title: name,
-                            type: TYPE_CALLBACK_AFTER_CALL,
-                            date: dateObj,
-                            displayTime: '',
-                            phone: callbackAfterCallPhone || phone,
-                            city: city,
-                            address: address,
-                            notes: callbackAfterCallNotes || notes || 'متابعة بعد المكالمة'
+                            id: `cbL_${i}`, title: name, type: TYPE_CALLBACK_AFTER_CALL,
+                            date: dateObj, displayTime: '', phone: phone,
+                            city: city, address: address, notes: callbackNotes || notes || 'متابعة'
                         });
                     }
                 }
                 
-                // ========== متابعة بعد المعاينة من العمود S ==========
-                const callbackAfterApptDate = row[COL_CALLBACK_AFTER_APPT_DATE];
-                const callbackAfterApptNotes = row[COL_CALLBACK_AFTER_APPT_NOTES] || '';
+                // متابعة بعد المعاينة من العمود S
+                const callbackApptDate = row[COL_CALLBACK_AFTER_APPT_DATE];
+                const callbackApptNotes = row[COL_CALLBACK_AFTER_APPT_NOTES] || '';
                 
-                if (callbackAfterApptDate && callbackAfterApptDate.toString().trim() && callbackAfterApptDate !== 'FALSE') {
-                    const dateObj = parseDate(callbackAfterApptDate);
+                if (callbackApptDate && callbackApptDate.toString().trim() && callbackApptDate !== 'FALSE') {
+                    const dateObj = parseDate(callbackApptDate);
                     if (dateObj) {
                         events.push({
-                            id: `cbS_${i}`,
-                            title: name,
-                            type: TYPE_CALLBACK_AFTER_APPT,
-                            date: dateObj,
-                            displayTime: '',
-                            phone: phone,
-                            city: city,
-                            address: address,
-                            notes: callbackAfterApptNotes || notes || 'متابعة بعد المعاينة'
+                            id: `cbS_${i}`, title: name, type: TYPE_CALLBACK_AFTER_APPT,
+                            date: dateObj, displayTime: '', phone: phone,
+                            city: city, address: address, notes: callbackApptNotes || notes || 'متابعة'
                         });
                     }
                 }
             }
             
+            if (events.length === 0) {
+                throw new Error("لم يتم العثور على أي مواعيد في الجدول");
+            }
+            
             statusSpan.innerHTML = `✅ ${events.length} موعد`;
+            statusSpan.className = 'status-badge success';
             return events;
             
         } catch (error) {
             console.error("خطأ:", error);
             statusSpan.innerHTML = '❌ فشل الجلب';
+            statusSpan.className = 'status-badge error';
+            showError(error.message);
             return [];
         }
     }
@@ -401,15 +380,11 @@
         }
         
         const sorted = [...events].sort((a, b) => a.date - b.date);
-        
         let html = '';
         for (const ev of sorted) {
             const dateStr = ev.date.toLocaleDateString('ar-EG', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
-            const isCallback = (ev.type === TYPE_CALLBACK_AFTER_CALL || ev.type === TYPE_CALLBACK_AFTER_APPT);
+            const isCallback = (ev.type !== TYPE_APPOINTMENT);
             let typeDisplay = ev.type;
-            if (ev.type === TYPE_CALLBACK_AFTER_CALL) typeDisplay = '📞 متابعة بعد المكالمة';
-            if (ev.type === TYPE_CALLBACK_AFTER_APPT) typeDisplay = '📋 متابعة بعد المعاينة';
-            
             const timeDisplay = ev.displayTime ? `🕐 ${ev.displayTime}` : '';
             
             html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="alert('${ev.title}\\n📅 ${dateStr}\\n${timeDisplay}\\n📞 ${ev.phone || 'غير متوفر'}\\n📍 ${ev.city || ''} ${ev.address || ''}\\n📝 ${ev.notes || ''}')">
@@ -438,14 +413,8 @@
         const fcEvents = events.map(ev => {
             let color = '#c9a03d';
             let icon = '🏢';
-            if (ev.type === TYPE_CALLBACK_AFTER_CALL) {
-                color = '#e67e22';
-                icon = '📞';
-            }
-            if (ev.type === TYPE_CALLBACK_AFTER_APPT) {
-                color = '#3b82f6';
-                icon = '📋';
-            }
+            if (ev.type === TYPE_CALLBACK_AFTER_CALL) { color = '#e67e22'; icon = '📞'; }
+            if (ev.type === TYPE_CALLBACK_AFTER_APPT) { color = '#3b82f6'; icon = '📋'; }
             
             let titleWithTime = ev.title;
             if (ev.displayTime && ev.displayTime !== '') {
@@ -453,33 +422,23 @@
             }
             
             return {
-                id: ev.id,
-                title: `${icon} ${titleWithTime}`,
-                start: ev.date,
-                backgroundColor: color,
-                extendedProps: { phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, type: ev.type, displayTime: ev.displayTime }
+                id: ev.id, title: `${icon} ${titleWithTime}`,
+                start: ev.date, backgroundColor: color,
+                extendedProps: { phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, displayTime: ev.displayTime }
             };
         });
         
         calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            locale: 'ar',
-            direction: 'rtl',
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: window.innerWidth < 768 ? '' : 'dayGridMonth,listWeek'
-            },
+            initialView: 'dayGridMonth', locale: 'ar', direction: 'rtl',
+            headerToolbar: { left: 'prev,next today', center: 'title', right: window.innerWidth < 768 ? '' : 'dayGridMonth,listWeek' },
             buttonText: { today: 'اليوم', month: 'شهر', week: 'أسبوع', list: 'قائمة' },
             events: fcEvents,
             eventClick: (info) => {
-                const ev = info.event;
-                const ext = ev.extendedProps;
+                const ext = info.event.extendedProps;
                 const timeDisplay = ext.displayTime ? `🕐 ${ext.displayTime}` : '';
-                alert(`${ev.title}\n📅 ${ev.start.toLocaleDateString('ar-EG')}\n${timeDisplay}\n📞 ${ext.phone || 'غير متوفر'}\n📍 ${ext.city || ''} ${ext.address || ''}\n📝 ${ext.notes || ''}`);
+                alert(`${info.event.title}\n📅 ${info.event.start.toLocaleDateString('ar-EG')}\n${timeDisplay}\n📞 ${ext.phone || 'غير متوفر'}\n📍 ${ext.city || ''} ${ext.address || ''}\n📝 ${ext.notes || ''}`);
             },
-            height: 'auto',
-            firstDay: 6
+            height: 'auto', firstDay: 6
         });
         calendar.render();
     }
@@ -492,7 +451,7 @@
         
         if (filter === 'all') filteredEvents = [...allEvents];
         else if (filter === 'appointment') filteredEvents = allEvents.filter(e => e.type === TYPE_APPOINTMENT);
-        else filteredEvents = allEvents.filter(e => e.type === TYPE_CALLBACK_AFTER_CALL || e.type === TYPE_CALLBACK_AFTER_APPT);
+        else filteredEvents = allEvents.filter(e => e.type !== TYPE_APPOINTMENT);
         
         updateStats(filteredEvents);
         renderEventList(filteredEvents);
@@ -501,8 +460,10 @@
     
     async function refreshDashboard() {
         const events = await fetchData();
-        allEvents = events;
-        setFilter(currentFilter);
+        if (events.length > 0) {
+            allEvents = events;
+            setFilter(currentFilter);
+        }
     }
     
     window.addEventListener('load', () => {
