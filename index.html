@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>معاينات بيدار🏠</title>
+    <title>نظام إدارة العقارات - مواعيد المعاينات والمتابعات</title>
     <!-- FullCalendar CSS & JS -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <!-- Sweet Alert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
@@ -22,81 +20,54 @@
         }
 
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 50%, #1a472a 100%);
             min-height: 100vh;
             padding: 20px;
             direction: rtl;
         }
 
-        /* animated background */
-        .animated-bg {
+        /* Real Estate Pattern Overlay */
+        body::before {
+            content: '';
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1;
-            overflow: hidden;
-        }
-
-        .animated-bg::before {
-            content: '';
-            position: absolute;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 50px 50px;
-            animation: moveDots 20s linear infinite;
-        }
-
-        @keyframes moveDots {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(50px, 50px); }
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.05"><path fill="white" d="M50,5 L95,30 L95,70 L50,95 L5,70 L5,30 Z"/><rect x="35" y="40" width="30" height="30" fill="white"/><rect x="42" y="48" width="6" height="6" fill="%231a472a"/><rect x="52" y="48" width="6" height="6" fill="%231a472a"/></svg>');
+            background-repeat: repeat;
+            background-size: 60px;
+            pointer-events: none;
+            z-index: 0;
         }
 
         .dashboard-container {
             max-width: 1600px;
             margin: 0 auto;
-            animation: fadeInUp 0.6s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            position: relative;
+            z-index: 1;
         }
 
         /* Header */
         .header {
-            background: rgba(255,255,255,0.95);
+            background: rgba(255,255,255,0.97);
             backdrop-filter: blur(10px);
             border-radius: 28px;
             padding: 20px 32px;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
             box-shadow: 0 20px 35px -10px rgba(0,0,0,0.2);
             display: flex;
             flex-wrap: wrap;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.3s;
-        }
-
-        .header:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 25px 40px -12px rgba(0,0,0,0.25);
+            border: 1px solid rgba(218, 165, 32, 0.3);
         }
 
         h1 {
-            font-size: 1.8rem;
-            background: linear-gradient(135deg, #1e5f4b, #2c9b77);
+            font-size: 1.6rem;
+            background: linear-gradient(135deg, #c9a03d, #8b6914);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
             margin: 0;
             display: flex;
             align-items: center;
@@ -105,17 +76,130 @@
 
         h1 i {
             background: none;
-            -webkit-text-fill-color: #2c9b77;
-            font-size: 2rem;
+            -webkit-text-fill-color: #c9a03d;
+            font-size: 1.8rem;
         }
 
-        h1 small {
+        /* Notification Bell */
+        .notification-area {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .notification-bell {
+            background: rgba(201,160,61,0.1);
+            padding: 12px;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+
+        .notification-bell:hover {
+            background: rgba(201,160,61,0.2);
+            transform: scale(1.05);
+        }
+
+        .notification-bell i {
+            font-size: 1.3rem;
+            color: #c9a03d;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc2626;
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
             font-size: 0.7rem;
-            background: #e9f3ef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* Notifications Panel */
+        .notifications-panel {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 380px;
+            max-height: 500px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideInLeft 0.3s ease-out;
+        }
+
+        @keyframes slideInLeft {
+            from { transform: translateX(-100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .notifications-header {
+            background: linear-gradient(135deg, #c9a03d, #8b6914);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notifications-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+        }
+
+        .clear-notifications {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
             padding: 5px 12px;
-            border-radius: 40px;
-            font-weight: normal;
-            -webkit-text-fill-color: #1e5f4b;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .notifications-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .notification-item.unread {
+            background: #fef8e7;
+        }
+
+        .notification-icon.appointment {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .notification-icon.callback {
+            background: #ffecb3;
+            color: #b45f06;
+        }
+
+        .notification-icon.info {
+            background: #fee2e2;
+            color: #dc2626;
         }
 
         /* Filter Buttons */
@@ -133,55 +217,47 @@
             border: none;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s;
             background: transparent;
             color: #5c6b66;
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 0.9rem;
-        }
-
-        .filter-btn i {
-            font-size: 1.1rem;
         }
 
         .filter-btn.active {
-            background: linear-gradient(135deg, #1e5f4b, #2c9b77);
+            background: linear-gradient(135deg, #c9a03d, #8b6914);
             color: white;
-            box-shadow: 0 4px 15px rgba(44,155,119,0.4);
-            transform: scale(1.02);
-        }
-
-        .filter-btn:hover:not(.active) {
-            background: rgba(44,155,119,0.1);
-            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(201,160,61,0.4);
         }
 
         .refresh-btn {
-            background: linear-gradient(135deg, #1e5f4b, #2c9b77);
+            background: linear-gradient(135deg, #c9a03d, #8b6914);
             border: none;
             color: white;
             padding: 10px 24px;
             border-radius: 40px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.3s;
             display: flex;
             align-items: center;
             gap: 8px;
+            transition: all 0.3s;
         }
 
         .refresh-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(30,95,75,0.4);
+            box-shadow: 0 5px 15px rgba(201,160,61,0.4);
         }
 
-        .refresh-btn:active {
-            transform: translateY(0);
+        .status-badge {
+            background: #eef2ff;
+            padding: 8px 16px;
+            border-radius: 32px;
+            font-size: 0.85rem;
         }
 
-        /* Stats Cards */
+        /* Stats Cards - Real Estate Style */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -198,6 +274,7 @@
             cursor: pointer;
             position: relative;
             overflow: hidden;
+            border: 1px solid rgba(201,160,61,0.2);
         }
 
         .stat-card::before {
@@ -207,11 +284,11 @@
             right: 0;
             width: 4px;
             height: 100%;
-            background: linear-gradient(135deg, #2c9b77, #1e5f4b);
+            background: linear-gradient(135deg, #c9a03d, #8b6914);
         }
 
         .stat-card:hover {
-            transform: translateY(-5px) scale(1.02);
+            transform: translateY(-5px);
             box-shadow: 0 15px 35px rgba(0,0,0,0.15);
         }
 
@@ -228,10 +305,9 @@
         .stat-number {
             font-size: 2.5rem;
             font-weight: 800;
-            background: linear-gradient(135deg, #1e5f4b, #2c9b77);
+            background: linear-gradient(135deg, #c9a03d, #8b6914);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
 
         /* Main Content */
@@ -246,12 +322,7 @@
             backdrop-filter: blur(10px);
             border-radius: 28px;
             padding: 24px;
-            transition: all 0.3s;
-        }
-
-        .calendar-panel:hover, .events-panel:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+            border: 1px solid rgba(201,160,61,0.2);
         }
 
         .calendar-panel { flex: 2; min-width: 300px; }
@@ -262,40 +333,15 @@
             font-weight: 700;
             margin-bottom: 20px;
             padding-bottom: 12px;
-            border-bottom: 2px solid #e2efe9;
-            color: #2c7a5e;
+            border-bottom: 2px solid rgba(201,160,61,0.3);
+            color: #8b6914;
             display: flex;
-            align-items: center;
             justify-content: space-between;
         }
 
-        .filter-info {
-            font-size: 0.8rem;
-            background: #f0f7f0;
-            padding: 5px 12px;
-            border-radius: 20px;
-            color: #2c9b77;
-        }
-
-        /* Event List */
         .event-list {
             max-height: 550px;
             overflow-y: auto;
-            scrollbar-width: thin;
-        }
-
-        .event-list::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .event-list::-webkit-scrollbar-track {
-            background: #f0f0f0;
-            border-radius: 10px;
-        }
-
-        .event-list::-webkit-scrollbar-thumb {
-            background: #2c9b77;
-            border-radius: 10px;
         }
 
         .event-item {
@@ -303,26 +349,13 @@
             margin-bottom: 14px;
             padding: 16px;
             border-radius: 20px;
-            border-right: 4px solid #2c9b77;
+            border-right: 4px solid #c9a03d;
             transition: all 0.3s;
             cursor: pointer;
-            position: relative;
-            overflow: hidden;
         }
 
-        .event-item::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(44,155,119,0.1), transparent);
-            transition: left 0.5s;
-        }
-
-        .event-item:hover::after {
-            left: 100%;
+        .event-item.callback {
+            border-right-color: #e67e22;
         }
 
         .event-item:hover {
@@ -330,30 +363,25 @@
             box-shadow: 0 8px 20px rgba(0,0,0,0.1);
         }
 
-        .event-item.callback {
-            border-right-color: #f4b942;
-        }
-
         .event-title {
             font-weight: 700;
             font-size: 1rem;
             display: flex;
             justify-content: space-between;
-            align-items: center;
             margin-bottom: 8px;
         }
 
         .event-type {
             font-size: 0.7rem;
-            background: #deede7;
+            background: #fef8e7;
             padding: 4px 12px;
             border-radius: 20px;
-            font-weight: 500;
+            color: #8b6914;
         }
 
         .event-type.callback-badge {
-            background: #ffecb3;
-            color: #b45f06;
+            background: #fff3e0;
+            color: #e67e22;
         }
 
         .event-details {
@@ -364,13 +392,6 @@
             flex-wrap: wrap;
         }
 
-        .event-details span {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        /* Loading Animation */
         .loading {
             text-align: center;
             padding: 60px;
@@ -379,8 +400,8 @@
         .spinner {
             width: 50px;
             height: 50px;
-            border: 4px solid #e2efe9;
-            border-top: 4px solid #2c9b77;
+            border: 4px solid #fef8e7;
+            border-top: 4px solid #c9a03d;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin: 0 auto 20px;
@@ -391,33 +412,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Toast Notification */
-        .toast-notification {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background: white;
-            padding: 12px 24px;
-            border-radius: 50px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 1000;
-            animation: slideInRight 0.3s ease-out;
-        }
-
-        @keyframes slideInRight {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
         .footer-note {
             margin-top: 28px;
             text-align: center;
@@ -426,90 +420,105 @@
             background: rgba(0,0,0,0.2);
             padding: 15px;
             border-radius: 30px;
-            backdrop-filter: blur(10px);
+        }
+
+        /* Property Badge */
+        .property-badge {
+            display: inline-block;
+            background: rgba(201,160,61,0.1);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            color: #c9a03d;
+            margin-right: 8px;
         }
 
         @media (max-width: 780px) {
-            body { padding: 12px; }
-            .header { padding: 15px 20px; }
+            .notifications-panel { width: 90%; left: 5%; right: 5%; }
             .filter-btn { padding: 6px 14px; font-size: 0.8rem; }
-            h1 { font-size: 1.2rem; }
         }
     </style>
 </head>
 <body>
-<div class="animated-bg"></div>
 <div class="dashboard-container">
     <div class="header">
         <h1>
-            <i class="fas fa-tooth"></i>
-            نظام المعاينات والمتابعات
-            <small>ذكي ومتطور</small>
+            <i class="fas fa-building"></i>
+            نظام إدارة العقارات
+            <small>معاينات ومتابعات</small>
         </h1>
         <div style="display: flex; gap: 12px; align-items: center;">
             <div class="filter-group">
-                <button class="filter-btn active" data-filter="all">
-                    <i class="fas fa-globe"></i> الكل
-                </button>
-                <button class="filter-btn" data-filter="appointment">
-                    <i class="fas fa-home"></i> معاينات
-                </button>
-                <button class="filter-btn" data-filter="callback">
-                    <i class="fas fa-phone-alt"></i> متابعات
-                </button>
+                <button class="filter-btn active" data-filter="all"><i class="fas fa-globe"></i> الكل</button>
+                <button class="filter-btn" data-filter="appointment"><i class="fas fa-building"></i> معاينات عقارات</button>
+                <button class="filter-btn" data-filter="callback"><i class="fas fa-phone-alt"></i> متابعات عملاء</button>
             </div>
-            <button class="refresh-btn" id="refreshDataBtn">
-                <i class="fas fa-sync-alt"></i> تحديث
-            </button>
-            <span class="status-badge" id="syncStatus">
-                <i class="fas fa-spinner fa-spin"></i> جاري التحميل...
-            </span>
+            <button class="refresh-btn" id="refreshDataBtn"><i class="fas fa-sync-alt"></i> تحديث</button>
+            <div class="notification-area" id="notificationBell">
+                <div class="notification-bell">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="notificationCount" style="display: none;">0</span>
+                </div>
+            </div>
+            <span class="status-badge" id="syncStatus"><i class="fas fa-spinner fa-spin"></i> جاري...</span>
         </div>
     </div>
 
+    <!-- Notifications Panel -->
+    <div class="notifications-panel" id="notificationsPanel">
+        <div class="notifications-header">
+            <h3><i class="fas fa-bell"></i> الإشعارات</h3>
+            <button class="clear-notifications" id="clearNotifications">مسح الكل</button>
+        </div>
+        <div class="notifications-list" id="notificationsList">
+            <div style="text-align: center; padding: 40px; color: #9ca3af;">
+                <i class="fas fa-inbox" style="font-size: 3rem;"></i>
+                <p>لا توجد إشعارات</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real Estate Stats Cards -->
     <div class="stats-grid">
-        <div class="stat-card" id="statAppointments">
-            <h3><i class="fas fa-home"></i> إجمالي المعاينات</h3>
+        <div class="stat-card">
+            <h3><i class="fas fa-building"></i> إجمالي معاينات العقارات</h3>
             <div class="stat-number" id="totalAppointments">0</div>
         </div>
-        <div class="stat-card" id="statCallbacks">
-            <h3><i class="fas fa-phone-alt"></i> إجمالي المتابعات</h3>
+        <div class="stat-card">
+            <h3><i class="fas fa-users"></i> إجمالي متابعات العملاء</h3>
             <div class="stat-number" id="totalCallbacks">0</div>
         </div>
-        <div class="stat-card" id="statUpcoming">
-            <h3><i class="fas fa-calendar-day"></i> المعاينات القادمة</h3>
-            <div class="stat-number" id="upcomingAppointments">0</div>
+        <div class="stat-card">
+            <h3><i class="fas fa-calendar-day"></i> معاينات اليوم</h3>
+            <div class="stat-number" id="todayAppointments">0</div>
         </div>
-        <div class="stat-card" id="statWeek">
-            <h3><i class="fas fa-calendar-week"></i> متابعات هذا الأسبوع</h3>
-            <div class="stat-number" id="weekCallbacks">0</div>
+        <div class="stat-card">
+            <h3><i class="fas fa-clock"></i> متابعات اليوم</h3>
+            <div class="stat-number" id="todayCallbacks">0</div>
         </div>
     </div>
 
     <div class="two-columns">
         <div class="calendar-panel">
             <div class="section-title">
-                <span><i class="fas fa-calendar-alt"></i> التقويم التفاعلي</span>
+                <span><i class="fas fa-calendar-alt"></i> تقويم معاينات العقارات</span>
                 <span class="filter-info" id="filterInfo"><i class="fas fa-eye"></i> عرض الكل</span>
             </div>
             <div id="calendar"></div>
         </div>
         <div class="events-panel">
             <div class="section-title">
-                <span><i class="fas fa-list"></i> الأحداث القادمة (7 أيام)</span>
-                <span class="filter-info" id="listFilterInfo">الكل</span>
+                <span><i class="fas fa-list"></i> المعاينات والمتابعات القادمة (7 أيام)</span>
             </div>
             <div id="upcomingEventsList" class="event-list">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>جاري تحميل البيانات...</p>
-                </div>
+                <div class="loading"><div class="spinner"></div><p>جاري تحميل البيانات...</p></div>
             </div>
         </div>
     </div>
     <div class="footer-note">
-        <i class="fas fa-shield-alt"></i> بيانات آمنة ومشفرة | يتم التحديث تلقائياً | 
-        <i class="fas fa-chart-line"></i> إحصائيات فورية
+        <i class="fas fa-bell"></i> تنبيهات للمواعيد القادمة خلال 24 ساعة | 
+        <i class="fas fa-building"></i> نظام متكامل لإدارة معاينات العقارات ومتابعة العملاء |
+        <i class="fas fa-chart-line"></i> تحديث فوري للبيانات
     </div>
 </div>
 
@@ -523,81 +532,174 @@
     let filteredEvents = [];
     let calendarInstance = null;
     let currentFilter = 'all';
+    let notifications = [];
+    let notificationId = 0;
     
-    const TYPE_APPOINTMENT = 'معاينة';
-    const TYPE_CALLBACK = 'متابعة';
+    const TYPE_APPOINTMENT = 'معاينة عقار';
+    const TYPE_CALLBACK = 'متابعة عميل';
     
-    // Show toast notification
+    // Request notification permission
+    function requestNotificationPermission() {
+        if ('Notification' in window) {
+            Notification.requestPermission();
+        }
+    }
+    
+    function showBrowserNotification(title, body, type) {
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(title, {
+                body: body,
+                icon: type === 'appointment' ? 'https://img.icons8.com/color/48/real-estate.png' : 'https://img.icons8.com/color/48/phone.png',
+                silent: false
+            });
+        }
+    }
+    
+    function addNotification(title, message, type, eventDate = null) {
+        const id = notificationId++;
+        notifications.unshift({
+            id: id, title: title, message: message, type: type,
+            time: new Date(), read: false, eventDate: eventDate
+        });
+        updateNotificationUI();
+        showBrowserNotification(title, message, type);
+        showToast(message, type);
+    }
+    
+    function updateNotificationUI() {
+        const count = notifications.filter(n => !n.read).length;
+        const countBadge = document.getElementById('notificationCount');
+        if (count > 0) {
+            countBadge.style.display = 'flex';
+            countBadge.innerText = count > 9 ? '9+' : count;
+        } else {
+            countBadge.style.display = 'none';
+        }
+        
+        const container = document.getElementById('notificationsList');
+        if (notifications.length === 0) {
+            container.innerHTML = '<div style="text-align: center; padding: 40px; color: #9ca3af;"><i class="fas fa-inbox" style="font-size: 3rem;"></i><p>لا توجد إشعارات</p></div>';
+            return;
+        }
+        
+        let html = '';
+        for (const notif of notifications) {
+            const timeStr = formatTimeAgo(notif.time);
+            let iconClass = 'info';
+            let iconHtml = '<i class="fas fa-info-circle"></i>';
+            
+            if (notif.type === 'appointment') {
+                iconClass = 'appointment';
+                iconHtml = '<i class="fas fa-building"></i>';
+            } else if (notif.type === 'callback') {
+                iconClass = 'callback';
+                iconHtml = '<i class="fas fa-phone-alt"></i>';
+            }
+            
+            html += `
+                <div class="notification-item ${!notif.read ? 'unread' : ''}" onclick="markAsRead(${notif.id})">
+                    <div class="notification-icon ${iconClass}">${iconHtml}</div>
+                    <div class="notification-content">
+                        <div class="notification-title">${notif.title}</div>
+                        <div class="notification-title" style="font-size: 0.8rem; color: #4b5563;">${notif.message}</div>
+                        <div class="notification-time">${timeStr}</div>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+    
+    function formatTimeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        if (seconds < 60) return 'الآن';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `منذ ${minutes} دقيقة`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `منذ ${hours} ساعة`;
+        return `منذ ${Math.floor(hours / 24)} يوم`;
+    }
+    
+    window.markAsRead = function(id) {
+        const notif = notifications.find(n => n.id === id);
+        if (notif) { notif.read = true; updateNotificationUI(); }
+    };
+    
+    function clearAllNotifications() {
+        notifications = [];
+        updateNotificationUI();
+        showToast('تم مسح جميع الإشعارات', 'info');
+    }
+    
     function showToast(message, type = 'success') {
-        const toast = document.createElement('div');
-        toast.className = 'toast-notification';
-        toast.innerHTML = type === 'success' 
-            ? `<i class="fas fa-check-circle" style="color: #16a34a;"></i> ${message}`
-            : `<i class="fas fa-exclamation-circle" style="color: #dc2626;"></i> ${message}`;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        Swal.fire({
+            text: message,
+            icon: type === 'appointment' ? 'info' : (type === 'callback' ? 'warning' : 'success'),
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            background: 'white',
+            didOpen: (toast) => { toast.style.direction = 'rtl'; }
+        });
+    }
+    
+    function checkAndNotifyUpcomingEvents(events) {
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const todayEvents = events.filter(ev => new Date(ev.start).toDateString() === today.toDateString());
+        const tomorrowEvents = events.filter(ev => new Date(ev.start).toDateString() === tomorrow.toDateString());
+        
+        if (todayEvents.length > 0) {
+            const appointmentsToday = todayEvents.filter(e => e.type === TYPE_APPOINTMENT);
+            const callbacksToday = todayEvents.filter(e => e.type === TYPE_CALLBACK);
+            if (appointmentsToday.length > 0) addNotification('🏢 معاينات عقارات اليوم', `لديك ${appointmentsToday.length} معاينة عقار اليوم`, 'appointment');
+            if (callbacksToday.length > 0) addNotification('📞 متابعات العملاء اليوم', `لديك ${callbacksToday.length} متابعة عميل اليوم`, 'callback');
+        }
+        
+        if (tomorrowEvents.length > 0) {
+            const appointmentsTomorrow = tomorrowEvents.filter(e => e.type === TYPE_APPOINTMENT);
+            const callbacksTomorrow = tomorrowEvents.filter(e => e.type === TYPE_CALLBACK);
+            if (appointmentsTomorrow.length > 0) addNotification('⏰ تذكير معاينات غداً', `${appointmentsTomorrow.length} معاينة عقار غداً`, 'appointment');
+            if (callbacksTomorrow.length > 0) addNotification('⏰ تذكير متابعات غداً', `${callbacksTomorrow.length} متابعة عميل غداً`, 'callback');
+        }
     }
     
     function setFilter(filter) {
         currentFilter = filter;
-        
         document.querySelectorAll('.filter-btn').forEach(btn => {
-            if (btn.dataset.filter === filter) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
+            if (btn.dataset.filter === filter) btn.classList.add('active');
+            else btn.classList.remove('active');
         });
-        
         applyFilter();
-        
-        const filterText = filter === 'all' ? 'عرض الكل' : (filter === 'appointment' ? 'معاينات فقط' : 'متابعات فقط');
-        document.getElementById('filterInfo').innerHTML = `<i class="fas fa-eye"></i> ${filterText}`;
-        document.getElementById('listFilterInfo').innerHTML = filterText;
-        
         renderUpcomingList(filteredEvents);
         initCalendar(filteredEvents);
-        showToast(`تم التصفية: ${filterText}`, 'success');
     }
     
     function applyFilter() {
-        if (currentFilter === 'all') {
-            filteredEvents = [...originalEvents];
-        } else if (currentFilter === 'appointment') {
-            filteredEvents = originalEvents.filter(e => e.type === TYPE_APPOINTMENT);
-        } else if (currentFilter === 'callback') {
-            filteredEvents = originalEvents.filter(e => e.type === TYPE_CALLBACK);
-        }
+        if (currentFilter === 'all') filteredEvents = [...originalEvents];
+        else if (currentFilter === 'appointment') filteredEvents = originalEvents.filter(e => e.type === TYPE_APPOINTMENT);
+        else filteredEvents = originalEvents.filter(e => e.type === TYPE_CALLBACK);
         updateStats(filteredEvents);
     }
     
     async function fetchRealSheetData() {
         const statusSpan = document.getElementById('syncStatus');
         statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جلب البيانات...';
-        statusSpan.className = 'status-badge';
         
         try {
             const range = `${SHEET_NAME}!A1:V1000`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
-            
             const response = await fetch(url);
-            
-            if (!response.ok) {
-                if (response.status === 403) {
-                    throw new Error("صلاحيات الوصول مطلوبة");
-                } else if (response.status === 404) {
-                    throw new Error("الجدول غير موجود");
-                } else {
-                    throw new Error(`خطأ ${response.status}`);
-                }
-            }
+            if (!response.ok) throw new Error(`خطأ ${response.status}`);
             
             const data = await response.json();
             const rows = data.values;
-            
-            if (!rows || rows.length < 2) {
-                throw new Error("لا توجد بيانات في الجدول");
-            }
+            if (!rows || rows.length < 2) throw new Error("لا توجد بيانات");
             
             const events = [];
             let appointmentCount = 0, callbackCount = 0;
@@ -618,14 +720,9 @@
                     let fullDate = parseDate(appointmentDateRaw, appointmentTime);
                     if (fullDate) {
                         events.push({
-                            id: `app_${i}`,
-                            title: name,
-                            type: TYPE_APPOINTMENT,
-                            start: fullDate,
-                            dateStr: appointmentDateRaw,
-                            time: appointmentTime,
-                            phone: phone,
-                            notes: generalNotes || callbackNotes || 'لا توجد ملاحظات'
+                            id: `app_${i}`, title: name, type: TYPE_APPOINTMENT,
+                            start: fullDate, dateStr: appointmentDateRaw, time: appointmentTime,
+                            phone: phone, notes: generalNotes || callbackNotes || 'لا توجد ملاحظات'
                         });
                         appointmentCount++;
                     }
@@ -635,54 +732,39 @@
                     let fullDate = parseDate(callbackDateRaw, '');
                     if (fullDate) {
                         events.push({
-                            id: `cb_${i}`,
-                            title: name,
-                            type: TYPE_CALLBACK,
-                            start: fullDate,
-                            dateStr: callbackDateRaw,
-                            time: '',
-                            phone: row[12] || phone,
-                            notes: callbackNotes || generalNotes || 'لا توجد ملاحظات'
+                            id: `cb_${i}`, title: name, type: TYPE_CALLBACK,
+                            start: fullDate, dateStr: callbackDateRaw, time: '',
+                            phone: row[12] || phone, notes: callbackNotes || generalNotes || 'لا توجد ملاحظات'
                         });
                         callbackCount++;
                     }
                 }
             }
             
-            if (events.length === 0) {
-                throw new Error("لم يتم العثور على مواعيد");
-            }
+            if (events.length === 0) throw new Error("لم يتم العثور على مواعيد");
             
-            statusSpan.innerHTML = `<i class="fas fa-check-circle"></i> ${events.length} حدث (${appointmentCount} معاينة، ${callbackCount} متابعة)`;
-            statusSpan.className = 'status-badge success';
-            showToast(`تم جلب ${events.length} حدث بنجاح`, 'success');
+            statusSpan.innerHTML = `<i class="fas fa-check-circle"></i> ${events.length} موعد`;
+            addNotification('✅ تحديث البيانات', `تم جلب ${appointmentCount} معاينة عقار و ${callbackCount} متابعة عميل`, 'info');
             return events;
-            
         } catch (error) {
-            statusSpan.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${error.message}`;
-            statusSpan.className = 'status-badge error';
-            showToast(error.message, 'error');
+            statusSpan.innerHTML = `<i class="fas fa-exclamation-circle"></i> خطأ`;
+            addNotification('❌ خطأ في الاتصال', error.message, 'info');
             return [];
         }
     }
     
     function parseDate(dateStr, timeStr) {
         if (!dateStr) return null;
-        
         let cleaned = dateStr.toString().trim();
         let year, month, day;
         
         let match = cleaned.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
         if (match) {
-            year = parseInt(match[1]);
-            month = parseInt(match[2]) - 1;
-            day = parseInt(match[3]);
+            year = parseInt(match[1]); month = parseInt(match[2]) - 1; day = parseInt(match[3]);
         } else {
             match = cleaned.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
             if (match) {
-                day = parseInt(match[1]);
-                month = parseInt(match[2]) - 1;
-                year = parseInt(match[3]);
+                day = parseInt(match[1]); month = parseInt(match[2]) - 1; year = parseInt(match[3]);
             } else {
                 let d = new Date(cleaned);
                 if (!isNaN(d.getTime())) return d;
@@ -693,10 +775,7 @@
         let hour = 12, minute = 0;
         if (timeStr && timeStr.trim()) {
             let timeParts = timeStr.trim().match(/(\d{1,2}):(\d{2})/);
-            if (timeParts) {
-                hour = parseInt(timeParts[1]);
-                minute = parseInt(timeParts[2]);
-            }
+            if (timeParts) { hour = parseInt(timeParts[1]); minute = parseInt(timeParts[2]); }
         }
         
         let dateObj = new Date(year, month, day, hour, minute);
@@ -707,28 +786,21 @@
         const totalApp = events.filter(e => e.type === TYPE_APPOINTMENT).length;
         const totalCb = events.filter(e => e.type === TYPE_CALLBACK).length;
         
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const upcomingApps = events.filter(e => e.type === TYPE_APPOINTMENT && new Date(e.start) >= now).length;
-        
-        const weekLater = new Date(now);
-        weekLater.setDate(now.getDate() + 7);
-        const weekCb = events.filter(e => {
-            const d = new Date(e.start);
-            return e.type === TYPE_CALLBACK && d >= now && d <= weekLater;
-        }).length;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayApps = events.filter(e => e.type === TYPE_APPOINTMENT && new Date(e.start).toDateString() === today.toDateString()).length;
+        const todayCbs = events.filter(e => e.type === TYPE_CALLBACK && new Date(e.start).toDateString() === today.toDateString()).length;
         
         document.getElementById('totalAppointments').innerText = totalApp;
         document.getElementById('totalCallbacks').innerText = totalCb;
-        document.getElementById('upcomingAppointments').innerText = upcomingApps;
-        document.getElementById('weekCallbacks').innerText = weekCb;
+        document.getElementById('todayAppointments').innerText = todayApps;
+        document.getElementById('todayCallbacks').innerText = todayCbs;
     }
     
     function renderUpcomingList(events) {
         const container = document.getElementById('upcomingEventsList');
-        
         if (events.length === 0) {
-            container.innerHTML = '<div class="loading"><i class="fas fa-calendar-times" style="font-size: 3rem; opacity: 0.5;"></i><p>لا توجد أحداث للعرض</p></div>';
+            container.innerHTML = '<div class="loading"><i class="fas fa-building" style="font-size: 3rem; opacity: 0.5;"></i><p>لا توجد معاينات أو متابعات</p></div>';
             return;
         }
         
@@ -744,22 +816,20 @@
         }).sort((a, b) => a.start - b.start);
         
         if (upcoming.length === 0) {
-            container.innerHTML = '<div class="loading"><i class="fas fa-smile-wink" style="font-size: 3rem; opacity: 0.5;"></i><p>لا توجد أحداث قريبة</p></div>';
+            container.innerHTML = '<div class="loading"><i class="fas fa-smile-wink"></i><p>لا توجد مواعيد قريبة خلال 7 أيام</p></div>';
             return;
         }
         
         let html = '';
         for (const ev of upcoming) {
             const dateStr = ev.start.toLocaleDateString('ar-EG', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
-            const timeStr = ev.time || (ev.start.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }));
+            const timeStr = ev.time || ev.start.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
             const isCallback = ev.type === TYPE_CALLBACK;
             html += `
                 <div class="event-item ${isCallback ? 'callback' : ''}" onclick="showEventDetails('${ev.title.replace(/'/g, "\\'")}', '${ev.phone || 'غير متوفر'}', '${ev.notes.replace(/'/g, "\\'")}', '${ev.type}')">
                     <div class="event-title">
-                        <span><i class="fas fa-user-circle"></i> ${ev.title}</span>
-                        <span class="event-type ${isCallback ? 'callback-badge' : ''}">
-                            <i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-home'}"></i> ${ev.type}
-                        </span>
+                        <span><i class="fas ${isCallback ? 'fa-user-friends' : 'fa-building'}"></i> ${ev.title}</span>
+                        <span class="event-type ${isCallback ? 'callback-badge' : ''}"><i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-home'}"></i> ${ev.type}</span>
                     </div>
                     <div class="event-details">
                         <span><i class="far fa-calendar-alt"></i> ${dateStr}</span>
@@ -772,93 +842,82 @@
         container.innerHTML = html;
     }
     
-    function showEventDetails(title, phone, notes, type) {
+    window.showEventDetails = function(title, phone, notes, type) {
         Swal.fire({
             title: title,
-            html: `
-                <div style="text-align: right; direction: rtl;">
-                    <p><i class="fas fa-tag"></i> <strong>النوع:</strong> ${type}</p>
-                    <p><i class="fas fa-phone"></i> <strong>رقم الهاتف:</strong> ${phone}</p>
-                    <p><i class="fas fa-sticky-note"></i> <strong>الملاحظات:</strong> ${notes}</p>
-                </div>
-            `,
-            icon: type === 'معاينة' ? 'info' : 'warning',
+            html: `<div style="text-align:right">
+                <p><i class="fas fa-tag"></i> <strong>نوع الموعد:</strong> ${type}</p>
+                <p><i class="fas fa-phone"></i> <strong>رقم العميل:</strong> ${phone}</p>
+                <p><i class="fas fa-sticky-note"></i> <strong>ملاحظات إضافية:</strong> ${notes}</p>
+                <hr>
+                <p><i class="fas fa-info-circle"></i> هذا الموعد مسجل في نظام إدارة العقارات</p>
+            </div>`,
+            icon: type === 'معاينة عقار' ? 'info' : 'warning',
             confirmButtonText: 'إغلاق',
-            confirmButtonColor: '#2c9b77',
-            background: 'white',
-            backdrop: true
+            confirmButtonColor: '#c9a03d'
         });
-    }
+    };
     
     function initCalendar(events) {
         const calendarEl = document.getElementById('calendar');
         if (calendarInstance) calendarInstance.destroy();
-        
         if (events.length === 0) return;
         
         const fcEvents = events.map(ev => ({
             id: ev.id,
-            title: `${ev.type === TYPE_APPOINTMENT ? '🏠' : '📞'} ${ev.title}`,
+            title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : '📞'} ${ev.title}`,
             start: ev.start,
-            backgroundColor: ev.type === TYPE_APPOINTMENT ? '#2c9b77' : '#f4b942',
-            borderColor: ev.type === TYPE_APPOINTMENT ? '#1e6b51' : '#dd9d2b',
+            backgroundColor: ev.type === TYPE_APPOINTMENT ? '#c9a03d' : '#e67e22',
+            borderColor: ev.type === TYPE_APPOINTMENT ? '#8b6914' : '#b45f06',
             extendedProps: { phone: ev.phone, notes: ev.notes, type: ev.type }
         }));
         
         calendarInstance = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            locale: 'ar',
-            direction: 'rtl',
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek,listWeek'
-            },
+            initialView: 'dayGridMonth', locale: 'ar', direction: 'rtl',
+            headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' },
             events: fcEvents,
             eventClick: (info) => {
                 const ext = info.event.extendedProps;
-                showEventDetails(info.event.title.replace(/^[🏠📞] /, ''), ext.phone, ext.notes, ext.type);
+                showEventDetails(info.event.title.replace(/^[🏢📞] /, ''), ext.phone, ext.notes, ext.type);
             },
-            height: 'auto',
-            firstDay: 6,
-            buttonText: {
-                today: 'اليوم',
-                month: 'شهر',
-                week: 'أسبوع',
-                list: 'قائمة'
-            }
+            height: 'auto', firstDay: 6,
+            buttonText: { today: 'اليوم', month: 'شهر', week: 'أسبوع' }
         });
         calendarInstance.render();
     }
     
     async function refreshDashboard() {
         const realEvents = await fetchRealSheetData();
-        
         if (realEvents.length > 0) {
             originalEvents = realEvents;
             applyFilter();
-            showToast(`تم تحديث البيانات - ${originalEvents.length} حدث`, 'success');
+            checkAndNotifyUpcomingEvents(realEvents);
         } else {
-            originalEvents = [];
-            filteredEvents = [];
-            updateStats([]);
-            renderUpcomingList([]);
-            initCalendar([]);
+            originalEvents = []; filteredEvents = [];
+            updateStats([]); renderUpcomingList([]); initCalendar([]);
         }
     }
     
-    function initFilters() {
+    // Event Listeners
+    window.addEventListener('load', () => {
+        requestNotificationPermission();
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => setFilter(btn.dataset.filter));
         });
-    }
-    
-    window.addEventListener('load', () => {
-        initFilters();
-        refreshDashboard();
         document.getElementById('refreshDataBtn').addEventListener('click', refreshDashboard);
-        
-        // تحديث تلقائي كل 5 دقائق
+        document.getElementById('notificationBell').addEventListener('click', () => {
+            const panel = document.getElementById('notificationsPanel');
+            panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+        });
+        document.getElementById('clearNotifications').addEventListener('click', clearAllNotifications);
+        document.addEventListener('click', (e) => {
+            const panel = document.getElementById('notificationsPanel');
+            const bell = document.getElementById('notificationBell');
+            if (!bell.contains(e.target) && !panel.contains(e.target)) {
+                panel.style.display = 'none';
+            }
+        });
+        refreshDashboard();
         setInterval(refreshDashboard, 300000);
     });
 </script>
