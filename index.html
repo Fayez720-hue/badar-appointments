@@ -23,6 +23,8 @@
         .status-badge { background: #eef2ff; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; }
         
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+        @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
+        
         .stat-card { background: rgba(255,255,255,0.95); border-radius: 16px; padding: 12px; border-right: 3px solid #c9a03d; cursor: pointer; transition: all 0.2s; }
         .stat-card:hover { transform: translateY(-2px); }
         .stat-number { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -57,10 +59,6 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         .footer-note { margin-top: 16px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.2); padding: 8px; border-radius: 20px; }
-        
-        @media (min-width: 768px) {
-            .stats-grid { grid-template-columns: repeat(4, 1fr); }
-        }
     </style>
 </head>
 <body>
@@ -90,7 +88,7 @@
         <div class="events-panel"><div class="section-title">📋 قائمة المواعيد</div><div id="eventList"><div class="loading"><div class="spinner"></div></div></div></div>
     </div>
     
-    <div class="footer-note"><i class="fas fa-info-circle"></i> المعاينات: العمود O | المتابعات: العمود L + العمود S</div>
+    <div class="footer-note"><i class="fas fa-info-circle"></i> المعاينات من العمود O | المتابعات من العمود S (Callback Date Appointment)</div>
     
     <div class="debug-panel" id="debugPanel">
         <div id="debugLog">🔄 جاري تحميل البيانات...</div>
@@ -114,11 +112,7 @@
     const COL_APPOINTMENT_DATE = 14; // O - تاريخ المعاينة
     const COL_APPOINTMENT_TIME = 15; // P - وقت المعاينة
     
-    // المتابعات
-    const COL_CALLBACK_L_DATE = 11;  // L - Callback Date
-    const COL_CALLBACK_L_PHONE = 12; // M - Callback phone
-    const COL_CALLBACK_L_NOTES = 13; // N - Callback Notes
-    
+    // المتابعات (من التحليل، العمود S هو الذي يحتوي على التواريخ)
     const COL_CALLBACK_S_DATE = 18;  // S - Callback Date Appointment
     const COL_CALLBACK_S_NOTES = 19; // T - ملاحظات المتابعة
     
@@ -142,7 +136,7 @@
         while (logDiv.children.length > 50) logDiv.removeChild(logDiv.firstChild);
     }
     
-    // تحويل التاريخ من أي تنسيق
+    // تحويل التاريخ من تنسيق "الجمعة, 27/02/2026" أو "27/04/2026" إلى Date
     function parseDate(dateStr) {
         if (!dateStr) return null;
         
@@ -231,15 +225,12 @@
             // عرض العناوين للتأكد
             if (rows[0]) {
                 log(`📋 العمود O (تاريخ المعاينة): "${rows[0][COL_APPOINTMENT_DATE] || 'فارغ'}"`, 'info');
-                log(`📋 العمود L (Callback Date): "${rows[0][COL_CALLBACK_L_DATE] || 'فارغ'}"`, 'info');
                 log(`📋 العمود S (Callback Date Appointment): "${rows[0][COL_CALLBACK_S_DATE] || 'فارغ'}"`, 'info');
             }
             
             const events = [];
             let appointmentCount = 0;
             let callbackCount = 0;
-            let callbackFromL = 0;
-            let callbackFromS = 0;
             
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
@@ -274,43 +265,14 @@
                     }
                 }
                 
-                // ========== 2. المتابعات من العمود L (Callback Date) ==========
-                const callbackLDate = row[COL_CALLBACK_L_DATE];
-                const callbackLPhone = row[COL_CALLBACK_L_PHONE] || '';
-                const callbackLNotes = row[COL_CALLBACK_L_NOTES] || '';
+                // ========== 2. المتابعات من العمود S (Callback Date Appointment) ==========
+                const callbackDateS = row[COL_CALLBACK_S_DATE];
+                const callbackNotesS = row[COL_CALLBACK_S_NOTES] || '';
                 
-                if (callbackLDate && callbackLDate.toString().trim() && callbackLDate !== 'FALSE') {
-                    log(`🔍 فحص متابعة L للصف ${i}: "${name}" - التاريخ: "${callbackLDate}"`, 'info');
+                if (callbackDateS && callbackDateS.toString().trim() && callbackDateS !== 'FALSE') {
+                    log(`🔍 فحص متابعة S للصف ${i}: "${name}" - التاريخ: "${callbackDateS}"`, 'info');
                     
-                    const dateObj = parseDate(callbackLDate);
-                    if (dateObj) {
-                        events.push({
-                            id: `cbL_${i}`,
-                            title: name,
-                            type: TYPE_CALLBACK,
-                            date: dateObj,
-                            time: '',
-                            phone: callbackLPhone || phone,
-                            city: city,
-                            address: address,
-                            notes: callbackLNotes || notes || 'متابعة من العمود L'
-                        });
-                        callbackCount++;
-                        callbackFromL++;
-                        log(`   ✅ تمت إضافة متابعة L: ${name}`, 'success');
-                    } else {
-                        log(`   ❌ فشل تحويل تاريخ متابعة L: "${callbackLDate}"`, 'error');
-                    }
-                }
-                
-                // ========== 3. المتابعات من العمود S (Callback Date Appointment) ==========
-                const callbackSDate = row[COL_CALLBACK_S_DATE];
-                const callbackSNotes = row[COL_CALLBACK_S_NOTES] || '';
-                
-                if (callbackSDate && callbackSDate.toString().trim() && callbackSDate !== 'FALSE') {
-                    log(`🔍 فحص متابعة S للصف ${i}: "${name}" - التاريخ: "${callbackSDate}"`, 'info');
-                    
-                    const dateObj = parseDate(callbackSDate);
+                    const dateObj = parseDate(callbackDateS);
                     if (dateObj) {
                         events.push({
                             id: `cbS_${i}`,
@@ -321,13 +283,12 @@
                             phone: phone,
                             city: city,
                             address: address,
-                            notes: callbackSNotes || notes || 'متابعة من العمود S'
+                            notes: callbackNotesS || notes || 'متابعة'
                         });
                         callbackCount++;
-                        callbackFromS++;
                         log(`   ✅ تمت إضافة متابعة S: ${name}`, 'success');
                     } else {
-                        log(`   ❌ فشل تحويل تاريخ متابعة S: "${callbackSDate}"`, 'error');
+                        log(`   ❌ فشل تحويل تاريخ متابعة S: "${callbackDateS}"`, 'error');
                     }
                 }
             }
@@ -335,15 +296,13 @@
             log('════════════════════════════════════════', 'info');
             log(`📊 النتائج النهائية:`, 'info');
             log(`   • معاينات: ${appointmentCount}`, 'success');
-            log(`   • متابعات من العمود L: ${callbackFromL}`, 'success');
-            log(`   • متابعات من العمود S: ${callbackFromS}`, 'success');
-            log(`   • إجمالي المتابعات: ${callbackCount}`, 'success');
+            log(`   • متابعات من العمود S: ${callbackCount}`, 'success');
             log(`   • إجمالي الأحداث: ${events.length}`, 'success');
             log('════════════════════════════════════════', 'info');
             
             if (events.length === 0) {
                 log(`⚠️ لم يتم العثور على أي مواعيد!`, 'warning');
-                log(`💡 تأكد من وجود تواريخ في الأعمدة O (معاينات) أو L/S (متابعات)`, 'warning');
+                log(`💡 تأكد من وجود تواريخ في الأعمدة O (معاينات) أو S (متابعات)`, 'warning');
             }
             
             statusSpan.innerHTML = `✅ ${events.length} موعد`;
@@ -478,7 +437,6 @@
     window.addEventListener('load', () => {
         log('🚀 بدء تشغيل التطبيق - نظام إدارة العقارات', 'success');
         log(`📍 المعاينات: العمود O (index ${COL_APPOINTMENT_DATE})`, 'info');
-        log(`📍 المتابعات: العمود L (index ${COL_CALLBACK_L_DATE})`, 'info');
         log(`📍 المتابعات: العمود S (index ${COL_CALLBACK_S_DATE})`, 'info');
         
         document.querySelectorAll('.filter-btn').forEach(btn => {
