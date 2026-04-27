@@ -23,20 +23,27 @@
         .filter-group { display: flex; gap: 6px; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 40px; flex-wrap: wrap; }
         .filter-btn { padding: 6px 12px; border-radius: 30px; border: none; cursor: pointer; font-weight: 600; font-size: 0.75rem; background: transparent; color: #5c6b66; display: flex; align-items: center; gap: 4px; }
         .filter-btn.active { background: linear-gradient(135deg, #c9a03d, #8b6914); color: white; }
-        .refresh-btn { background: linear-gradient(135deg, #c9a03d, #8b6914); border: none; color: white; padding: 8px 14px; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: flex; align-items: center; gap: 6px; }
+        .refresh-btn { background: linear-gradient(135deg, #c9a03d, #8b6914); border: none; color: white; padding: 8px 14px; border-radius: 30px; cursor: pointer; font-weight: 600; font-size: 0.75rem; display: flex; align-items: center; gap: 6px; transition: all 0.3s; }
+        .refresh-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(201,160,61,0.4); }
         
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
-        .stat-card { background: rgba(255,255,255,0.95); border-radius: 16px; padding: 12px; border: 1px solid rgba(201,160,61,0.2); }
-        .stat-card h3 { font-size: 0.7rem; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+        .stat-card { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-radius: 16px; padding: 12px; border: 1px solid rgba(201,160,61,0.2); transition: all 0.3s; cursor: pointer; }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .stat-card h3 { font-size: 0.7rem; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; color: #6c7a74; }
         .stat-number { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
         .two-columns { display: flex; flex-direction: column; gap: 16px; }
-        .calendar-panel, .events-panel { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 16px; border: 1px solid rgba(201,160,61,0.2); }
+        .calendar-panel, .events-panel { background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-radius: 20px; padding: 16px; border: 1px solid rgba(201,160,61,0.2); transition: all 0.3s; }
+        .calendar-panel:hover, .events-panel:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
         .calendar-panel { flex: 2; }
         .events-panel { flex: 1.2; }
         .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid rgba(201,160,61,0.3); color: #8b6914; display: flex; justify-content: space-between; align-items: center; }
         
         .event-list { max-height: 400px; overflow-y: auto; }
+        .event-list::-webkit-scrollbar { width: 4px; }
+        .event-list::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 10px; }
+        .event-list::-webkit-scrollbar-thumb { background: #c9a03d; border-radius: 10px; }
+        
         .event-item { background: #f9fbfa; margin-bottom: 10px; padding: 12px; border-radius: 14px; border-right: 3px solid #c9a03d; cursor: pointer; transition: all 0.2s; }
         .event-item.callback { border-right-color: #e67e22; }
         .event-item:hover { transform: translateX(-5px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -46,27 +53,34 @@
         
         .notifications-panel { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: none; flex-direction: column; overflow: hidden; }
         .notifications-header { background: linear-gradient(135deg, #c9a03d, #8b6914); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
-        .clear-notifications { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 12px; border-radius: 20px; cursor: pointer; }
+        .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .back-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.05); }
+        .clear-notifications { background: rgba(255,255,255,0.2); border: none; color: white; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; }
         .notifications-list { flex: 1; overflow-y: auto; }
-        .notification-item { padding: 12px 15px; border-bottom: 1px solid #e5e7eb; display: flex; gap: 12px; cursor: pointer; }
+        .notification-item { padding: 12px 15px; border-bottom: 1px solid #e5e7eb; display: flex; gap: 12px; cursor: pointer; transition: background 0.2s; }
+        .notification-item:hover { background: #fef8e7; }
         .notification-item.unread { background: #fef8e7; }
         .notification-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
         .notification-icon.appointment { background: #dcfce7; color: #16a34a; }
         .notification-icon.callback { background: #ffecb3; color: #b45f06; }
+        .notification-icon.info { background: #dbeafe; color: #3b82f6; }
         
         .notification-area { position: relative; cursor: pointer; }
-        .notification-bell { background: rgba(201,160,61,0.1); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-        .notification-badge { position: absolute; top: -5px; right: -5px; background: #dc2626; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.6rem; display: flex; align-items: center; justify-content: center; }
+        .notification-bell { background: rgba(201,160,61,0.1); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .notification-bell:hover { background: rgba(201,160,61,0.2); transform: scale(1.05); }
+        .notification-badge { position: absolute; top: -5px; right: -5px; background: #dc2626; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.6rem; display: flex; align-items: center; justify-content: center; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
         
         .fc { direction: rtl; }
         .fc .fc-toolbar { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
         .fc .fc-toolbar-title { font-size: 1rem !important; }
-        .fc .fc-button { padding: 4px 8px !important; font-size: 0.7rem !important; background: #c9a03d !important; border: none !important; }
-        .fc .fc-button-primary:not(:disabled):hover { background: #8b6914 !important; }
+        .fc .fc-button { padding: 4px 8px !important; font-size: 0.7rem !important; background: #c9a03d !important; border: none !important; transition: all 0.2s !important; }
+        .fc .fc-button:hover { background: #8b6914 !important; transform: scale(1.02); }
+        .fc .fc-button-primary:not(:disabled):active { background: #6b4f10 !important; }
         .fc-daygrid-day-number { font-size: 0.7rem !important; }
         .fc-event-title { font-size: 0.65rem !important; }
-        .fc-event { cursor: pointer; }
+        .fc-event { cursor: pointer; transition: transform 0.2s; }
+        .fc-event:hover { transform: scale(1.02); }
         
         .footer-note { margin-top: 16px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 20px; }
         .loading { text-align: center; padding: 40px; }
@@ -76,6 +90,7 @@
         .status-badge { display: inline-block; background: #eef2ff; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; }
         .status-badge.error { background: #fee2e2; color: #dc2626; }
         .status-badge.success { background: #dcfce7; color: #16a34a; }
+        .status-badge.warning { background: #fed7aa; color: #9a3412; }
         
         @media (min-width: 768px) {
             body { padding: 20px; }
@@ -162,37 +177,52 @@
     const TYPE_APPOINTMENT = 'معاينة عقار';
     const TYPE_CALLBACK = 'متابعة عميل';
     
-    // دالة متقدمة لتحويل التاريخ من النص (تدعم تنسيقات متعددة)
+    // دالة آمنة للإشعارات - تعمل على جميع المتصفحات بدون أخطاء
+    function showSafeNotification(title, message) {
+        // استخدام SweetAlert بدلاً من Notification API لتجنب أخطاء Chrome
+        if (document.hidden) {
+            // فقط إذا كان المستخدم في تبويب آخر، نعرض إشعار المتصفح إذا كان مدعوماً
+            if ('Notification' in window && Notification.permission === 'granted' && window.isSecureContext) {
+                try {
+                    new Notification(title, { body: message });
+                } catch(e) {
+                    console.log("الإشعارات غير مدعومة في هذا المتصفح");
+                }
+            }
+        }
+        // دائماً نعرض Toast
+        showToast(message);
+    }
+    
+    // دالة متقدمة لتحويل التاريخ من النص
     function parseArabicDate(dateString, timeString) {
         if (!dateString || dateString.toString().trim() === '') return null;
         
         let dateStr = dateString.toString().trim();
         let timeStr = timeString ? timeString.toString().trim() : '';
         
-        console.log(`📅 محاولة تحويل: التاريخ="${dateStr}", الوقت="${timeStr}"`);
+        console.log(`📅 تحويل: التاريخ="${dateStr}", الوقت="${timeStr}"`);
         
-        // إزالة اسم اليوم العربي (السبت, الأحد, الاثنين, الثلاثاء, الأربعاء, الخميس, الجمعة)
+        // إزالة اسم اليوم العربي
         let cleanedDate = dateStr.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
         
         let day, month, year;
         
-        // محاولة تنسيق DD/MM/YYYY
+        // تنسيق DD/MM/YYYY
         let parts = cleanedDate.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
         if (parts) {
             day = parseInt(parts[1]);
             month = parseInt(parts[2]) - 1;
             year = parseInt(parts[3]);
-            console.log(`   ✓ تنسيق DD/MM/YYYY: يوم=${day}, شهر=${month+1}, سنة=${year}`);
         } else {
-            // محاولة تنسيق DD-MM-YYYY
+            // تنسيق DD-MM-YYYY
             parts = cleanedDate.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
             if (parts) {
                 day = parseInt(parts[1]);
                 month = parseInt(parts[2]) - 1;
                 year = parseInt(parts[3]);
-                console.log(`   ✓ تنسيق DD-MM-YYYY: يوم=${day}, شهر=${month+1}, سنة=${year}`);
             } else {
-                console.log(`   ❌ فشل تحليل التاريخ: "${cleanedDate}"`);
+                console.log(`❌ فشل تحليل التاريخ: "${cleanedDate}"`);
                 return null;
             }
         }
@@ -210,11 +240,9 @@
             if (timeParts) {
                 hour = parseInt(timeParts[1]);
                 minute = parseInt(timeParts[2]);
-                // تحويل 24 ساعة إلى 12 ساعة للعرض
                 let displayHour = hour % 12 || 12;
                 let ampm = hour >= 12 ? 'م' : 'ص';
                 displayTime = `${displayHour}:${minute.toString().padStart(2, '0')} ${ampm}`;
-                console.log(`   ✓ وقت HH:MM:SS: ${hour}:${minute} -> ${displayTime}`);
             } else {
                 // تنسيق HH:MM
                 timeParts = cleanTime.match(/(\d{1,2}):(\d{2})/);
@@ -224,25 +252,20 @@
                     let displayHour = hour % 12 || 12;
                     let ampm = hour >= 12 ? 'م' : 'ص';
                     displayTime = `${displayHour}:${minute.toString().padStart(2, '0')} ${ampm}`;
-                    console.log(`   ✓ وقت HH:MM: ${hour}:${minute} -> ${displayTime}`);
-                } else {
-                    console.log(`   ⚠ لم يتم التعرف على تنسيق الوقت: "${timeStr}"`);
                 }
             }
         }
         
         let dateObj = new Date(year, month, day, hour, minute);
         if (!isNaN(dateObj.getTime())) {
-            console.log(`   ✅ تم إنشاء التاريخ: ${dateObj.toLocaleString('ar-EG')}`);
             return { date: dateObj, displayTime: displayTime };
         }
         
-        console.log(`   ❌ فشل إنشاء التاريخ`);
         return null;
     }
     
     async function fetchRealSheetData() {
-        console.log("🔄 بدء جلب البيانات من Google Sheets...");
+        console.log("🔄 جلب البيانات من Google Sheets...");
         
         try {
             const range = `${SHEET_NAME}!A1:V500`;
@@ -267,17 +290,7 @@
                 throw new Error("لا توجد بيانات في الجدول");
             }
             
-            console.log(`✅ تم جلب ${rows.length} صف من البيانات`);
-            
-            // عرض العناوين للتأكد
-            if (rows[0]) {
-                console.log("📋 العناوين:");
-                console.log(`   العمود B (الاسم): "${rows[0][1] || 'غير موجود'}"`);
-                console.log(`   العمود G (المدينة): "${rows[0][6] || 'غير موجود'}"`);
-                console.log(`   العمود H (العنوان): "${rows[0][7] || 'غير موجود'}"`);
-                console.log(`   العمود O (تاريخ المعاينة): "${rows[0][14] || 'غير موجود'}"`);
-                console.log(`   العمود P (وقت المعاينة): "${rows[0][15] || 'غير موجود'}"`);
-            }
+            console.log(`✅ تم جلب ${rows.length} صف`);
             
             const events = [];
             let appCount = 0;
@@ -293,13 +306,11 @@
                 const address = row[7] || '';
                 const generalNotes = row[8] || '';
                 
-                // ========== معاينة من العمود O (index 14) والوقت من العمود P (index 15) ==========
+                // معاينة من العمود O (index 14) والوقت من العمود P (index 15)
                 const appointmentDateRaw = row[14] || '';
                 const appointmentTimeRaw = row[15] || '';
                 
                 if (appointmentDateRaw && appointmentDateRaw.toString().trim() !== '') {
-                    console.log(`\n🔍 الصف ${i}: "${name}"`);
-                    
                     const result = parseArabicDate(appointmentDateRaw, appointmentTimeRaw);
                     
                     if (result && result.date && !isNaN(result.date.getTime())) {
@@ -309,21 +320,16 @@
                             type: TYPE_APPOINTMENT,
                             start: result.date,
                             displayTime: result.displayTime,
-                            originalDateRaw: appointmentDateRaw,
-                            originalTimeRaw: appointmentTimeRaw,
                             phone: phone,
                             city: city,
                             address: address,
                             notes: generalNotes || 'لا توجد ملاحظات'
                         });
                         appCount++;
-                        console.log(`   ✅ تمت إضافة معاينة: ${name} - ${result.displayTime}`);
-                    } else {
-                        console.log(`   ❌ فشل تحويل التاريخ`);
                     }
                 }
                 
-                // ========== متابعة من العمود L (index 11) ==========
+                // متابعة من العمود L (index 11)
                 const callbackDateL = row[11] || '';
                 const callbackNotesL = row[13] || '';
                 
@@ -342,11 +348,10 @@
                             notes: callbackNotesL || generalNotes || 'متابعة'
                         });
                         callbackCount++;
-                        console.log(`   ✅ تمت إضافة متابعة L`);
                     }
                 }
                 
-                // ========== متابعة من العمود S (index 18) ==========
+                // متابعة من العمود S (index 18)
                 const callbackDateS = row[18] || '';
                 const callbackNotesS = row[19] || '';
                 
@@ -365,15 +370,11 @@
                             notes: callbackNotesS || generalNotes || 'متابعة إضافية'
                         });
                         callbackCount++;
-                        console.log(`   ✅ تمت إضافة متابعة S`);
                     }
                 }
             }
             
-            console.log(`\n📊 التقرير النهائي:`);
-            console.log(`   ✅ معاينات: ${appCount}`);
-            console.log(`   ✅ متابعات: ${callbackCount}`);
-            console.log(`   ✅ المجموع الكلي: ${events.length}`);
+            console.log(`📊 النتائج: ${appCount} معاينة, ${callbackCount} متابعة`);
             
             if (events.length === 0) {
                 throw new Error("لم يتم العثور على أي مواعيد صالحة في الجدول");
@@ -413,9 +414,102 @@
         document.getElementById('todayAppointments').innerText = todayApps;
         document.getElementById('todayCallbacks').innerText = todayCbs;
         
-        const statusSpan = document.getElementById('syncStatus');
-        statusSpan.innerHTML = `✅ ${events.length} موعد`;
-        statusSpan.className = 'status-badge success';
+        // إشعار لمواعيد اليوم
+        if (todayApps > 0 && !lastNotifiedDates.has(`today_app_${today.toDateString()}`)) {
+            lastNotifiedDates.add(`today_app_${today.toDateString()}`);
+            showSafeNotification(`🏢 معاينات اليوم`, `${todayApps} معاينة عقار اليوم`);
+            addToNotificationsList(`🏢 معاينات اليوم`, `${todayApps} معاينة عقار اليوم`, 'appointment');
+        }
+        if (todayCbs > 0 && !lastNotifiedDates.has(`today_cb_${today.toDateString()}`)) {
+            lastNotifiedDates.add(`today_cb_${today.toDateString()}`);
+            showSafeNotification(`📞 متابعات اليوم`, `${todayCbs} متابعة عميل اليوم`);
+            addToNotificationsList(`📞 متابعات اليوم`, `${todayCbs} متابعة عميل اليوم`, 'callback');
+        }
+    }
+    
+    function addToNotificationsList(title, message, type) {
+        const id = notificationId++;
+        notifications.unshift({ id, title, message, type, time: new Date(), read: false });
+        if (notifications.length > 50) notifications.pop();
+        updateNotificationUI();
+    }
+    
+    function updateNotificationUI() {
+        const unreadCount = notifications.filter(n => !n.read).length;
+        const badge = document.getElementById('notificationCount');
+        if (unreadCount > 0) {
+            badge.style.display = 'flex';
+            badge.innerText = unreadCount > 9 ? '9+' : unreadCount;
+        } else {
+            badge.style.display = 'none';
+        }
+        
+        const container = document.getElementById('notificationsList');
+        if (notifications.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-inbox" style="font-size:2rem;"></i><p>لا توجد إشعارات</p></div>';
+            return;
+        }
+        
+        let html = '';
+        for (const n of notifications) {
+            const timeStr = formatTimeAgo(n.time);
+            let iconClass = 'info';
+            let iconHtml = '<i class="fas fa-info-circle"></i>';
+            if (n.type === 'appointment') { iconClass = 'appointment'; iconHtml = '<i class="fas fa-building"></i>'; }
+            else if (n.type === 'callback') { iconClass = 'callback'; iconHtml = '<i class="fas fa-phone-alt"></i>'; }
+            
+            html += `<div class="notification-item ${!n.read ? 'unread' : ''}" onclick="markAsRead(${n.id})">
+                <div class="notification-icon ${iconClass}">${iconHtml}</div>
+                <div class="notification-content">
+                    <div class="notification-title" style="font-weight:600;">${n.title}</div>
+                    <div style="font-size:0.8rem;color:#4b5563;">${n.message}</div>
+                    <div class="notification-time" style="font-size:0.7rem;color:#9ca3af;margin-top:4px;">${timeStr}</div>
+                </div>
+            </div>`;
+        }
+        container.innerHTML = html;
+    }
+    
+    function formatTimeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        if (seconds < 60) return 'الآن';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `منذ ${minutes} دقيقة`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `منذ ${hours} ساعة`;
+        return `منذ ${Math.floor(hours / 24)} يوم`;
+    }
+    
+    window.markAsRead = function(id) {
+        const n = notifications.find(n => n.id === id);
+        if (n) { n.read = true; updateNotificationUI(); }
+    };
+    
+    function clearAllNotifications() {
+        notifications = [];
+        updateNotificationUI();
+    }
+    
+    function toggleNotifications() {
+        const panel = document.getElementById('notificationsPanel');
+        panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
+    }
+    
+    function closeNotifications() {
+        document.getElementById('notificationsPanel').style.display = 'none';
+    }
+    
+    function showToast(message) {
+        Swal.fire({
+            text: message,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true,
+            background: '#fff',
+            didOpen: (toast) => { toast.style.direction = 'rtl'; }
+        });
     }
     
     function renderUpcomingList(events) {
@@ -553,85 +647,6 @@
         console.log(`📅 تم تحديث التقويم بـ ${fcEvents.length} حدث`);
     }
     
-    function addNotification(title, message, type, eventId = null) {
-        if (eventId && lastNotifiedDates.has(eventId)) return;
-        if (eventId) lastNotifiedDates.add(eventId);
-        
-        const id = notificationId++;
-        notifications.unshift({ id, title, message, type, time: new Date(), read: false });
-        if (notifications.length > 50) notifications.pop();
-        updateNotificationUI();
-        
-        if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(title, { body: message });
-        }
-    }
-    
-    function updateNotificationUI() {
-        const unreadCount = notifications.filter(n => !n.read).length;
-        const badge = document.getElementById('notificationCount');
-        if (unreadCount > 0) {
-            badge.style.display = 'flex';
-            badge.innerText = unreadCount > 9 ? '9+' : unreadCount;
-        } else {
-            badge.style.display = 'none';
-        }
-        
-        const container = document.getElementById('notificationsList');
-        if (notifications.length === 0) {
-            container.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-inbox" style="font-size:2rem;"></i><p>لا توجد إشعارات</p></div>';
-            return;
-        }
-        
-        let html = '';
-        for (const n of notifications) {
-            const timeStr = formatTimeAgo(n.time);
-            let iconClass = 'info';
-            let iconHtml = '<i class="fas fa-info-circle"></i>';
-            if (n.type === 'appointment') { iconClass = 'appointment'; iconHtml = '<i class="fas fa-building"></i>'; }
-            else if (n.type === 'callback') { iconClass = 'callback'; iconHtml = '<i class="fas fa-phone-alt"></i>'; }
-            
-            html += `<div class="notification-item ${!n.read ? 'unread' : ''}" onclick="markAsRead(${n.id})">
-                <div class="notification-icon ${iconClass}">${iconHtml}</div>
-                <div class="notification-content">
-                    <div class="notification-title" style="font-weight:600;">${n.title}</div>
-                    <div style="font-size:0.8rem;">${n.message}</div>
-                    <div class="notification-time" style="font-size:0.7rem;color:#9ca3af;margin-top:4px;">${timeStr}</div>
-                </div>
-            </div>`;
-        }
-        container.innerHTML = html;
-    }
-    
-    function formatTimeAgo(date) {
-        const seconds = Math.floor((new Date() - date) / 1000);
-        if (seconds < 60) return 'الآن';
-        const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) return `منذ ${minutes} دقيقة`;
-        const hours = Math.floor(minutes / 60);
-        if (hours < 24) return `منذ ${hours} ساعة`;
-        return `منذ ${Math.floor(hours / 24)} يوم`;
-    }
-    
-    window.markAsRead = function(id) {
-        const n = notifications.find(n => n.id === id);
-        if (n) { n.read = true; updateNotificationUI(); }
-    };
-    
-    function clearAllNotifications() {
-        notifications = [];
-        updateNotificationUI();
-    }
-    
-    function toggleNotifications() {
-        const panel = document.getElementById('notificationsPanel');
-        panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex';
-    }
-    
-    function closeNotifications() {
-        document.getElementById('notificationsPanel').style.display = 'none';
-    }
-    
     function setFilter(filter) {
         currentFilter = filter;
         document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -649,12 +664,6 @@
         updateStats(filteredEvents);
     }
     
-    function requestNotificationPermission() {
-        if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-            Notification.requestPermission();
-        }
-    }
-    
     async function refreshDashboard() {
         console.log("🔄 بدء تحديث البيانات...");
         
@@ -669,9 +678,11 @@
                 originalEvents = realEvents;
                 applyFilter();
                 console.log(`✅ تم تحديث الواجهة بـ ${realEvents.length} موعد`);
+                statusSpan.innerHTML = `✅ ${realEvents.length} موعد`;
+                statusSpan.className = 'status-badge success';
                 
-                // إشعار بنجاح التحديث
-                addNotification('✅ تحديث البيانات', `تم جلب ${realEvents.length} موعد من Google Sheets`, 'info', `refresh_${Date.now()}`);
+                // إضافة إشعار نجاح
+                addToNotificationsList('✅ تحديث البيانات', `تم جلب ${realEvents.length} موعد من Google Sheets`, 'info');
             } else {
                 throw new Error("لم يتم العثور على بيانات");
             }
@@ -681,17 +692,18 @@
             statusSpan.innerHTML = '❌ فشل الجلب';
             statusSpan.className = 'status-badge error';
             
-            // عرض رسالة خطأ
+            // عرض خطأ للمستخدم
             Swal.fire({
-                title: 'خطأ في جلب البيانات',
+                title: '⚠️ خطأ في جلب البيانات',
                 html: `<div style="text-align:right">
-                    <p>${error.message}</p>
+                    <p><i class="fas fa-exclamation-triangle"></i> ${error.message}</p>
                     <hr>
                     <p><strong>🔧 الحلول المقترحة:</strong></p>
-                    <ul style="text-align:right">
+                    <ul style="text-align:right; padding-right:20px;">
                         <li>تأكد من مشاركة الجدول: مشاركة → عام → أي شخص لديه الرابط</li>
-                        <li>تأكد من وجود تواريخ في العمود O</li>
-                        <li>تأكد من صحة معرف الجدول ومفتاح API</li>
+                        <li>تأكد من وجود تواريخ في العمود O (تاريخ المعاينة)</li>
+                        <li>تأكد من صحة معرف الجدول (Spreadsheet ID)</li>
+                        <li>تأكد من صحة مفتاح API (API Key)</li>
                     </ul>
                 </div>`,
                 icon: 'error',
@@ -704,8 +716,6 @@
     window.addEventListener('load', () => {
         console.log(`🚀 بدء تشغيل التطبيق - نظام إدارة العقارات`);
         console.log(`📅 التاريخ الحالي: ${new Date().toLocaleString('ar-EG')}`);
-        
-        requestNotificationPermission();
         
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => setFilter(btn.dataset.filter));
