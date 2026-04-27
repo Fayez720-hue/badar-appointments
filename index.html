@@ -9,182 +9,215 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ar.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', sans-serif; }
-        body { background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 100%); min-height: 100vh; padding: 12px; direction: rtl; }
-        .dashboard-container { max-width: 1400px; margin: 0 auto; }
-        
-        .header { background: rgba(255,255,255,0.97); border-radius: 20px; padding: 12px 16px; margin-bottom: 16px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; }
-        h1 { font-size: 1.2rem; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        
-        .filter-group { display: flex; gap: 6px; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 40px; }
-        .filter-btn { padding: 6px 12px; border-radius: 30px; border: none; cursor: pointer; font-size: 0.75rem; background: transparent; transition: all 0.2s; }
-        .filter-btn.active { background: linear-gradient(135deg, #c9a03d, #8b6914); color: white; }
-        .refresh-btn { background: linear-gradient(135deg, #c9a03d, #8b6914); border: none; color: white; padding: 8px 14px; border-radius: 30px; cursor: pointer; margin-left: 8px; transition: all 0.2s; }
-        .refresh-btn:hover { transform: translateY(-2px); }
-        .status-badge { background: #eef2ff; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; }
-        .status-badge.error { background: #fee2e2; color: #dc2626; }
-        .status-badge.success { background: #dcfce7; color: #16a34a; }
-        
-        /* Date Range Filter Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 100%);
+            min-height: 100vh;
+            padding: 15px;
+            direction: rtl;
+        }
+
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.97);
+            border-radius: 24px;
+            padding: 15px 24px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 1.3rem;
+            background: linear-gradient(135deg, #c9a03d, #8b6914);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Filter Buttons */
+        .filter-group {
+            display: flex;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 5px;
+            border-radius: 50px;
+        }
+
+        .filter-btn {
+            padding: 6px 18px;
+            border-radius: 40px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: transparent;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, #c9a03d, #8b6914);
+            color: white;
+        }
+
+        .refresh-btn {
+            background: linear-gradient(135deg, #c9a03d, #8b6914);
+            border: none;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 10px;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .status-badge {
+            background: #eef2ff;
+            padding: 4px 12px;
+            border-radius: 25px;
+            font-size: 0.7rem;
+        }
+
+        /* Date Range Filter */
         .date-range-filter {
-            background: rgba(255,255,255,0.95);
+            background: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             justify-content: center;
             gap: 12px;
-            border: 1px solid rgba(201,160,61,0.3);
+            border: 1px solid rgba(201, 160, 61, 0.3);
         }
+
         .date-range-filter label {
             font-size: 0.75rem;
             color: #8b6914;
             font-weight: bold;
         }
+
         .date-range-filter input {
-            padding: 6px 10px;
+            padding: 6px 12px;
             border-radius: 12px;
             border: 1px solid #ddd;
             font-size: 0.75rem;
-            background: white;
-            cursor: pointer;
         }
+
         .date-range-filter button {
             background: linear-gradient(135deg, #c9a03d, #8b6914);
             border: none;
             color: white;
-            padding: 6px 14px;
+            padding: 6px 16px;
             border-radius: 25px;
             cursor: pointer;
             font-size: 0.7rem;
-            transition: all 0.2s;
         }
-        .date-range-filter button:hover {
-            transform: translateY(-2px);
-        }
+
         .date-range-filter .clear-btn {
             background: #6c7a74;
         }
+
         .range-info {
             font-size: 0.7rem;
             color: #c9a03d;
             background: #fef8e7;
-            padding: 4px 10px;
+            padding: 4px 12px;
             border-radius: 20px;
         }
-        
-        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
-        @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
-        
-        .stat-card { background: rgba(255,255,255,0.95); border-radius: 16px; padding: 12px; border-right: 3px solid #c9a03d; cursor: pointer; transition: all 0.2s; }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .stat-number { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        
-        .two-columns { display: flex; flex-direction: column; gap: 16px; }
-        @media (min-width: 768px) { .two-columns { flex-direction: row; } }
-        
-        .calendar-panel, .events-panel { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 16px; }
-        .calendar-panel { flex: 2; }
-        .events-panel { flex: 1.2; }
-        
-        .events-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #e2e8f0;
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
         }
-        .events-header h3 {
-            font-size: 1rem;
-            color: #8b6914;
+
+        @media (min-width: 768px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
         }
-        .events-count {
-            background: #c9a03d;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-        }
-        
-        .event-list { max-height: 550px; overflow-y: auto; }
-        .event-list::-webkit-scrollbar { width: 4px; }
-        .event-list::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 10px; }
-        .event-list::-webkit-scrollbar-thumb { background: #c9a03d; border-radius: 10px; }
-        
-        .event-item {
-            background: white;
-            margin-bottom: 10px;
-            padding: 12px;
-            border-radius: 14px;
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 18px;
+            padding: 15px;
             border-right: 4px solid #c9a03d;
-            cursor: pointer;
             transition: all 0.2s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        .event-item.callback { border-right-color: #e67e22; background: #fffbf0; }
-        .event-item:hover { transform: translateX(-5px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        
-        .event-title { 
-            font-weight: 700; 
-            font-size: 0.9rem; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 0.75rem;
+            color: #6c7a74;
             margin-bottom: 8px;
         }
-        .event-name {
+
+        .stat-number {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #c9a03d, #8b6914);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Two Columns */
+        .two-columns {
             display: flex;
-            align-items: center;
-            gap: 8px;
+            flex-direction: column;
+            gap: 20px;
         }
-        .event-type { 
-            font-size: 0.6rem; 
-            padding: 3px 10px; 
-            border-radius: 20px; 
-            background: #fef8e7; 
+
+        @media (min-width: 768px) {
+            .two-columns {
+                flex-direction: row;
+            }
         }
-        .event-type.callback-badge { background: #ffecb3; color: #b45f06; }
-        
-        .event-details { 
-            font-size: 0.7rem; 
-            color: #4a5b54; 
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 5px;
+
+        .calendar-panel,
+        .events-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 24px;
+            padding: 20px;
         }
-        .event-details span {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
+
+        .calendar-panel {
+            flex: 2;
         }
-        .event-phone {
-            direction: ltr;
-            font-family: monospace;
-            background: #f0f0f0;
-            padding: 2px 6px;
-            border-radius: 8px;
+
+        .events-panel {
+            flex: 1.2;
         }
-        
-        .fc { direction: rtl; }
-        .fc .fc-toolbar { flex-direction: column; gap: 8px; margin-bottom: 15px; }
-        @media (min-width: 768px) { .fc .fc-toolbar { flex-direction: row; } }
-        .fc .fc-button { background: #c9a03d !important; border: none !important; }
-        .fc .fc-button:hover { background: #8b6914 !important; }
-        
-        .loading { text-align: center; padding: 40px; }
-        .spinner { width: 40px; height: 40px; border: 3px solid #fef8e7; border-top: 3px solid #c9a03d; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        .footer-note { margin-top: 16px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.2); padding: 8px; border-radius: 20px; }
-        
-        .error-message { text-align: center; padding: 40px; background: #fee2e2; border-radius: 16px; margin: 20px; }
-        .error-message i { font-size: 2rem; color: #dc2626; margin-bottom: 15px; display: block; }
-        .error-message button { background: #c9a03d; border: none; padding: 8px 20px; border-radius: 25px; color: white; cursor: pointer; margin-top: 15px; }
-        
+
         .section-title {
             font-size: 1rem;
             font-weight: 700;
@@ -195,6 +228,186 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        .events-count {
+            background: #c9a03d;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+        }
+
+        /* Event List */
+        .event-list {
+            max-height: 550px;
+            overflow-y: auto;
+        }
+
+        .event-list::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .event-list::-webkit-scrollbar-track {
+            background: #f0f0f0;
+            border-radius: 10px;
+        }
+
+        .event-list::-webkit-scrollbar-thumb {
+            background: #c9a03d;
+            border-radius: 10px;
+        }
+
+        .event-item {
+            background: white;
+            margin-bottom: 12px;
+            padding: 14px;
+            border-radius: 16px;
+            border-right: 4px solid #c9a03d;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .event-item.callback {
+            border-right-color: #e67e22;
+            background: #fffbf0;
+        }
+
+        .event-item:hover {
+            transform: translateX(-5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .event-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .event-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .event-type {
+            font-size: 0.6rem;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: #fef8e7;
+        }
+
+        .event-type.callback-badge {
+            background: #ffecb3;
+            color: #b45f06;
+        }
+
+        .event-details {
+            font-size: 0.7rem;
+            color: #4a5b54;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 5px;
+        }
+
+        .event-details span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .event-phone {
+            direction: ltr;
+            font-family: monospace;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 8px;
+        }
+
+        /* Calendar */
+        .fc {
+            direction: rtl;
+        }
+
+        .fc .fc-toolbar {
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        @media (min-width: 768px) {
+            .fc .fc-toolbar {
+                flex-direction: row;
+            }
+        }
+
+        .fc .fc-button {
+            background: #c9a03d !important;
+            border: none !important;
+        }
+
+        .fc .fc-button:hover {
+            background: #8b6914 !important;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #fef8e7;
+            border-top: 3px solid #c9a03d;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer-note {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 25px;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 40px;
+            background: #fee2e2;
+            border-radius: 16px;
+            margin: 20px;
+        }
+
+        .error-message i {
+            font-size: 2rem;
+            color: #dc2626;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .error-message button {
+            background: #c9a03d;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            margin-top: 15px;
         }
     </style>
 </head>
@@ -213,22 +426,33 @@
         </div>
     </div>
 
-    <!-- فلتر نطاق التاريخ -->
     <div class="date-range-filter">
         <label>📅 من:</label>
         <input type="date" id="startDate" value="2026-04-01">
         <label>إلى:</label>
         <input type="date" id="endDate" value="2026-04-30">
-        <button id="applyDateRangeBtn"><i class="fas fa-filter"></i> تطبيق الفلتر</button>
-        <button id="clearDateRangeBtn" class="clear-btn"><i class="fas fa-times"></i> إلغاء الفلتر</button>
+        <button id="applyDateRangeBtn"><i class="fas fa-filter"></i> تطبيق</button>
+        <button id="clearDateRangeBtn" class="clear-btn"><i class="fas fa-times"></i> إلغاء</button>
         <span id="rangeInfo" class="range-info"></span>
     </div>
 
     <div class="stats-grid">
-        <div class="stat-card"><h3>🏢 إجمالي المعاينات</h3><div class="stat-number" id="totalApp">0</div></div>
-        <div class="stat-card"><h3>📞 إجمالي المتابعات</h3><div class="stat-number" id="totalCb">0</div></div>
-        <div class="stat-card"><h3>📅 معاينات اليوم</h3><div class="stat-number" id="todayApp">0</div></div>
-        <div class="stat-card"><h3>⏰ متابعات اليوم</h3><div class="stat-number" id="todayCb">0</div></div>
+        <div class="stat-card">
+            <h3><i class="fas fa-building"></i> إجمالي المعاينات</h3>
+            <div class="stat-number" id="totalApp">0</div>
+        </div>
+        <div class="stat-card">
+            <h3><i class="fas fa-phone-alt"></i> إجمالي المتابعات</h3>
+            <div class="stat-number" id="totalCb">0</div>
+        </div>
+        <div class="stat-card">
+            <h3><i class="fas fa-calendar-day"></i> معاينات اليوم</h3>
+            <div class="stat-number" id="todayApp">0</div>
+        </div>
+        <div class="stat-card">
+            <h3><i class="fas fa-clock"></i> متابعات اليوم</h3>
+            <div class="stat-number" id="todayCb">0</div>
+        </div>
     </div>
 
     <div class="two-columns">
@@ -244,16 +468,18 @@
             <div id="eventList" class="event-list"><div class="loading"><div class="spinner"></div><p>جاري التحميل...</p></div></div>
         </div>
     </div>
-    
-    <div class="footer-note"><i class="fas fa-info-circle"></i> 🏢 المعاينات: العمود O | 📞 متابعات بعد المكالمة: العمود L | 📋 متابعات بعد المعاينة: العمود S</div>
+
+    <div class="footer-note">
+        <i class="fas fa-info-circle"></i> 🏢 المعاينات من العمود O | 📞 متابعات بعد المكالمة من العمود L | 📋 متابعات بعد المعاينة من العمود S
+    </div>
 </div>
 
 <script>
-    // ======================= إعدادات Google Sheets =======================
+    // إعدادات Google Sheets
     const SPREADSHEET_ID = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
     const SHEET_NAME = 'مبيعات';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
-    
+
     // الأعمدة
     const COL_NAME = 1;
     const COL_PHONE = 2;
@@ -262,130 +488,103 @@
     const COL_NOTES = 8;
     const COL_APPOINTMENT_DATE = 14;
     const COL_APPOINTMENT_TIME = 15;
-    const COL_CALLBACK_AFTER_CALL_DATE = 11;
-    const COL_CALLBACK_AFTER_CALL_NOTES = 13;
-    const COL_CALLBACK_AFTER_APPT_DATE = 18;
-    const COL_CALLBACK_AFTER_APPT_NOTES = 20;
-    
+    const COL_CALLBACK_L_DATE = 11;
+    const COL_CALLBACK_L_NOTES = 13;
+    const COL_CALLBACK_S_DATE = 18;
+    const COL_CALLBACK_S_NOTES = 20;
+
     let allEvents = [];
     let filteredEvents = [];
     let calendar = null;
     let currentFilter = 'all';
     let dateRange = { start: null, end: null };
-    
+
     const TYPE_APPOINTMENT = 'معاينة';
-    const TYPE_CALLBACK_AFTER_CALL = 'متابعة بعد المكالمة';
-    const TYPE_CALLBACK_AFTER_APPT = 'متابعة بعد المعاينة';
-    
-    // تطبيق فلتر التاريخ
+    const TYPE_CALLBACK_L = 'متابعة المكالمة';
+    const TYPE_CALLBACK_S = 'متابعة المعاينة';
+
     function applyDateRangeFilter() {
-        const startDateInput = document.getElementById('startDate');
-        const endDateInput = document.getElementById('endDate');
+        const startInput = document.getElementById('startDate');
+        const endInput = document.getElementById('endDate');
         const rangeInfo = document.getElementById('rangeInfo');
-        
-        if (startDateInput.value) {
-            dateRange.start = new Date(startDateInput.value);
+
+        if (startInput.value) {
+            dateRange.start = new Date(startInput.value);
             dateRange.start.setHours(0, 0, 0, 0);
         } else {
             dateRange.start = null;
         }
-        
-        if (endDateInput.value) {
-            dateRange.end = new Date(endDateInput.value);
+
+        if (endInput.value) {
+            dateRange.end = new Date(endInput.value);
             dateRange.end.setHours(23, 59, 59, 999);
         } else {
             dateRange.end = null;
         }
-        
+
         if (dateRange.start && dateRange.end) {
-            const startFormatted = dateRange.start.toLocaleDateString('ar-EG');
-            const endFormatted = dateRange.end.toLocaleDateString('ar-EG');
-            rangeInfo.innerHTML = `📅 من ${startFormatted} إلى ${endFormatted}`;
+            rangeInfo.innerHTML = `📅 ${dateRange.start.toLocaleDateString('ar-EG')} - ${dateRange.end.toLocaleDateString('ar-EG')}`;
         } else if (dateRange.start) {
             rangeInfo.innerHTML = `📅 من ${dateRange.start.toLocaleDateString('ar-EG')}`;
         } else if (dateRange.end) {
             rangeInfo.innerHTML = `📅 حتى ${dateRange.end.toLocaleDateString('ar-EG')}`;
         } else {
-            rangeInfo.innerHTML = '📅 جميع المواعيد';
+            rangeInfo.innerHTML = '📅 الكل';
         }
-        
+
         applyFilters();
     }
-    
+
     function clearDateRangeFilter() {
         document.getElementById('startDate').value = '';
         document.getElementById('endDate').value = '';
         dateRange = { start: null, end: null };
-        document.getElementById('rangeInfo').innerHTML = '📅 جميع المواعيد';
+        document.getElementById('rangeInfo').innerHTML = '📅 الكل';
         applyFilters();
     }
-    
+
     function applyFilters() {
         let result = [...allEvents];
-        
+
         if (currentFilter === 'appointment') {
             result = result.filter(e => e.type === TYPE_APPOINTMENT);
         } else if (currentFilter === 'callback') {
             result = result.filter(e => e.type !== TYPE_APPOINTMENT);
         }
-        
+
         if (dateRange.start) {
             result = result.filter(e => {
-                const eventDate = new Date(e.date);
-                eventDate.setHours(0, 0, 0, 0);
+                const evDate = new Date(e.date);
+                evDate.setHours(0, 0, 0, 0);
                 const startDate = new Date(dateRange.start);
                 startDate.setHours(0, 0, 0, 0);
-                return eventDate >= startDate;
+                return evDate >= startDate;
             });
         }
+
         if (dateRange.end) {
             result = result.filter(e => {
-                const eventDate = new Date(e.date);
-                eventDate.setHours(0, 0, 0, 0);
+                const evDate = new Date(e.date);
+                evDate.setHours(0, 0, 0, 0);
                 const endDate = new Date(dateRange.end);
                 endDate.setHours(0, 0, 0, 0);
-                return eventDate <= endDate;
+                return evDate <= endDate;
             });
         }
-        
+
         filteredEvents = result;
         document.getElementById('eventsCount').innerText = filteredEvents.length;
         updateStats(filteredEvents);
         renderEventList(filteredEvents);
         initCalendar(filteredEvents);
     }
-    
-    function showError(message) {
-        const calendarEl = document.getElementById('calendar');
-        const eventListEl = document.getElementById('eventList');
-        const errorHtml = `
-            <div class="error-message">
-                <i class="fas fa-exclamation-triangle"></i>
-                <p><strong>⚠️ ${message}</strong></p>
-                <p style="font-size: 0.8rem; margin-top: 10px;">تأكد من مشاركة الجدول كـ "عام"</p>
-                <button onclick="location.reload()">🔄 إعادة المحاولة</button>
-            </div>
-        `;
-        calendarEl.innerHTML = errorHtml;
-        eventListEl.innerHTML = errorHtml;
-        
-        document.getElementById('totalApp').innerText = '0';
-        document.getElementById('totalCb').innerText = '0';
-        document.getElementById('todayApp').innerText = '0';
-        document.getElementById('todayCb').innerText = '0';
-        document.getElementById('eventsCount').innerText = '0';
-        
-        const statusSpan = document.getElementById('status');
-        statusSpan.innerHTML = '❌ فشل الجلب';
-        statusSpan.className = 'status-badge error';
-    }
-    
+
     function parseDate(dateStr) {
         if (!dateStr) return null;
         let original = dateStr.toString().trim();
         if (original === 'FALSE' || original === 'TRUE' || original === '') return null;
         let cleaned = original.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
-        
+
         let day, month, year;
         let parts = cleaned.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
         if (parts) {
@@ -416,20 +615,20 @@
                 }
             }
         }
-        
+
         let dateObj = new Date(year, month, day, 12, 0);
         return !isNaN(dateObj.getTime()) ? dateObj : null;
     }
-    
+
     function parseTime(timeStr) {
         if (!timeStr) return { hour24: 12, minute: 0, display: '12:00 م' };
         let clean = timeStr.toString().trim();
         if (clean === 'FALSE' || clean === 'TRUE' || clean === '') {
             return { hour24: 12, minute: 0, display: '12:00 م' };
         }
-        
+
         let hour24 = 12, minute = 0, displayTime = '';
-        
+
         let match = clean.match(/(\d{1,2}):(\d{2}):(\d{2})\s*([مص])/);
         if (match) {
             let hour = parseInt(match[1]);
@@ -445,7 +644,7 @@
             displayTime = `${hour12}:${minute.toString().padStart(2, '0')} ${displayPeriod}`;
             return { hour24, minute, display: displayTime };
         }
-        
+
         match = clean.match(/(\d{1,2}):(\d{2})\s*([مص])/);
         if (match) {
             let hour = parseInt(match[1]);
@@ -461,55 +660,52 @@
             displayTime = `${hour12}:${minute.toString().padStart(2, '0')} ${displayPeriod}`;
             return { hour24, minute, display: displayTime };
         }
-        
+
         if (clean.includes('12:00:00 ص')) return { hour24: 0, minute: 0, display: '12:00 ص' };
         if (clean.includes('12:00:00 م')) return { hour24: 12, minute: 0, display: '12:00 م' };
-        
+
         return { hour24: 12, minute: 0, display: '12:00 م' };
     }
-    
+
     async function fetchData() {
         const statusSpan = document.getElementById('status');
         statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري...';
-        statusSpan.className = 'status-badge';
-        
+
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:Z500?key=${API_KEY}`;
             const response = await fetch(url);
-            
+
             if (!response.ok) {
-                if (response.status === 403) {
-                    throw new Error("خطأ 403: يرجى مشاركة الجدول كـ 'عام'");
-                }
                 throw new Error(`HTTP ${response.status}`);
             }
-            
+
             const data = await response.json();
             const rows = data.values;
-            
+
             if (!rows || rows.length < 2) {
-                throw new Error("لا توجد بيانات في الجدول");
+                throw new Error("لا توجد بيانات");
             }
-            
+
             const events = [];
-            
+
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 if (!row) continue;
-                
+
                 const name = row[COL_NAME] || 'غير محدد';
                 const phone = row[COL_PHONE] || '';
                 const city = row[COL_CITY] || '';
                 const address = row[COL_ADDRESS] || '';
                 const notes = row[COL_NOTES] || '';
-                
-                const appointmentDate = row[COL_APPOINTMENT_DATE];
-                const appointmentTimeRaw = row[COL_APPOINTMENT_TIME] || '';
-                
-                if (appointmentDate && appointmentDate.toString().trim() && appointmentDate !== 'FALSE') {
-                    const dateObj = parseDate(appointmentDate);
+
+                // المعاينة
+                const appDate = row[COL_APPOINTMENT_DATE];
+                const appTime = row[COL_APPOINTMENT_TIME] || '';
+
+                if (appDate && appDate.toString().trim() && appDate !== 'FALSE') {
+                    const dateObj = parseDate(appDate);
                     if (dateObj) {
-                        const timeInfo = parseTime(appointmentTimeRaw);
+                        const timeInfo = parseTime(appTime);
                         dateObj.setHours(timeInfo.hour24, timeInfo.minute, 0);
                         events.push({
                             id: `app_${i}`, title: name, type: TYPE_APPOINTMENT,
@@ -518,103 +714,104 @@
                         });
                     }
                 }
-                
-                const callbackDate = row[COL_CALLBACK_AFTER_CALL_DATE];
-                const callbackNotes = row[COL_CALLBACK_AFTER_CALL_NOTES] || '';
-                
-                if (callbackDate && callbackDate.toString().trim() && callbackDate !== 'FALSE') {
-                    const dateObj = parseDate(callbackDate);
+
+                // متابعة من العمود L
+                const cbLDate = row[COL_CALLBACK_L_DATE];
+                const cbLNotes = row[COL_CALLBACK_L_NOTES] || '';
+
+                if (cbLDate && cbLDate.toString().trim() && cbLDate !== 'FALSE') {
+                    const dateObj = parseDate(cbLDate);
                     if (dateObj) {
                         events.push({
-                            id: `cbL_${i}`, title: name, type: TYPE_CALLBACK_AFTER_CALL,
+                            id: `cbL_${i}`, title: name, type: TYPE_CALLBACK_L,
                             date: dateObj, displayTime: '', phone: phone,
-                            city: city, address: address, notes: callbackNotes || notes || 'متابعة'
+                            city: city, address: address, notes: cbLNotes || notes || 'متابعة المكالمة'
                         });
                     }
                 }
-                
-                const callbackApptDate = row[COL_CALLBACK_AFTER_APPT_DATE];
-                const callbackApptNotes = row[COL_CALLBACK_AFTER_APPT_NOTES] || '';
-                
-                if (callbackApptDate && callbackApptDate.toString().trim() && callbackApptDate !== 'FALSE') {
-                    const dateObj = parseDate(callbackApptDate);
+
+                // متابعة من العمود S
+                const cbSDate = row[COL_CALLBACK_S_DATE];
+                const cbSNotes = row[COL_CALLBACK_S_NOTES] || '';
+
+                if (cbSDate && cbSDate.toString().trim() && cbSDate !== 'FALSE') {
+                    const dateObj = parseDate(cbSDate);
                     if (dateObj) {
                         events.push({
-                            id: `cbS_${i}`, title: name, type: TYPE_CALLBACK_AFTER_APPT,
+                            id: `cbS_${i}`, title: name, type: TYPE_CALLBACK_S,
                             date: dateObj, displayTime: '', phone: phone,
-                            city: city, address: address, notes: callbackApptNotes || notes || 'متابعة'
+                            city: city, address: address, notes: cbSNotes || notes || 'متابعة المعاينة'
                         });
                     }
                 }
             }
-            
+
             if (events.length === 0) {
-                throw new Error("لم يتم العثور على أي مواعيد في الجدول");
+                throw new Error("لم يتم العثور على أي مواعيد");
             }
-            
+
             statusSpan.innerHTML = `✅ ${events.length} موعد`;
-            statusSpan.className = 'status-badge success';
             return events;
-            
+
         } catch (error) {
             console.error("خطأ:", error);
             statusSpan.innerHTML = '❌ فشل الجلب';
-            statusSpan.className = 'status-badge error';
-            showError(error.message);
             return [];
         }
     }
-    
+
     function updateStats(events) {
         const totalApp = events.filter(e => e.type === TYPE_APPOINTMENT).length;
         const totalCb = events.filter(e => e.type !== TYPE_APPOINTMENT).length;
-        
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
+
         const todayApp = events.filter(e => {
             if (e.type !== TYPE_APPOINTMENT) return false;
             const evDate = new Date(e.date);
             evDate.setHours(0, 0, 0, 0);
             return evDate.getTime() === today.getTime();
         }).length;
-        
+
         const todayCb = events.filter(e => {
             if (e.type === TYPE_APPOINTMENT) return false;
             const evDate = new Date(e.date);
             evDate.setHours(0, 0, 0, 0);
             return evDate.getTime() === today.getTime();
         }).length;
-        
+
         document.getElementById('totalApp').innerText = totalApp;
         document.getElementById('totalCb').innerText = totalCb;
         document.getElementById('todayApp').innerText = todayApp;
         document.getElementById('todayCb').innerText = todayCb;
     }
-    
+
     function renderEventList(events) {
         const container = document.getElementById('eventList');
         if (events.length === 0) {
             container.innerHTML = '<div class="loading"><p>✨ لا توجد مواعيد في النطاق المحدد</p></div>';
             return;
         }
-        
+
         const sorted = [...events].sort((a, b) => a.date - b.date);
         let html = '';
+
         for (const ev of sorted) {
-            const dateStr = ev.date.toLocaleDateString('ar-EG', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+            const dateStr = ev.date.toLocaleDateString('ar-EG', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
             const timeDisplay = ev.displayTime ? `🕐 ${ev.displayTime}` : '';
             const isCallback = (ev.type !== TYPE_APPOINTMENT);
-            const typeDisplay = isCallback ? (ev.type === TYPE_CALLBACK_AFTER_CALL ? '📞 متابعة بعد المكالمة' : '📋 متابعة بعد المعاينة') : '🏢 معاينة';
-            
+            let typeIcon = isCallback ? '📞' : '🏢';
+            let typeDisplay = ev.type;
+
             html += `
-                <div class="event-item ${isCallback ? 'callback' : ''}" onclick="showEventDetails('${ev.title.replace(/'/g, "\\'")}', '${dateStr}', '${timeDisplay}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${typeDisplay}')">
+                <div class="event-item ${isCallback ? 'callback' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${dateStr}', '${timeDisplay}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${typeDisplay}')">
                     <div class="event-title">
                         <div class="event-name">
                             <i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i>
                             <span>${ev.title}</span>
                         </div>
-                        <span class="event-type ${isCallback ? 'callback-badge' : ''}">${typeDisplay}</span>
+                        <span class="event-type ${isCallback ? 'callback-badge' : ''}">${typeIcon} ${typeDisplay}</span>
                     </div>
                     <div class="event-details">
                         <span><i class="far fa-calendar-alt"></i> ${dateStr}</span>
@@ -626,13 +823,13 @@
         }
         container.innerHTML = html;
     }
-    
-    function showEventDetails(title, date, time, phone, city, address, notes, type) {
+
+    function showDetails(title, date, time, phone, city, address, notes, type) {
         let locationHtml = '';
         if (city || address) {
             locationHtml = `<hr><p><i class="fas fa-map-marker-alt"></i> <strong>الموقع:</strong><br>${city ? `🏙️ ${city}<br>` : ''}${address ? `📍 ${address}` : ''}</p>`;
         }
-        
+
         Swal.fire({
             title: title,
             html: `<div style="text-align:right">
@@ -649,34 +846,34 @@
             confirmButtonText: 'إغلاق'
         });
     }
-    
+
     function initCalendar(events) {
         const calendarEl = document.getElementById('calendar');
         if (calendar) calendar.destroy();
-        
+
         if (events.length === 0) {
-            calendarEl.innerHTML = '<div class="loading"><p>لا توجد مواعيد في النطاق المحدد</p></div>';
+            calendarEl.innerHTML = '<div class="loading"><p>لا توجد مواعيد</p></div>';
             return;
         }
-        
+
         const fcEvents = events.map(ev => {
             let color = '#c9a03d';
             let icon = '🏢';
-            if (ev.type === TYPE_CALLBACK_AFTER_CALL) { color = '#e67e22'; icon = '📞'; }
-            if (ev.type === TYPE_CALLBACK_AFTER_APPT) { color = '#3b82f6'; icon = '📋'; }
-            
+            if (ev.type === TYPE_CALLBACK_L) { color = '#e67e22'; icon = '📞'; }
+            if (ev.type === TYPE_CALLBACK_S) { color = '#3b82f6'; icon = '📋'; }
+
             let titleWithTime = ev.title;
             if (ev.displayTime && ev.displayTime !== '') {
                 titleWithTime = `${ev.title} (${ev.displayTime})`;
             }
-            
+
             return {
                 id: ev.id, title: `${icon} ${titleWithTime}`,
                 start: ev.date, backgroundColor: color,
                 extendedProps: { phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, displayTime: ev.displayTime, type: ev.type }
             };
         });
-        
+
         calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth', locale: 'ar', direction: 'rtl',
             headerToolbar: { left: 'prev,next today', center: 'title', right: window.innerWidth < 768 ? '' : 'dayGridMonth,listWeek' },
@@ -684,16 +881,16 @@
             events: fcEvents,
             eventClick: (info) => {
                 const ext = info.event.extendedProps;
-                const dateStr = info.event.start.toLocaleDateString('ar-EG', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+                const dateStr = info.event.start.toLocaleDateString('ar-EG', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
                 const timeDisplay = ext.displayTime ? `🕐 ${ext.displayTime}` : '';
-                const typeDisplay = ext.type === TYPE_APPOINTMENT ? '🏢 معاينة' : (ext.type === TYPE_CALLBACK_AFTER_CALL ? '📞 متابعة بعد المكالمة' : '📋 متابعة بعد المعاينة');
-                showEventDetails(info.event.title.replace(/^[🏢📞📋] /, '').replace(/\([^)]*\)/, '').trim(), dateStr, timeDisplay, ext.phone, ext.city, ext.address, ext.notes, typeDisplay);
+                let typeDisplay = ext.type;
+                showDetails(info.event.title.replace(/^[🏢📞📋] /, '').replace(/\([^)]*\)/, '').trim(), dateStr, timeDisplay, ext.phone, ext.city, ext.address, ext.notes, typeDisplay);
             },
             height: 'auto', firstDay: 6
         });
         calendar.render();
     }
-    
+
     function setFilter(filter) {
         currentFilter = filter;
         document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -701,7 +898,7 @@
         });
         applyFilters();
     }
-    
+
     async function refreshDashboard() {
         const events = await fetchData();
         if (events.length > 0) {
@@ -709,7 +906,8 @@
             applyFilters();
         }
     }
-    
+
+    // Event Listeners
     window.addEventListener('load', () => {
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => setFilter(btn.dataset.filter));
@@ -717,12 +915,11 @@
         document.getElementById('refreshBtn').addEventListener('click', refreshDashboard);
         document.getElementById('applyDateRangeBtn').addEventListener('click', applyDateRangeFilter);
         document.getElementById('clearDateRangeBtn').addEventListener('click', clearDateRangeFilter);
-        
-        // تعيين الفلتر الافتراضي لأبريل 2026
+
         document.getElementById('startDate').value = '2026-04-01';
         document.getElementById('endDate').value = '2026-04-30';
         applyDateRangeFilter();
-        
+
         refreshDashboard();
         setInterval(refreshDashboard, 300000);
     });
