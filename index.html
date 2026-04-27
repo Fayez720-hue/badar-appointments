@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>نظام إدارة العقارات - معاينات ومتابعات</title>
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <!-- FullCalendar CSS & JS - روابط صحيحة -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ar.js"></script>
+    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Sweet Alert -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif; }
@@ -58,9 +62,16 @@
         .notification-bell { background: rgba(201,160,61,0.1); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
         .notification-badge { position: absolute; top: -5px; right: -5px; background: #dc2626; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.6rem; display: flex; align-items: center; justify-content: center; }
         
-        .fc .fc-toolbar { flex-direction: column; gap: 10px; }
+        /* FullCalendar 5.x styles */
+        .fc { direction: rtl; }
+        .fc .fc-toolbar { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
         .fc .fc-toolbar-title { font-size: 1rem !important; }
-        .fc .fc-button { padding: 4px 8px !important; font-size: 0.7rem !important; }
+        .fc .fc-button { padding: 4px 8px !important; font-size: 0.7rem !important; background: #c9a03d !important; border: none !important; }
+        .fc .fc-button-primary:not(:disabled):hover { background: #8b6914 !important; }
+        .fc .fc-button-primary:focus { box-shadow: none !important; }
+        .fc-daygrid-day-number { font-size: 0.7rem !important; }
+        .fc-event-title { font-size: 0.65rem !important; }
+        .fc-event { cursor: pointer; }
         
         .footer-note { margin-top: 16px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 20px; }
         .loading { text-align: center; padding: 40px; }
@@ -75,6 +86,12 @@
             .two-columns { flex-direction: row; }
             .notifications-panel { width: 400px; height: auto; max-height: 600px; top: 20px; left: 20px; border-radius: 20px; }
             h1 { font-size: 1.4rem; }
+            .fc .fc-toolbar { flex-direction: row; }
+        }
+        
+        @media (max-width: 767px) {
+            .fc .fc-toolbar { flex-direction: column; }
+            .fc .fc-toolbar-title { margin: 10px 0; }
         }
     </style>
 </head>
@@ -151,7 +168,7 @@
     // ========== بيانات تجريبية للتأكد من عمل التقويم ==========
     function getDemoEvents() {
         const today = new Date();
-        const demoEvents = [
+        return [
             {
                 id: 'demo1',
                 title: 'أحمد محمد (معاينة فيلا)',
@@ -215,7 +232,6 @@
                 notes: 'تأكيد موعد المعاينة السابق'
             }
         ];
-        return demoEvents;
     }
     
     // دالة لاستخراج الوقت من العمود P
@@ -224,17 +240,17 @@
         let timeStr = timeValue.toString().trim();
         if (timeStr === '') return null;
         
-        // تنسيق HH:MM (24 ساعة)
         let match24 = timeStr.match(/^(\d{1,2}):(\d{2})$/);
         if (match24) {
             let hour = parseInt(match24[1]);
             let minute = parseInt(match24[2]);
             if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59) {
-                return { hour: hour, minute: minute, display: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}` };
+                let displayHour = hour % 12 || 12;
+                let ampm = hour >= 12 ? 'م' : 'ص';
+                return { hour: hour, minute: minute, display: `${displayHour}:${minute.toString().padStart(2, '0')} ${ampm}` };
             }
         }
         
-        // تنسيق HH:MM مع ص/م
         let match12 = timeStr.match(/^(\d{1,2}):(\d{2})\s*(ص|م|صباحاً|مساءً|AM|PM|am|pm)$/i);
         if (match12) {
             let hour = parseInt(match12[1]);
@@ -245,7 +261,7 @@
             } else if (period === 'ص' || period === 'صباحاً' || period === 'am') {
                 if (hour === 12) hour = 0;
             }
-            return { hour: hour, minute: minute, display: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}` };
+            return { hour: hour, minute: minute, display: timeStr };
         }
         
         return null;
@@ -287,15 +303,10 @@
                 const address = row[7] || '';
                 const generalNotes = row[8] || '';
                 
-                // التاريخ من العمود O (index 14)
                 const appointmentDateRaw = row[14] || '';
-                // الوقت من العمود P (index 15)
                 const appointmentTimeRaw = row[15] || '';
                 
                 if (appointmentDateRaw && appointmentDateRaw.toString().trim() !== '') {
-                    console.log(`📅 صف ${i}: ${name} - التاريخ: ${appointmentDateRaw}, الوقت: ${appointmentTimeRaw || 'غير موجود'}`);
-                    
-                    // تحويل التاريخ
                     let dateParts = appointmentDateRaw.toString().trim().split('/');
                     if (dateParts.length === 3) {
                         let day = parseInt(dateParts[0]);
@@ -303,15 +314,13 @@
                         let year = parseInt(dateParts[2]);
                         
                         let hour = 12, minute = 0;
-                        let displayTime = "12:00";
+                        let displayTime = "12:00 م";
                         
-                        // استخراج الوقت من العمود P
                         let timeResult = extractTimeFromColumnP(appointmentTimeRaw);
                         if (timeResult) {
                             hour = timeResult.hour;
                             minute = timeResult.minute;
                             displayTime = timeResult.display;
-                            console.log(`   ✓ الوقت المستخرج: ${displayTime}`);
                         }
                         
                         let dateObj = new Date(year, month, day, hour, minute);
@@ -328,7 +337,6 @@
                                 notes: generalNotes || 'لا توجد ملاحظات'
                             });
                             appCount++;
-                            console.log(`   ✅ تمت إضافة معاينة: ${name}`);
                         }
                     }
                 }
@@ -343,7 +351,6 @@
         }
     }
     
-    // تحديث الإحصائيات
     function updateStats(events) {
         const totalApp = events.filter(e => e.type === TYPE_APPOINTMENT).length;
         const totalCb = events.filter(e => e.type === TYPE_CALLBACK).length;
@@ -374,7 +381,6 @@
         statusSpan.innerHTML = `✅ ${events.length} موعد`;
     }
     
-    // عرض قائمة الأحداث القادمة
     function renderUpcomingList(events) {
         const container = document.getElementById('upcomingEventsList');
         if (events.length === 0) {
@@ -416,7 +422,6 @@
         container.innerHTML = html;
     }
     
-    // عرض التفاصيل
     window.showDetails = function(title, phone, notes, type, city = '', address = '', timeStr = '') {
         let locationHtml = '';
         if (type === TYPE_APPOINTMENT && (city || address)) {
@@ -444,10 +449,12 @@
         });
     };
     
-    // تهيئة التقويم
     function initCalendar(events) {
         const calendarEl = document.getElementById('calendar');
-        if (calendarInstance) calendarInstance.destroy();
+        if (calendarInstance) {
+            calendarInstance.destroy();
+            calendarEl.innerHTML = '';
+        }
         
         if (events.length === 0) {
             calendarEl.innerHTML = '<div style="text-align:center;padding:40px;"><i class="fas fa-calendar-times" style="font-size:3rem;opacity:0.5;"></i><p>لا توجد مواعيد للعرض</p></div>';
@@ -465,6 +472,7 @@
                 title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : '📞'} ${titleWithTime}`,
                 start: ev.start, 
                 backgroundColor: ev.type === TYPE_APPOINTMENT ? '#c9a03d' : '#e67e22',
+                borderColor: ev.type === TYPE_APPOINTMENT ? '#8b6914' : '#b45f06',
                 extendedProps: { 
                     phone: ev.phone, 
                     notes: ev.notes, 
@@ -478,30 +486,33 @@
         
         calendarInstance = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
-            locale: 'ar', 
+            locale: 'ar',
             direction: 'rtl',
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
                 right: window.innerWidth < 768 ? '' : 'dayGridMonth,timeGridWeek'
             },
+            buttonText: {
+                today: 'اليوم',
+                month: 'شهر',
+                week: 'أسبوع',
+                day: 'يوم',
+                list: 'قائمة'
+            },
             events: fcEvents,
             eventClick: (info) => { 
                 const ext = info.event.extendedProps; 
-                showDetails(
-                    info.event.title.replace(/^[🏢📞] /, '').replace(/\([^)]*\)/, '').trim(), 
-                    ext.phone, 
-                    ext.notes, 
-                    ext.type, 
-                    ext.city, 
-                    ext.address,
-                    ext.displayTime
-                );
+                let title = info.event.title;
+                title = title.replace(/^[🏢📞] /, '');
+                title = title.replace(/\([^)]*\)/, '').trim();
+                showDetails(title, ext.phone, ext.notes, ext.type, ext.city, ext.address, ext.displayTime);
             },
-            height: 'auto', 
+            height: 'auto',
             firstDay: 6,
             eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: true }
         });
+        
         calendarInstance.render();
         console.log(`📅 تم تحديث التقويم بـ ${fcEvents.length} حدث`);
     }
@@ -611,22 +622,16 @@
     async function refreshDashboard() {
         console.log("🔄 بدء تحديث البيانات...");
         
-        // محاولة جلب البيانات الحقيقية
         let realEvents = await fetchRealSheetData();
         
         if (realEvents && realEvents.length > 0) {
-            // إذا تم جلب بيانات حقيقية، استخدمها
             originalEvents = realEvents;
             console.log(`✅ تم استخدام البيانات الحقيقية - ${realEvents.length} موعد`);
-            const statusSpan = document.getElementById('syncStatus');
-            statusSpan.innerHTML = `✅ ${realEvents.length} موعد (حقيقي)`;
+            document.getElementById('syncStatus').innerHTML = `✅ ${realEvents.length} موعد (حقيقي)`;
         } else {
-            // وإلا استخدم البيانات التجريبية
             originalEvents = getDemoEvents();
             console.log(`⚠️ استخدام البيانات التجريبية - ${originalEvents.length} موعد تجريبي`);
-            const statusSpan = document.getElementById('syncStatus');
-            statusSpan.innerHTML = `⚠️ ${originalEvents.length} موعد (تجريبي)`;
-            
+            document.getElementById('syncStatus').innerHTML = `⚠️ ${originalEvents.length} موعد (تجريبي)`;
             addNotification('ℹ️ بيانات تجريبية', 'يتم عرض بيانات تجريبية. قم بتحديث إعدادات Google Sheets لعرض بياناتك الحقيقية.', 'info', 'demo_notification');
         }
         
