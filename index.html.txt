@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>نظام إدارة المعاينات والمتابعات - لوحة التحكم</title>
+    <!-- FullCalendar CSS & JS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Tahoma', system-ui, sans-serif;
+        }
+        body {
+            background: #f5f7fb;
+            margin: 0;
+            padding: 20px;
+            direction: rtl;
+        }
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            border-radius: 24px;
+            padding: 20px 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+        }
+        h1 {
+            font-size: 1.6rem;
+            color: #1e5f4b;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        h1 small {
+            font-size: 0.75rem;
+            background: #e9f3ef;
+            padding: 6px 12px;
+            border-radius: 40px;
+            font-weight: normal;
+        }
+        .status-badge {
+            background: #eef2ff;
+            padding: 8px 16px;
+            border-radius: 32px;
+            font-size: 0.85rem;
+        }
+        .refresh-btn {
+            background: #1e5f4b;
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-left: 12px;
+            transition: 0.2s;
+        }
+        .refresh-btn:hover {
+            background: #0f4234;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: white;
+            border-radius: 20px;
+            padding: 18px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-right: 4px solid #2c9b77;
+        }
+        .stat-card h3 {
+            margin: 0 0 8px 0;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #6c7a74;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1e5f4b;
+        }
+        .two-columns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+        .calendar-panel {
+            flex: 2;
+            min-width: 300px;
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        }
+        .events-panel {
+            flex: 1.2;
+            min-width: 280px;
+            background: white;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+        }
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 18px;
+            border-bottom: 2px solid #e2efe9;
+            padding-bottom: 10px;
+            color: #2c7a5e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .event-list {
+            max-height: 550px;
+            overflow-y: auto;
+        }
+        .event-item {
+            background: #f9fbfa;
+            margin-bottom: 14px;
+            padding: 14px;
+            border-radius: 18px;
+            border-right: 4px solid #2c9b77;
+            transition: 0.1s;
+        }
+        .event-item.callback {
+            border-right-color: #f4b942;
+            background: #fffbf0;
+        }
+        .event-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+        .event-type {
+            font-size: 0.7rem;
+            background: #deede7;
+            padding: 3px 10px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .event-type.callback-badge {
+            background: #ffecb3;
+            color: #b45f06;
+        }
+        .event-details {
+            font-size: 0.78rem;
+            color: #4a5b54;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+        .event-phone {
+            direction: ltr;
+            display: inline-block;
+            font-family: monospace;
+        }
+        .footer-note {
+            margin-top: 28px;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #6b8b7c;
+            background: #eef3f0;
+            padding: 12px;
+            border-radius: 30px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #2c7a5e;
+        }
+        @media (max-width: 780px) {
+            body { padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <div class="header">
+        <h1>
+            📊 نظام المعاينات والمتابعات
+            <small>معاينات | متابعات (Callbacks)</small>
+        </h1>
+        <div>
+            <button class="refresh-btn" id="refreshDataBtn">🔄 تحديث البيانات</button>
+            <span class="status-badge" id="syncStatus">⏳ جاري التحميل...</span>
+        </div>
+    </div>
+
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><h3>🦷 إجمالي المعاينات</h3><div class="stat-number" id="totalAppointments">-</div></div>
+        <div class="stat-card"><h3>📞 إجمالي المتابعات (Callbacks)</h3><div class="stat-number" id="totalCallbacks">-</div></div>
+        <div class="stat-card"><h3>🗓️ المعاينات القادمة</h3><div class="stat-number" id="upcomingAppointments">-</div></div>
+        <div class="stat-card"><h3>⏰ متابعات هذا الأسبوع</h3><div class="stat-number" id="weekCallbacks">-</div></div>
+    </div>
+
+    <div class="two-columns">
+        <div class="calendar-panel">
+            <div class="section-title">
+                📆 التقويم التفاعلي
+            </div>
+            <div id="calendar"></div>
+        </div>
+        <div class="events-panel">
+            <div class="section-title">
+                📋 الأحداث القادمة (7 أيام)
+            </div>
+            <div id="upcomingEventsList" class="event-list">
+                <div class="loading">جاري التحميل...</div>
+            </div>
+        </div>
+    </div>
+    <div class="footer-note">
+        ✅ البيانات مستخرجة من Google Sheets حسب الأعمدة: "تاريخ المعاينة" للمواعيد، "Callback Date" للمتابعات.
+        📞 يتم عرض رقم الهاتف من عمود "الموبايل" أو "Callback phone".
+    </div>
+</div>
+
+<script>
+    // ======================= الإعدادات =======================
+    // استبدل هذه القيم ببيانات جدول Google Sheets الخاص بك
+    const SPREADSHEET_ID = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';   // ضع معرف الجدول
+   const SHEET_NAME = 'مبيعات';                          // اسم الورقة
+    const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';                  // مفتاح API (يُفضل تقييده)
+    
+    // إذا لم ترغب في استخدام API مباشرة، يمكن استخدام Google Apps Script Web App.
+    // لكن لتجربة سريعة، سنقوم بإنشاء بيانات نموذجية تعكس هيكل الأعمدة الفعلية.
+    
+    // هيكل الأعمدة المتوقع (حسب وصفك):
+    // 0: رقم, 1: الاسم, 2: الموبايل, 3: التاريخ, 4: حالة العميل الاولى, 5: التصنيف, 6: محافظة, 7: العنوان, 
+    // 8: ملاحظات محمد, 9: تسجيل مكالمات, 10: Callback WhatsApp, 11: Callback Date, 12: Callback phone, 
+    // 13: Callback Notes, 14: تاريخ المعاينة, 15: وقت المعاينة, 16: لينك المقايسة, 17: التصنيف بعد المعاينة, 
+    // 18: Callback Date Appointment, 19: Callback after Appointment, 20: اشياء اخرى, 21: معاينات تمت
+    
+    let eventsList = [];
+    let calendarInstance = null;
+    
+    const TYPE_APPOINTMENT = 'معاينة';
+    const TYPE_CALLBACK = 'متابعة';
+    
+    // جلب البيانات من Google Sheets
+    async function fetchSheetData() {
+        const statusSpan = document.getElementById('syncStatus');
+        statusSpan.innerHTML = '⏳ جلب البيانات من جوجل شيتس...';
+        try {
+            // نطاق واسع لجلب كل الأعمدة (حتى عمود 22)
+            const range = `${SHEET_NAME}!A1:V1000`;
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            const rows = data.values;
+            if (!rows || rows.length < 2) throw new Error("لا توجد بيانات كافية");
+            
+            const events = [];
+            // تخطي الصف الأول (العناوين)
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                // الأعمدة حسب الفهرس
+                const name = row[1] || 'غير محدد';           // الاسم
+                const phone = row[2] || row[12] || '';       // الموبايل أو Callback phone
+                const appointmentDateRaw = row[14] || '';    // تاريخ المعاينة
+                const appointmentTime = row[15] || '';       // وقت المعاينة
+                const callbackDateRaw = row[11] || '';       // Callback Date
+                const callbackPhone = row[12] || row[2] || '';
+                const callbackNotes = row[13] || '';
+                const generalNotes = row[8] || '';
+                
+                // إضافة معاينة إذا كان التاريخ موجوداً
+                if (appointmentDateRaw && appointmentDateRaw.trim() !== '') {
+                    let fullDate = parseDate(appointmentDateRaw, appointmentTime);
+                    if (fullDate) {
+                        events.push({
+                            id: `app_${i}_${Date.now()}`,
+                            title: name,
+                            type: TYPE_APPOINTMENT,
+                            start: fullDate,
+                            dateStr: appointmentDateRaw,
+                            time: appointmentTime,
+                            phone: phone,
+                            notes: generalNotes || callbackNotes,
+                            extra: `📝 ${generalNotes || 'لا توجد ملاحظات'}`
+                        });
+                    }
+                }
+                
+                // إضافة متابعة (Callback) إذا كان التاريخ موجوداً
+                if (callbackDateRaw && callbackDateRaw.trim() !== '') {
+                    let fullDate = parseDate(callbackDateRaw, '');
+                    if (fullDate) {
+                        events.push({
+                            id: `cb_${i}_${Date.now()}`,
+                            title: name,
+                            type: TYPE_CALLBACK,
+                            start: fullDate,
+                            dateStr: callbackDateRaw,
+                            time: '',
+                            phone: callbackPhone || phone,
+                            notes: callbackNotes || generalNotes,
+                            extra: `📞 متابعة: ${callbackNotes || generalNotes || ''}`
+                        });
+                    }
+                }
+            }
+            
+            if (events.length === 0) throw new Error("لم يتم العثور على مواعيد");
+            statusSpan.innerHTML = '✅ تم التحديث من Google Sheets';
+            return events;
+        } catch (error) {
+            console.error("فشل الجلب:", error);
+            statusSpan.innerHTML = '⚠️ عرض بيانات تجريبية (تعذر الاتصال)';
+            return generateMockDataFromStructure();
+        }
+    }
+    
+    // دالة لتحويل التاريخ من صيغ مختلفة
+    function parseDate(dateStr, timeStr) {
+        if (!dateStr) return null;
+        // محاولة تحويل صيغة YYYY-MM-DD أو DD/MM/YYYY أو غيرها
+        let cleaned = dateStr.toString().trim();
+        let parts = cleaned.includes('-') ? cleaned.split('-') : 
+                    cleaned.includes('/') ? cleaned.split('/') : null;
+        let year, month, day;
+        if (parts && parts.length === 3) {
+            // افتراض YYYY-MM-DD أو DD/MM/YYYY
+            if (parts[0].length === 4) {
+                year = parseInt(parts[0]);
+                month = parseInt(parts[1]) - 1;
+                day = parseInt(parts[2]);
+            } else {
+                day = parseInt(parts[0]);
+                month = parseInt(parts[1]) - 1;
+                year = parseInt(parts[2]);
+            }
+        } else {
+            // محاولة new Date مباشرة
+            let d = new Date(cleaned);
+            if (!isNaN(d.getTime())) return d;
+            return null;
+        }
+        
+        let hour = 12, minute = 0;
+        if (timeStr && timeStr.trim()) {
+            let timeParts = timeStr.trim().match(/(\d{1,2}):(\d{2})/);
+            if (timeParts) {
+                hour = parseInt(timeParts[1]);
+                minute = parseInt(timeParts[2]);
+            }
+        }
+        let dateObj = new Date(year, month, day, hour, minute);
+        return isNaN(dateObj.getTime()) ? null : dateObj;
+    }
+    
+    // بيانات تجريبية تعكس هيكل الجدول الفعلي
+    function generateMockDataFromStructure() {
+        const today = new Date();
+        const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+        const day3 = new Date(today); day3.setDate(today.getDate() + 3);
+        const day5 = new Date(today); day5.setDate(today.getDate() + 5);
+        const weekLater = new Date(today); weekLater.setDate(today.getDate() + 8);
+        
+        return [
+            { id: 'm1', title: 'أحمد محمد', type: TYPE_APPOINTMENT, start: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 0), dateStr: '2025-04-27', time: '10:00', phone: '01001234567', notes: 'أول معاينة - خلع ضرس', extra: '' },
+            { id: 'm2', title: 'سارة خالد', type: TYPE_APPOINTMENT, start: new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 11, 30), dateStr: '2025-04-28', time: '11:30', phone: '01112345678', notes: 'حشو تجميلي', extra: '' },
+            { id: 'm3', title: 'محمد علي', type: TYPE_CALLBACK, start: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 14, 0), dateStr: '2025-04-27', time: '', phone: '01223456789', notes: 'تذكير بمتابعة التقويم', extra: '' },
+            { id: 'm4', title: 'فاطمة حسن', type: TYPE_CALLBACK, start: new Date(day3.getFullYear(), day3.getMonth(), day3.getDate(), 9, 15), dateStr: '2025-04-30', time: '09:15', phone: '01098765432', notes: 'تأكيد موعد المعاينة', extra: '' },
+            { id: 'm5', title: 'يوسف رامي', type: TYPE_APPOINTMENT, start: new Date(day5.getFullYear(), day5.getMonth(), day5.getDate(), 13, 0), dateStr: '2025-05-02', time: '13:00', phone: '01567890123', notes: 'تركيب تقويم', extra: '' },
+            { id: 'm6', title: 'ليلى عماد', type: TYPE_CALLBACK, start: new Date(weekLater.getFullYear(), weekLater.getMonth(), weekLater.getDate(), 16, 45), dateStr: '2025-05-05', time: '16:45', phone: '01134567890', notes: 'متابعة بعد الحشو', extra: '' },
+        ];
+    }
+    
+    // تحديث الإحصائيات
+    function updateStats(events) {
+        const totalApp = events.filter(e => e.type === TYPE_APPOINTMENT).length;
+        const totalCb = events.filter(e => e.type === TYPE_CALLBACK).length;
+        
+        const now = new Date();
+        now.setHours(0,0,0,0);
+        const upcomingApps = events.filter(e => {
+            return e.type === TYPE_APPOINTMENT && new Date(e.start) >= now;
+        }).length;
+        
+        const weekLater = new Date(now);
+        weekLater.setDate(now.getDate() + 7);
+        const weekCb = events.filter(e => {
+            const d = new Date(e.start);
+            return e.type === TYPE_CALLBACK && d >= now && d <= weekLater;
+        }).length;
+        
+        document.getElementById('totalAppointments').innerText = totalApp;
+        document.getElementById('totalCallbacks').innerText = totalCb;
+        document.getElementById('upcomingAppointments').innerText = upcomingApps;
+        document.getElementById('weekCallbacks').innerText = weekCb;
+    }
+    
+    // عرض قائمة الأحداث القادمة
+    function renderUpcomingList(events) {
+        const container = document.getElementById('upcomingEventsList');
+        const now = new Date();
+        now.setHours(0,0,0,0);
+        const limit = new Date(now);
+        limit.setDate(now.getDate() + 7);
+        
+        const upcoming = events.filter(ev => {
+            const evDate = new Date(ev.start);
+            evDate.setHours(0,0,0,0);
+            return evDate >= now && evDate <= limit;
+        }).sort((a,b) => a.start - b.start);
+        
+        if (upcoming.length === 0) {
+            container.innerHTML = '<div style="text-align:center;padding:20px;">✨ لا توجد أحداث قريبة</div>';
+            return;
+        }
+        
+        let html = '';
+        for (const ev of upcoming) {
+            const dateStr = ev.start.toLocaleDateString('ar-EG', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+            const timeStr = ev.time || (ev.start.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' }));
+            const isCallback = ev.type === TYPE_CALLBACK;
+            html += `
+                <div class="event-item ${isCallback ? 'callback' : ''}">
+                    <div class="event-title">
+                        <span>👤 ${ev.title}</span>
+                        <span class="event-type ${isCallback ? 'callback-badge' : ''}">${ev.type}</span>
+                    </div>
+                    <div class="event-details">
+                        📅 ${dateStr} | 🕒 ${timeStr}<br>
+                        📞 <span class="event-phone">${ev.phone || 'غير متوفر'}</span><br>
+                        📝 ${ev.notes || 'لا توجد ملاحظات'}
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+    
+    // تهيئة التقويم
+    function initCalendar(events) {
+        const calendarEl = document.getElementById('calendar');
+        if (calendarInstance) calendarInstance.destroy();
+        
+        const fcEvents = events.map(ev => ({
+            id: ev.id,
+            title: `${ev.type === TYPE_APPOINTMENT ? '🦷' : '📞'} ${ev.title}`,
+            start: ev.start,
+            backgroundColor: ev.type === TYPE_APPOINTMENT ? '#2c9b77' : '#f4b942',
+            borderColor: ev.type === TYPE_APPOINTMENT ? '#1e6b51' : '#dd9d2b',
+            extendedProps: {
+                phone: ev.phone,
+                notes: ev.notes,
+                type: ev.type
+            }
+        }));
+        
+        calendarInstance = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'ar',
+            direction: 'rtl',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,listWeek'
+            },
+            events: fcEvents,
+            eventClick: (info) => {
+                const ext = info.event.extendedProps;
+                alert(`📌 ${info.event.title}\n📞 الهاتف: ${ext.phone || '-'}\n📝 ملاحظات: ${ext.notes || '-'}\n📋 النوع: ${ext.type}`);
+            },
+            height: 'auto',
+            firstDay: 6
+        });
+        calendarInstance.render();
+    }
+    
+    async function refreshDashboard() {
+        const statusSpan = document.getElementById('syncStatus');
+        statusSpan.innerHTML = '⏳ جاري التحديث...';
+        const rawEvents = await fetchSheetData();
+        eventsList = rawEvents;
+        updateStats(eventsList);
+        renderUpcomingList(eventsList);
+        initCalendar(eventsList);
+        statusSpan.innerHTML = '✅ تم التحديث بنجاح';
+        setTimeout(() => {
+            if (document.getElementById('syncStatus').innerHTML === '✅ تم التحديث بنجاح')
+                statusSpan.innerHTML = '✅ محدث';
+        }, 2000);
+    }
+    
+    window.addEventListener('load', () => {
+        refreshDashboard();
+        document.getElementById('refreshDataBtn').addEventListener('click', refreshDashboard);
+    });
+    
+    console.log("✅ النظام جاهز - يعمل مع هيكل الأعمدة: تاريخ المعاينة + Callback Date");
+</script>
+</body>
+</html>
