@@ -129,14 +129,14 @@
 
     <div class="stats-grid">
         <div class="stat-card"><h3><i class="fas fa-building"></i> معاينات عقارات</h3><div class="stat-number" id="totalAppointments">0</div></div>
-        <div class="stat-card"><h3><i class="fas fa-users"></i> متابعات عملاء</h3><div class="stat-number" id="totalCallbacks">0</div></div>
+        <div class="stat-card"><h3><i class="fas fa-phone-alt"></i> متابعات عملاء</h3><div class="stat-number" id="totalCallbacks">0</div></div>
         <div class="stat-card"><h3><i class="fas fa-calendar-day"></i> معاينات اليوم</h3><div class="stat-number" id="todayAppointments">0</div></div>
         <div class="stat-card"><h3><i class="fas fa-clock"></i> متابعات اليوم</h3><div class="stat-number" id="todayCallbacks">0</div></div>
     </div>
 
     <div class="two-columns">
         <div class="calendar-panel">
-            <div class="section-title"><span><i class="fas fa-calendar-alt"></i> تقويم المواعيد</span></div>
+            <div class="section-title"><span><i class="fas fa-calendar-alt"></i> تقويم المواعيد (معاينات + متابعات)</span></div>
             <div id="calendar"></div>
         </div>
         <div class="events-panel">
@@ -145,7 +145,7 @@
         </div>
     </div>
     
-    <div class="footer-note"><i class="fas fa-bell"></i> إشعارات للمواعيد القادمة | <i class="fas fa-clock"></i> الوقت من العمود P | <i class="fas fa-sync-alt"></i> تحديث تلقائي كل 5 دقائق</div>
+    <div class="footer-note"><i class="fas fa-bell"></i> إشعارات للمواعيد القادمة | <i class="fas fa-clock"></i> الوقت من العمود P | <i class="fas fa-sync-alt"></i> تحديث تلقائي كل 5 دقائق | <i class="fas fa-phone-alt"></i> المتابعات من الأعمدة L و S</div>
 </div>
 
 <div class="notifications-panel" id="notificationsPanel">
@@ -174,148 +174,113 @@
     const TYPE_APPOINTMENT = 'معاينة عقار';
     const TYPE_CALLBACK = 'متابعة عميل';
     
-    // دالة صحيحة 100% لتحويل الوقت من 24 ساعة إلى 12 ساعة مع (ص/م)
+    // دالة صحيحة لتحويل الوقت
     function convertToArabicTime(hour24, minute) {
-        // التحقق من صحة الساعة
         if (hour24 === undefined || hour24 === null) hour24 = 12;
         if (minute === undefined || minute === null) minute = 0;
         
         let hour12 = hour24 % 12;
         if (hour12 === 0) hour12 = 12;
-        
-        // القاعدة الصحيحة: ص = 00:00 إلى 11:59, م = 12:00 إلى 23:59
         let period = (hour24 < 12) ? 'ص' : 'م';
-        
         return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
     }
     
-    // دالة لتحويل النص الزمني من العمود P إلى ساعات 24
-    function parseTimeStringTo24(timeStr) {
+    // دالة لتحويل الوقت من النص إلى 24 ساعة
+    function parseTimeTo24(timeStr) {
         if (!timeStr || timeStr.toString().trim() === '') return null;
         
         let clean = timeStr.toString().trim();
-        console.log(`   ⏰ تحليل الوقت: "${clean}"`);
         
-        // تنسيق: "3:00:00 م" أو "2:00:00 م"
-        let matchArabic = clean.match(/(\d{1,2}):(\d{2}):(\d{2})\s*([مص])/);
-        if (matchArabic) {
-            let hour = parseInt(matchArabic[1]);
-            let minute = parseInt(matchArabic[2]);
-            let period = matchArabic[4];
+        // تنسيق: "3:00:00 م"
+        let match = clean.match(/(\d{1,2}):(\d{2}):(\d{2})\s*([مص])/);
+        if (match) {
+            let hour = parseInt(match[1]);
+            let minute = parseInt(match[2]);
+            let period = match[4];
             
-            if (period === 'م') { // مساءً
+            if (period === 'م') {
                 if (hour === 12) hour = 12;
                 else hour = hour + 12;
-            } else { // صباحاً
+            } else {
                 if (hour === 12) hour = 0;
             }
-            console.log(`   ✓ تحويل: ${clean} -> ${hour}:${minute}`);
             return { hour: hour, minute: minute };
         }
         
-        // تنسيق: "3:00:00 PM" (إنجليزي)
-        let matchEng = clean.match(/(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)/i);
-        if (matchEng) {
-            let hour = parseInt(matchEng[1]);
-            let minute = parseInt(matchEng[2]);
-            let period = matchEng[4].toUpperCase();
+        // تنسيق: "3:00 م"
+        match = clean.match(/(\d{1,2}):(\d{2})\s*([مص])/);
+        if (match) {
+            let hour = parseInt(match[1]);
+            let minute = parseInt(match[2]);
+            let period = match[3];
             
-            if (period === 'PM') {
+            if (period === 'م') {
                 if (hour === 12) hour = 12;
                 else hour = hour + 12;
-            } else { // AM
+            } else {
                 if (hour === 12) hour = 0;
             }
-            console.log(`   ✓ تحويل: ${clean} -> ${hour}:${minute}`);
             return { hour: hour, minute: minute };
         }
         
-        // تنسيق: "3:00 م" (بدون ثواني)
-        let matchSimple = clean.match(/(\d{1,2}):(\d{2})\s*([مص])/);
-        if (matchSimple) {
-            let hour = parseInt(matchSimple[1]);
-            let minute = parseInt(matchSimple[2]);
-            let period = matchSimple[3];
-            
-            if (period === 'م') { // مساءً
-                if (hour === 12) hour = 12;
-                else hour = hour + 12;
-            } else { // صباحاً
-                if (hour === 12) hour = 0;
-            }
-            console.log(`   ✓ تحويل: ${clean} -> ${hour}:${minute}`);
-            return { hour: hour, minute: minute };
-        }
-        
-        // تنسيق 24 ساعة: "14:30" أو "14:30:00"
-        let match24 = clean.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
-        if (match24) {
-            let hour = parseInt(match24[1]);
-            let minute = parseInt(match24[2]);
+        // تنسيق 24 ساعة
+        match = clean.match(/^(\d{1,2}):(\d{2})/);
+        if (match) {
+            let hour = parseInt(match[1]);
+            let minute = parseInt(match[2]);
             if (hour >= 0 && hour <= 23) {
-                console.log(`   ✓ ساعات 24: ${hour}:${minute}`);
                 return { hour: hour, minute: minute };
             }
         }
         
-        console.log(`   ⚠ لم يتم التعرف على تنسيق الوقت: "${clean}"`);
         return null;
     }
     
     // دالة لتحويل التاريخ من النص
-    function parseDateString(dateStr) {
+    function parseDateOnly(dateStr) {
         if (!dateStr) return null;
         
-        // إزالة اسم اليوم العربي
         let cleaned = dateStr.toString().trim();
         cleaned = cleaned.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
         
-        let day, month, year;
-        
-        // تنسيق DD/MM/YYYY
         let parts = cleaned.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
         if (parts) {
-            day = parseInt(parts[1]);
-            month = parseInt(parts[2]) - 1;
-            year = parseInt(parts[3]);
-            return { day, month, year };
+            return {
+                day: parseInt(parts[1]),
+                month: parseInt(parts[2]) - 1,
+                year: parseInt(parts[3])
+            };
         }
         
-        // تنسيق DD-MM-YYYY
         parts = cleaned.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
         if (parts) {
-            day = parseInt(parts[1]);
-            month = parseInt(parts[2]) - 1;
-            year = parseInt(parts[3]);
-            return { day, month, year };
+            return {
+                day: parseInt(parts[1]),
+                month: parseInt(parts[2]) - 1,
+                year: parseInt(parts[3])
+            };
         }
         
         return null;
     }
     
-    // دالة رئيسية لتحويل تاريخ ووقت المعاينة
-    function parseAppointmentDateTime(dateRaw, timeRaw) {
+    // دالة لتحويل تاريخ ووقت المعاينة
+    function parseDateTime(dateRaw, timeRaw) {
         if (!dateRaw || dateRaw.toString().trim() === '') return null;
         
-        let dateResult = parseDateString(dateRaw.toString().trim());
+        let dateResult = parseDateOnly(dateRaw.toString().trim());
         if (!dateResult) return null;
         
         let hour24 = 12, minute = 0;
         let displayTime = "12:00 م";
         
         if (timeRaw && timeRaw.toString().trim() !== '') {
-            let timeResult = parseTimeStringTo24(timeRaw.toString().trim());
+            let timeResult = parseTimeTo24(timeRaw.toString().trim());
             if (timeResult) {
                 hour24 = timeResult.hour;
                 minute = timeResult.minute;
                 displayTime = convertToArabicTime(hour24, minute);
-                console.log(`   ✅ النتيجة النهائية: ${displayTime} (${hour24}:${minute})`);
-            } else {
-                console.log(`   ⚠ استخدام الوقت الافتراضي 12:00 م`);
-                displayTime = convertToArabicTime(12, 0);
             }
-        } else {
-            console.log(`   ⚠ لا يوجد وقت، استخدام 12:00 م`);
         }
         
         let dateObj = new Date(dateResult.year, dateResult.month, dateResult.day, hour24, minute);
@@ -369,20 +334,15 @@
                 const address = row[7] || '';
                 const generalNotes = row[8] || '';
                 
-                // معاينة من العمود O (index 14) والوقت من العمود P (index 15)
+                // ========== معاينة من العمود O (index 14) والوقت من العمود P (index 15) ==========
                 const appointmentDateRaw = row[14] || '';
                 const appointmentTimeRaw = row[15] || '';
                 
                 if (appointmentDateRaw && appointmentDateRaw.toString().trim() !== '') {
-                    console.log(`\n🔍 معاينة الصف ${i}: "${name}"`);
-                    console.log(`   التاريخ الخام: "${appointmentDateRaw}"`);
-                    console.log(`   الوقت الخام: "${appointmentTimeRaw}"`);
-                    
-                    const result = parseAppointmentDateTime(appointmentDateRaw, appointmentTimeRaw);
-                    
-                    if (result && result.date && !isNaN(result.date.getTime())) {
+                    const result = parseDateTime(appointmentDateRaw, appointmentTimeRaw);
+                    if (result && result.date) {
                         events.push({
-                            id: `app_${i}_${Date.now()}`,
+                            id: `app_${i}`,
                             title: name,
                             type: TYPE_APPOINTMENT,
                             start: result.date,
@@ -393,53 +353,53 @@
                             notes: generalNotes || 'لا توجد ملاحظات'
                         });
                         appCount++;
-                        console.log(`   ✅ تمت إضافة المعاينة: ${result.displayTime}`);
-                    } else {
-                        console.log(`   ❌ فشل تحويل التاريخ`);
+                        console.log(`✅ معاينة: ${name} - ${result.displayTime}`);
                     }
                 }
                 
-                // متابعة من العمود L (index 11)
+                // ========== متابعة من العمود L (index 11) ==========
                 const callbackDateL = row[11] || '';
                 const callbackNotesL = row[13] || '';
                 
                 if (callbackDateL && callbackDateL.toString().trim() !== '') {
-                    const result = parseAppointmentDateTime(callbackDateL, '');
+                    const result = parseDateTime(callbackDateL, '');
                     if (result && result.date) {
                         events.push({
-                            id: `cbL_${i}_${Date.now()}`,
+                            id: `cbL_${i}`,
                             title: name,
                             type: TYPE_CALLBACK,
                             start: result.date,
                             displayTime: '',
                             phone: phone,
-                            city: '',
-                            address: '',
+                            city: city,
+                            address: address,
                             notes: callbackNotesL || generalNotes || 'متابعة'
                         });
                         callbackCount++;
+                        console.log(`✅ متابعة (L): ${name} - ${callbackDateL}`);
                     }
                 }
                 
-                // متابعة من العمود S (index 18)
+                // ========== متابعة من العمود S (index 18) ==========
                 const callbackDateS = row[18] || '';
                 const callbackNotesS = row[19] || '';
                 
                 if (callbackDateS && callbackDateS.toString().trim() !== '') {
-                    const result = parseAppointmentDateTime(callbackDateS, '');
+                    const result = parseDateTime(callbackDateS, '');
                     if (result && result.date) {
                         events.push({
-                            id: `cbS_${i}_${Date.now()}`,
+                            id: `cbS_${i}`,
                             title: name,
                             type: TYPE_CALLBACK,
                             start: result.date,
                             displayTime: '',
                             phone: phone,
-                            city: '',
-                            address: '',
+                            city: city,
+                            address: address,
                             notes: callbackNotesS || generalNotes || 'متابعة إضافية'
                         });
                         callbackCount++;
+                        console.log(`✅ متابعة (S): ${name} - ${callbackDateS}`);
                     }
                 }
             }
@@ -483,6 +443,8 @@
         document.getElementById('totalCallbacks').innerText = totalCb;
         document.getElementById('todayAppointments').innerText = todayApps;
         document.getElementById('todayCallbacks').innerText = todayCbs;
+        
+        console.log(`📈 إحصائيات: معاينات=${totalApp}, متابعات=${totalCb}, معاينات اليوم=${todayApps}, متابعات اليوم=${todayCbs}`);
         
         if (todayApps > 0 && !lastNotifiedDates.has(`today_app_${today.toDateString()}`)) {
             lastNotifiedDates.add(`today_app_${today.toDateString()}`);
@@ -610,7 +572,7 @@
             const isCallback = ev.type === TYPE_CALLBACK;
             
             html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${ev.phone || ''}', '${(ev.notes || '').replace(/'/g, "\\'")}', '${ev.type}', '${(ev.city || '').replace(/'/g, "\\'")}', '${(ev.address || '').replace(/'/g, "\\'")}', '${timeStr}')">
-                <div class="event-title"><span><i class="fas ${isCallback ? 'fa-user-friends' : 'fa-building'}"></i> ${ev.title}</span><span class="event-type">${ev.type === TYPE_APPOINTMENT ? '🏢 معاينة' : '📞 متابعة'}</span></div>
+                <div class="event-title"><span><i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i> ${ev.title}</span><span class="event-type">${ev.type === TYPE_APPOINTMENT ? '🏢 معاينة' : '📞 متابعة'}</span></div>
                 <div class="event-details">
                     <span><i class="far fa-calendar-alt"></i> ${dateStr}</span>
                     ${timeStr ? `<span><i class="far fa-clock"></i> ${timeStr}</span>` : ''}
@@ -623,12 +585,12 @@
     
     window.showDetails = function(title, phone, notes, type, city = '', address = '', timeStr = '') {
         let locationHtml = '';
-        if (type === TYPE_APPOINTMENT && (city || address)) {
+        if (city || address) {
             locationHtml = `
                 <hr>
                 <p><i class="fas fa-map-marker-alt"></i> <strong>الموقع:</strong></p>
-                ${city ? `<p style="margin-right: 20px;"><i class="fas fa-city"></i> المدينة: ${city}</p>` : ''}
-                ${address ? `<p style="margin-right: 20px;"><i class="fas fa-location-dot"></i> العنوان: ${address}</p>` : ''}
+                ${city ? `<p><i class="fas fa-city"></i> المدينة: ${city}</p>` : ''}
+                ${address ? `<p><i class="fas fa-location-dot"></i> العنوان: ${address}</p>` : ''}
             `;
         }
         
@@ -665,14 +627,14 @@
                 displayTime = convertToArabicTime(ev.start.getHours(), ev.start.getMinutes());
             }
             
-            let titleWithTime = ev.title;
+            let titleText = ev.title;
             if (ev.type === TYPE_APPOINTMENT && displayTime) {
-                titleWithTime = `${ev.title} (${displayTime})`;
+                titleText = `${ev.title} (${displayTime})`;
             }
             
             return {
                 id: ev.id, 
-                title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : '📞'} ${titleWithTime}`,
+                title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : '📞'} ${titleText}`,
                 start: ev.start, 
                 backgroundColor: ev.type === TYPE_APPOINTMENT ? '#c9a03d' : '#e67e22',
                 borderColor: ev.type === TYPE_APPOINTMENT ? '#8b6914' : '#b45f06',
@@ -717,7 +679,7 @@
         });
         
         calendarInstance.render();
-        console.log(`📅 تم تحديث التقويم بـ ${fcEvents.length} حدث`);
+        console.log(`📅 تم تحديث التقويم بـ ${fcEvents.length} حدث (${events.filter(e=>e.type===TYPE_APPOINTMENT).length} معاينة, ${events.filter(e=>e.type===TYPE_CALLBACK).length} متابعة)`);
     }
     
     function setFilter(filter) {
@@ -750,7 +712,7 @@
             if (realEvents && realEvents.length > 0) {
                 originalEvents = realEvents;
                 applyFilter();
-                console.log(`✅ تم تحديث الواجهة بـ ${realEvents.length} موعد`);
+                console.log(`✅ تم تحديث الواجهة بـ ${realEvents.length} موعد (${realEvents.filter(e=>e.type===TYPE_APPOINTMENT).length} معاينة, ${realEvents.filter(e=>e.type===TYPE_CALLBACK).length} متابعة)`);
                 statusSpan.innerHTML = `✅ ${realEvents.length} موعد`;
                 statusSpan.className = 'status-badge success';
                 
@@ -773,8 +735,8 @@
                     <ul style="text-align:right; padding-right:20px;">
                         <li>تأكد من مشاركة الجدول: مشاركة → عام → أي شخص لديه الرابط</li>
                         <li>تأكد من وجود تواريخ في العمود O (تاريخ المعاينة)</li>
+                        <li>تأكد من وجود تواريخ في العمود L أو S (للمتابعات)</li>
                         <li>تأكد من صحة معرف الجدول (Spreadsheet ID)</li>
-                        <li>تأكد من صحة مفتاح API (API Key)</li>
                     </ul>
                 </div>`,
                 icon: 'error',
