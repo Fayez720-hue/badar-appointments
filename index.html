@@ -174,93 +174,91 @@
     const TYPE_APPOINTMENT = 'معاينة عقار';
     const TYPE_CALLBACK = 'متابعة عميل';
     
-    // دالة دقيقة لتحويل الوقت إلى صيغة 12 ساعة مع م/ص (صحيحة)
-    function formatTime12Hour(hour24, minute) {
+    // دالة صحيحة 100% لتحويل الوقت من 24 ساعة إلى 12 ساعة مع (ص/م)
+    function convertToArabicTime(hour24, minute) {
+        // التحقق من صحة الساعة
+        if (hour24 === undefined || hour24 === null) hour24 = 12;
+        if (minute === undefined || minute === null) minute = 0;
+        
         let hour12 = hour24 % 12;
         if (hour12 === 0) hour12 = 12;
-        // التصحيح: ص = صباحاً (00:00 - 11:59), م = مساءً (12:00 - 23:59)
+        
+        // القاعدة الصحيحة: ص = 00:00 إلى 11:59, م = 12:00 إلى 23:59
         let period = (hour24 < 12) ? 'ص' : 'م';
+        
         return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
     }
     
-    // دالة لاستخراج الوقت من النص وتحديد ما إذا كان صباحاً أو مساءً
-    function parseTimeString(timeStr) {
-        if (!timeStr || timeStr.trim() === '') return null;
+    // دالة لتحويل النص الزمني من العمود P إلى ساعات 24
+    function parseTimeStringTo24(timeStr) {
+        if (!timeStr || timeStr.toString().trim() === '') return null;
         
-        let cleanTime = timeStr.trim();
-        let hour24 = null;
-        let minute = 0;
+        let clean = timeStr.toString().trim();
+        console.log(`   ⏰ تحليل الوقت: "${clean}"`);
         
         // تنسيق: "3:00:00 م" أو "2:00:00 م"
-        let matchArabic = cleanTime.match(/(\d{1,2}):(\d{2}):(\d{2})\s*([مص])/);
+        let matchArabic = clean.match(/(\d{1,2}):(\d{2}):(\d{2})\s*([مص])/);
         if (matchArabic) {
             let hour = parseInt(matchArabic[1]);
-            minute = parseInt(matchArabic[2]);
+            let minute = parseInt(matchArabic[2]);
             let period = matchArabic[4];
             
             if (period === 'م') { // مساءً
-                hour24 = (hour % 12) + 12;
+                if (hour === 12) hour = 12;
+                else hour = hour + 12;
             } else { // صباحاً
-                hour24 = hour % 12;
-                if (hour24 === 12) hour24 = 0;
+                if (hour === 12) hour = 0;
             }
-            return { hour24, minute };
+            console.log(`   ✓ تحويل: ${clean} -> ${hour}:${minute}`);
+            return { hour: hour, minute: minute };
         }
         
-        // تنسيق: "2:00:00 PM" أو "3:00:00 AM"
-        let matchEng = cleanTime.match(/(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)/i);
+        // تنسيق: "3:00:00 PM" (إنجليزي)
+        let matchEng = clean.match(/(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)/i);
         if (matchEng) {
             let hour = parseInt(matchEng[1]);
-            minute = parseInt(matchEng[2]);
+            let minute = parseInt(matchEng[2]);
             let period = matchEng[4].toUpperCase();
             
             if (period === 'PM') {
-                hour24 = (hour % 12) + 12;
-            } else {
-                hour24 = hour % 12;
-                if (hour24 === 12) hour24 = 0;
+                if (hour === 12) hour = 12;
+                else hour = hour + 12;
+            } else { // AM
+                if (hour === 12) hour = 0;
             }
-            return { hour24, minute };
+            console.log(`   ✓ تحويل: ${clean} -> ${hour}:${minute}`);
+            return { hour: hour, minute: minute };
         }
         
-        // تنسيق: "14:30" (24 ساعة)
-        let match24 = cleanTime.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
-        if (match24) {
-            hour24 = parseInt(match24[1]);
-            minute = parseInt(match24[2]);
-            if (hour24 >= 0 && hour24 <= 23) {
-                return { hour24, minute };
-            }
-        }
-        
-        // تنسيق: "10:30 ص" أو "2:30 م" (بدون ثواني)
-        let matchSimple = cleanTime.match(/(\d{1,2}):(\d{2})\s*([مص])/);
+        // تنسيق: "3:00 م" (بدون ثواني)
+        let matchSimple = clean.match(/(\d{1,2}):(\d{2})\s*([مص])/);
         if (matchSimple) {
             let hour = parseInt(matchSimple[1]);
-            minute = parseInt(matchSimple[2]);
+            let minute = parseInt(matchSimple[2]);
             let period = matchSimple[3];
             
-            if (period === 'م') {
-                hour24 = (hour % 12) + 12;
-            } else {
-                hour24 = hour % 12;
-                if (hour24 === 12) hour24 = 0;
+            if (period === 'م') { // مساءً
+                if (hour === 12) hour = 12;
+                else hour = hour + 12;
+            } else { // صباحاً
+                if (hour === 12) hour = 0;
             }
-            return { hour24, minute };
+            console.log(`   ✓ تحويل: ${clean} -> ${hour}:${minute}`);
+            return { hour: hour, minute: minute };
         }
         
-        // ساعة فقط
-        let hourOnly = parseInt(cleanTime);
-        if (!isNaN(hourOnly) && hourOnly >= 1 && hourOnly <= 12) {
-            // افتراض أنها صباحاً إذا كانت أقل من 12
-            if (hourOnly < 12) {
-                hour24 = hourOnly;
-            } else {
-                hour24 = 12;
+        // تنسيق 24 ساعة: "14:30" أو "14:30:00"
+        let match24 = clean.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+        if (match24) {
+            let hour = parseInt(match24[1]);
+            let minute = parseInt(match24[2]);
+            if (hour >= 0 && hour <= 23) {
+                console.log(`   ✓ ساعات 24: ${hour}:${minute}`);
+                return { hour: hour, minute: minute };
             }
-            return { hour24, minute: 0 };
         }
         
+        console.log(`   ⚠ لم يتم التعرف على تنسيق الوقت: "${clean}"`);
         return null;
     }
     
@@ -268,8 +266,9 @@
     function parseDateString(dateStr) {
         if (!dateStr) return null;
         
-        // إزالة اسم اليوم
-        let cleaned = dateStr.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
+        // إزالة اسم اليوم العربي
+        let cleaned = dateStr.toString().trim();
+        cleaned = cleaned.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
         
         let day, month, year;
         
@@ -279,21 +278,22 @@
             day = parseInt(parts[1]);
             month = parseInt(parts[2]) - 1;
             year = parseInt(parts[3]);
-        } else {
-            // تنسيق DD-MM-YYYY
-            parts = cleaned.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
-            if (parts) {
-                day = parseInt(parts[1]);
-                month = parseInt(parts[2]) - 1;
-                year = parseInt(parts[3]);
-            } else {
-                return null;
-            }
+            return { day, month, year };
         }
         
-        return { day, month, year };
+        // تنسيق DD-MM-YYYY
+        parts = cleaned.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
+        if (parts) {
+            day = parseInt(parts[1]);
+            month = parseInt(parts[2]) - 1;
+            year = parseInt(parts[3]);
+            return { day, month, year };
+        }
+        
+        return null;
     }
     
+    // دالة رئيسية لتحويل تاريخ ووقت المعاينة
     function parseAppointmentDateTime(dateRaw, timeRaw) {
         if (!dateRaw || dateRaw.toString().trim() === '') return null;
         
@@ -304,15 +304,18 @@
         let displayTime = "12:00 م";
         
         if (timeRaw && timeRaw.toString().trim() !== '') {
-            let timeResult = parseTimeString(timeRaw.toString().trim());
+            let timeResult = parseTimeStringTo24(timeRaw.toString().trim());
             if (timeResult) {
-                hour24 = timeResult.hour24;
+                hour24 = timeResult.hour;
                 minute = timeResult.minute;
-                displayTime = formatTime12Hour(hour24, minute);
-                console.log(`   ✓ الوقت: ${timeRaw} -> ${hour24}:${minute} -> ${displayTime}`);
+                displayTime = convertToArabicTime(hour24, minute);
+                console.log(`   ✅ النتيجة النهائية: ${displayTime} (${hour24}:${minute})`);
             } else {
-                console.log(`   ⚠ وقت غير مفهوم: "${timeRaw}"`);
+                console.log(`   ⚠ استخدام الوقت الافتراضي 12:00 م`);
+                displayTime = convertToArabicTime(12, 0);
             }
+        } else {
+            console.log(`   ⚠ لا يوجد وقت، استخدام 12:00 م`);
         }
         
         let dateObj = new Date(dateResult.year, dateResult.month, dateResult.day, hour24, minute);
@@ -372,7 +375,7 @@
                 
                 if (appointmentDateRaw && appointmentDateRaw.toString().trim() !== '') {
                     console.log(`\n🔍 معاينة الصف ${i}: "${name}"`);
-                    console.log(`   التاريخ: "${appointmentDateRaw}"`);
+                    console.log(`   التاريخ الخام: "${appointmentDateRaw}"`);
                     console.log(`   الوقت الخام: "${appointmentTimeRaw}"`);
                     
                     const result = parseAppointmentDateTime(appointmentDateRaw, appointmentTimeRaw);
@@ -390,7 +393,7 @@
                             notes: generalNotes || 'لا توجد ملاحظات'
                         });
                         appCount++;
-                        console.log(`   ✅ تمت الإضافة: ${result.displayTime}`);
+                        console.log(`   ✅ تمت إضافة المعاينة: ${result.displayTime}`);
                     } else {
                         console.log(`   ❌ فشل تحويل التاريخ`);
                     }
@@ -441,7 +444,7 @@
                 }
             }
             
-            console.log(`\n📊 النتائج: ${appCount} معاينة, ${callbackCount} متابعة, المجموع: ${events.length}`);
+            console.log(`\n📊 النتائج النهائية: ${appCount} معاينة, ${callbackCount} متابعة, المجموع: ${events.length}`);
             
             if (events.length === 0) {
                 throw new Error("لم يتم العثور على أي مواعيد صالحة في الجدول");
@@ -602,7 +605,7 @@
             const dateStr = ev.start.toLocaleDateString('ar-EG', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
             let timeStr = ev.displayTime;
             if (!timeStr && ev.type === TYPE_APPOINTMENT) {
-                timeStr = formatTime12Hour(ev.start.getHours(), ev.start.getMinutes());
+                timeStr = convertToArabicTime(ev.start.getHours(), ev.start.getMinutes());
             }
             const isCallback = ev.type === TYPE_CALLBACK;
             
@@ -659,7 +662,7 @@
         const fcEvents = events.map(ev => {
             let displayTime = ev.displayTime;
             if (!displayTime && ev.type === TYPE_APPOINTMENT) {
-                displayTime = formatTime12Hour(ev.start.getHours(), ev.start.getMinutes());
+                displayTime = convertToArabicTime(ev.start.getHours(), ev.start.getMinutes());
             }
             
             let titleWithTime = ev.title;
