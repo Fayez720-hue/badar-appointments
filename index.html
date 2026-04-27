@@ -23,7 +23,6 @@
         .refresh-btn:hover { transform: translateY(-2px); }
         .status-badge { background: #eef2ff; padding: 4px 12px; border-radius: 25px; font-size: 0.7rem; }
         
-        /* Date Range Filter */
         .date-range-filter { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 12px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; border: 1px solid rgba(201,160,61,0.3); }
         .date-range-filter label { font-size: 0.75rem; color: #8b6914; font-weight: bold; }
         .date-range-filter input { padding: 6px 12px; border-radius: 12px; border: 1px solid #ddd; font-size: 0.75rem; }
@@ -101,8 +100,8 @@
         <input type="date" id="startDate" value="2026-04-01">
         <label>إلى:</label>
         <input type="date" id="endDate" value="2026-04-30">
-        <button id="applyDateRangeBtn"><i class="fas fa-filter"></i> تطبيق الفلتر</button>
-        <button id="clearDateRangeBtn" class="clear-btn"><i class="fas fa-times"></i> إلغاء الفلتر</button>
+        <button id="applyDateRangeBtn"><i class="fas fa-filter"></i> تطبيق</button>
+        <button id="clearDateRangeBtn" class="clear-btn"><i class="fas fa-times"></i> إلغاء</button>
         <span id="rangeInfo" class="range-info">📅 1/4/2026 - 30/4/2026</span>
     </div>
 
@@ -152,96 +151,92 @@
     const COL_CALLBACK_S_NOTES = 20;
 
     let allEvents = [];
-    let filteredEvents = [];
-    let calendar = null;
-    let currentFilter = 'all';
-    let currentDateRange = { start: null, end: null };
+    let currentFilterType = 'all';
+    let currentStartDate = null;
+    let currentEndDate = null;
 
     const TYPE_APPOINTMENT = 'معاينة';
     const TYPE_CALLBACK_L = 'متابعة المكالمة';
     const TYPE_CALLBACK_S = 'متابعة المعاينة';
 
-    // دالة رئيسية لتطبيق جميع الفلاتر
-    function applyAllFilters() {
-        let result = [...allEvents];
+    // دالة لتحديث جميع عناصر الواجهة
+    function updateDisplay() {
+        let filtered = [...allEvents];
 
-        // 1. فلتر حسب النوع
-        if (currentFilter === 'appointment') {
-            result = result.filter(e => e.type === TYPE_APPOINTMENT);
-        } else if (currentFilter === 'callback') {
-            result = result.filter(e => e.type !== TYPE_APPOINTMENT);
+        // تطبيق فلتر النوع
+        if (currentFilterType === 'appointment') {
+            filtered = filtered.filter(e => e.type === TYPE_APPOINTMENT);
+        } else if (currentFilterType === 'callback') {
+            filtered = filtered.filter(e => e.type !== TYPE_APPOINTMENT);
         }
 
-        // 2. فلتر حسب نطاق التاريخ
-        if (currentDateRange.start) {
-            result = result.filter(e => {
+        // تطبيق فلتر التاريخ
+        if (currentStartDate) {
+            filtered = filtered.filter(e => {
                 const eventDate = new Date(e.date);
                 eventDate.setHours(0, 0, 0, 0);
-                const startDate = new Date(currentDateRange.start);
+                const startDate = new Date(currentStartDate);
                 startDate.setHours(0, 0, 0, 0);
                 return eventDate >= startDate;
             });
         }
 
-        if (currentDateRange.end) {
-            result = result.filter(e => {
+        if (currentEndDate) {
+            filtered = filtered.filter(e => {
                 const eventDate = new Date(e.date);
                 eventDate.setHours(0, 0, 0, 0);
-                const endDate = new Date(currentDateRange.end);
+                const endDate = new Date(currentEndDate);
                 endDate.setHours(0, 0, 0, 0);
                 return eventDate <= endDate;
             });
         }
 
-        filteredEvents = result;
-        
-        // تحديث الواجهة
-        document.getElementById('eventsCount').innerText = filteredEvents.length;
-        updateStats(filteredEvents);
-        renderEventList(filteredEvents);
-        initCalendar(filteredEvents);
+        // تحديث الإحصائيات والقائمة والتقويم
+        updateStats(filtered);
+        renderEventList(filtered);
+        initCalendar(filtered);
+        document.getElementById('eventsCount').innerText = filtered.length;
     }
 
-    // تطبيق فلتر التاريخ
     function applyDateRangeFilter() {
         const startInput = document.getElementById('startDate');
         const endInput = document.getElementById('endDate');
         const rangeInfo = document.getElementById('rangeInfo');
 
         if (startInput.value) {
-            currentDateRange.start = new Date(startInput.value);
-            currentDateRange.start.setHours(0, 0, 0, 0);
+            currentStartDate = new Date(startInput.value);
+            currentStartDate.setHours(0, 0, 0, 0);
         } else {
-            currentDateRange.start = null;
+            currentStartDate = null;
         }
 
         if (endInput.value) {
-            currentDateRange.end = new Date(endInput.value);
-            currentDateRange.end.setHours(23, 59, 59, 999);
+            currentEndDate = new Date(endInput.value);
+            currentEndDate.setHours(23, 59, 59, 999);
         } else {
-            currentDateRange.end = null;
+            currentEndDate = null;
         }
 
-        // تحديث النص التوضيحي
-        if (currentDateRange.start && currentDateRange.end) {
-            rangeInfo.innerHTML = `📅 ${currentDateRange.start.toLocaleDateString('ar-EG')} - ${currentDateRange.end.toLocaleDateString('ar-EG')}`;
-        } else if (currentDateRange.start) {
-            rangeInfo.innerHTML = `📅 من ${currentDateRange.start.toLocaleDateString('ar-EG')}`;
-        } else if (currentDateRange.end) {
-            rangeInfo.innerHTML = `📅 حتى ${currentDateRange.end.toLocaleDateString('ar-EG')}`;
+        if (currentStartDate && currentEndDate) {
+            rangeInfo.innerHTML = `📅 ${currentStartDate.toLocaleDateString('ar-EG')} - ${currentEndDate.toLocaleDateString('ar-EG')}`;
+        } else if (currentStartDate) {
+            rangeInfo.innerHTML = `📅 من ${currentStartDate.toLocaleDateString('ar-EG')}`;
+        } else if (currentEndDate) {
+            rangeInfo.innerHTML = `📅 حتى ${currentEndDate.toLocaleDateString('ar-EG')}`;
         } else {
             rangeInfo.innerHTML = '📅 جميع المواعيد';
         }
 
-        applyAllFilters();
+        updateDisplay();
     }
 
     function clearDateRangeFilter() {
         document.getElementById('startDate').value = '';
         document.getElementById('endDate').value = '';
-        currentDateRange = { start: null, end: null };
+        currentStartDate = null;
+        currentEndDate = null;
         document.getElementById('rangeInfo').innerHTML = '📅 جميع المواعيد';
-        applyAllFilters();
+        updateDisplay();
     }
 
     function parseDate(dateStr) {
@@ -323,7 +318,7 @@
             let hour12 = hour24 % 12 || 12;
             let displayPeriod = hour24 < 12 ? 'ص' : 'م';
             displayTime = `${hour12}:${minute.toString().padStart(2, '0')} ${displayPeriod}`;
-            return { hour24, minute, display: displayTime };
+            return { hour24, minute, display: displayTime};
         }
 
         if (clean.includes('12:00:00 ص')) return { hour24: 0, minute: 0, display: '12:00 ص' };
@@ -555,18 +550,18 @@
     }
 
     function setFilter(filter) {
-        currentFilter = filter;
+        currentFilterType = filter;
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.filter === filter);
         });
-        applyAllFilters();
+        updateDisplay();
     }
 
     async function refreshDashboard() {
         const events = await fetchData();
         if (events.length > 0) {
             allEvents = events;
-            applyAllFilters();
+            updateDisplay();
         }
     }
 
@@ -582,10 +577,8 @@
         // تعيين الفلتر الافتراضي لأبريل 2026
         document.getElementById('startDate').value = '2026-04-01';
         document.getElementById('endDate').value = '2026-04-30';
-        currentDateRange = {
-            start: new Date(2026, 3, 1),  // 1 أبريل 2026
-            end: new Date(2026, 3, 30, 23, 59, 59)  // 30 أبريل 2026
-        };
+        currentStartDate = new Date(2026, 3, 1);
+        currentEndDate = new Date(2026, 3, 30, 23, 59, 59);
         document.getElementById('rangeInfo').innerHTML = '📅 1/4/2026 - 30/4/2026';
 
         refreshDashboard();
