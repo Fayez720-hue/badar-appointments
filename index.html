@@ -22,10 +22,10 @@
         .refresh-btn { background: #c9a03d; border: none; color: white; padding: 5px 15px; border-radius: 25px; cursor: pointer; margin-right: 10px; }
         .status-badge { background: #eef2ff; padding: 5px 12px; border-radius: 25px; font-size: 0.7rem; }
         
+        .warning-badge { background: #fee2e2; color: #dc2626; margin-left: 10px; }
         .date-range-filter { background: white; border-radius: 18px; padding: 12px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; border: 1px solid #eee; }
-        .date-range-filter label { font-size: 0.75rem; color: #8b6914; }
-        .date-range-filter input { padding: 6px 10px; border-radius: 10px; border: 1px solid #ddd; font-size: 0.75rem; }
-        .date-range-filter button { background: #c9a03d; border: none; color: white; padding: 6px 15px; border-radius: 25px; cursor: pointer; font-size: 0.7rem; }
+        .date-range-filter input { padding: 6px 10px; border-radius: 10px; border: 1px solid #ddd; }
+        .date-range-filter button { background: #c9a03d; border: none; color: white; padding: 6px 15px; border-radius: 25px; cursor: pointer; }
         .date-range-filter .clear-btn { background: #888; }
         .range-info { font-size: 0.7rem; background: #fef8e7; padding: 4px 12px; border-radius: 20px; color: #c9a03d; }
         
@@ -55,19 +55,22 @@
         .event-list::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 10px; }
         .event-list::-webkit-scrollbar-thumb { background: #c9a03d; border-radius: 10px; }
         
-        .event-item { background: #f9fbfa; margin-bottom: 8px; padding: 10px; border-radius: 12px; border-right: 3px solid #c9a03d; transition: all 0.2s; cursor: pointer; }
+        .event-item { background: #f9fbfa; margin-bottom: 8px; padding: 10px; border-radius: 12px; border-right: 3px solid #c9a03d; transition: all 0.2s; cursor: pointer; position: relative; }
         .event-item.callback { border-right-color: #e67e22; background: #fffbf0; }
+        .event-item.overlap { background: #fee2e2; border-right-color: #dc2626; }
         .event-item:hover { transform: translateX(-5px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .event-title { font-weight: bold; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .event-name { display: flex; align-items: center; gap: 6px; }
         .event-type { font-size: 0.6rem; padding: 2px 8px; border-radius: 20px; background: #fef8e7; }
         .event-details { font-size: 0.65rem; color: #666; display: flex; flex-wrap: wrap; gap: 8px; }
         .event-phone { direction: ltr; font-family: monospace; background: #f0f0f0; padding: 1px 4px; border-radius: 6px; font-size: 0.6rem; }
+        .overlap-warning { position: absolute; top: -5px; left: -5px; background: #dc2626; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
         
         .fc { direction: rtl; }
         .fc .fc-toolbar { flex-direction: column; gap: 10px; margin-bottom: 15px; }
         @media (min-width: 768px) { .fc .fc-toolbar { flex-direction: row; } }
         .fc .fc-button { background: #c9a03d !important; border: none !important; }
+        .fc-event.overlap-event { border: 2px solid #dc2626 !important; box-shadow: 0 0 5px rgba(220,38,38,0.5); }
         
         .loading { text-align: center; padding: 40px; }
         .spinner { width: 40px; height: 40px; border: 3px solid #fef8e7; border-top: 3px solid #c9a03d; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
@@ -75,6 +78,9 @@
         
         .footer-note { margin-top: 20px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 25px; }
         .error-message { text-align: center; padding: 30px; background: #fee2e2; border-radius: 16px; margin: 20px; }
+        
+        .toast-notification { position: fixed; bottom: 20px; right: 20px; background: #dc2626; color: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 9999; animation: slideIn 0.3s ease; direction: rtl; display: flex; align-items: center; gap: 10px; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     </style>
 </head>
 <body>
@@ -134,18 +140,10 @@
     const SHEET_NAME = 'مبيعات';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
 
-    // الأعمدة
-    const COL_NAME = 1;
-    const COL_PHONE = 2;
-    const COL_CITY = 6;
-    const COL_ADDRESS = 7;
-    const COL_NOTES = 8;
-    const COL_APP_DATE = 14;
-    const COL_APP_TIME = 15;
-    const COL_CB_L_DATE = 11;
-    const COL_CB_L_NOTES = 13;
-    const COL_CB_S_DATE = 18;
-    const COL_CB_S_NOTES = 20;
+    const COL_NAME = 1, COL_PHONE = 2, COL_CITY = 6, COL_ADDRESS = 7, COL_NOTES = 8;
+    const COL_APP_DATE = 14, COL_APP_TIME = 15;
+    const COL_CB_L_DATE = 11, COL_CB_L_NOTES = 13;
+    const COL_CB_S_DATE = 18, COL_CB_S_NOTES = 20;
 
     let allEvents = [];
     let currentType = 'all';
@@ -153,12 +151,99 @@
     let filterEndDate = null;
     let calendar = null;
     let isLoading = false;
+    let shownOverlapAlerts = new Set();
 
     const TYPE_APP = 'معاينة';
     const TYPE_CB_L = 'متابعة مكالمة';
     const TYPE_CB_S = 'متابعة معاينة';
 
-    // دالة لتحويل التاريخ
+    // عرض إشعار Toast
+    function showToast(message, type = 'warning') {
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.innerHTML = `<i class="fas ${type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i> ${message}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
+
+    // كشف تداخل المواعيد
+    function detectOverlaps(events) {
+        const overlaps = [];
+        const eventMap = new Map();
+        
+        // تجميع الأحداث حسب التاريخ والوقت
+        for (let i = 0; i < events.length; i++) {
+            for (let j = i + 1; j < events.length; j++) {
+                const event1 = events[i];
+                const event2 = events[j];
+                const date1 = new Date(event1.date);
+                const date2 = new Date(event2.date);
+                
+                // نفس اليوم
+                if (date1.toDateString() === date2.toDateString()) {
+                    const time1 = event1.date.getHours() * 60 + event1.date.getMinutes();
+                    const time2 = event2.date.getHours() * 60 + event2.date.getMinutes();
+                    
+                    // تداخل في الوقت (ضمن ساعة واحدة)
+                    if (Math.abs(time1 - time2) < 60) {
+                        overlaps.push({
+                            event1: event1,
+                            event2: event2,
+                            date: date1,
+                            time1: time1,
+                            time2: time2
+                        });
+                    }
+                }
+            }
+        }
+        
+        return overlaps;
+    }
+
+    // عرض تنبيه للمواعيد المتداخلة
+    function showOverlapAlerts(overlaps) {
+        if (overlaps.length === 0) return;
+        
+        // تجنب تكرار الإشعارات
+        const alertKey = overlaps.map(o => `${o.event1.id}_${o.event2.id}`).join(',');
+        if (shownOverlapAlerts.has(alertKey)) return;
+        shownOverlapAlerts.add(alertKey);
+        
+        // إنشاء رسالة مفصلة
+        let message = `⚠️ تنبيه: تم العثور على ${overlaps.length} حالة تداخل في المواعيد!\n\n`;
+        for (const ov of overlaps) {
+            const dateStr = ov.date.toLocaleDateString('ar-EG');
+            const time1Str = ov.event1.displayTime || `${ov.event1.date.getHours()}:${ov.event1.date.getMinutes().toString().padStart(2, '0')}`;
+            const time2Str = ov.event2.displayTime || `${ov.event2.date.getHours()}:${ov.event2.date.getMinutes().toString().padStart(2, '0')}`;
+            message += `📅 ${dateStr}\n   🕐 ${time1Str} - ${ov.event1.title}\n   🕐 ${time2Str} - ${ov.event2.title}\n\n`;
+        }
+        
+        // SweetAlert منبثق
+        Swal.fire({
+            title: '⚠️ تداخل في المواعيد',
+            html: `<div style="text-align:right; direction:rtl;">
+                <p>تم اكتشاف <strong>${overlaps.length}</strong> حالة تداخل في المواعيد:</p>
+                <hr>
+                ${overlaps.map(ov => `
+                    <div style="background:#fee2e2; margin:10px 0; padding:10px; border-radius:8px;">
+                        <strong>📅 ${ov.date.toLocaleDateString('ar-EG')}</strong><br>
+                        🕐 ${ov.event1.displayTime || ov.event1.date.toLocaleTimeString('ar-EG')} - ${ov.event1.title}<br>
+                        🕐 ${ov.event2.displayTime || ov.event2.date.toLocaleTimeString('ar-EG')} - ${ov.event2.title}
+                    </div>
+                `).join('')}
+                <p style="margin-top:15px;">يرجى مراجعة هذه المواعيد وإعادة جدولتها.</p>
+            </div>`,
+            icon: 'warning',
+            confirmButtonColor: '#dc2626',
+            confirmButtonText: 'فهمت',
+            showCancelButton: false
+        });
+        
+        // Toast إشعار
+        showToast(`🚨 تنبيه: يوجد ${overlaps.length} حالة تداخل في المواعيد! رجاء المراجعة.`);
+    }
+
     function parseDate(dateStr) {
         if (!dateStr) return null;
         let s = dateStr.toString().trim();
@@ -210,18 +295,13 @@
             const response = await fetch(url);
             
             if (!response.ok) {
-                if (response.status === 403) {
-                    throw new Error('خطأ 403: يرجى مشاركة الجدول كـ "عام"');
-                }
+                if (response.status === 403) throw new Error('خطأ 403: يرجى مشاركة الجدول كـ "عام"');
                 throw new Error(`HTTP ${response.status}`);
             }
             
             const data = await response.json();
             const rows = data.values;
-            
-            if (!rows || rows.length < 2) {
-                throw new Error('لا توجد بيانات في الجدول');
-            }
+            if (!rows || rows.length < 2) throw new Error('لا توجد بيانات في الجدول');
             
             const events = [];
             
@@ -235,7 +315,6 @@
                 const address = row[COL_ADDRESS] || '';
                 const notes = row[COL_NOTES] || '';
                 
-                // المعاينات
                 const appDate = row[COL_APP_DATE];
                 const appTime = row[COL_APP_TIME] || '';
                 
@@ -258,7 +337,6 @@
                     }
                 }
                 
-                // متابعات من العمود L
                 const cbL = row[COL_CB_L_DATE];
                 const cbLNotes = row[COL_CB_L_NOTES] || '';
                 
@@ -279,7 +357,6 @@
                     }
                 }
                 
-                // متابعات من العمود S
                 const cbS = row[COL_CB_S_DATE];
                 const cbSNotes = row[COL_CB_S_NOTES] || '';
                 
@@ -318,26 +395,22 @@
             <div class="error-message">
                 <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #dc2626;"></i>
                 <p style="margin-top: 10px;"><strong>⚠️ ${message}</strong></p>
-                <p style="margin-top: 10px; font-size: 0.8rem;">تأكد من مشاركة الجدول كـ "عام"</p>
                 <button onclick="location.reload()" style="margin-top: 15px; padding: 8px 20px; background: #c9a03d; border: none; border-radius: 25px; color: white; cursor: pointer;">🔄 إعادة المحاولة</button>
             </div>
         `;
     }
 
-    // تحديث جميع العناصر - إعادة بناء التقويم بالكامل
     function refreshAll() {
         if (!allEvents.length) return;
         
         let filtered = [...allEvents];
         
-        // فلتر النوع
         if (currentType === 'appointment') {
             filtered = filtered.filter(e => e.type === TYPE_APP);
         } else if (currentType === 'callback') {
             filtered = filtered.filter(e => e.type !== TYPE_APP);
         }
         
-        // فلتر التاريخ
         if (filterStartDate) {
             const startTime = filterStartDate.getTime();
             filtered = filtered.filter(e => {
@@ -356,10 +429,16 @@
             });
         }
         
+        // كشف التداخلات في البيانات المفلترة
+        const overlaps = detectOverlaps(filtered);
+        if (overlaps.length > 0) {
+            showOverlapAlerts(overlaps);
+        }
+        
         document.getElementById('eventsCount').innerText = filtered.length;
         updateStats(filtered);
-        renderGroupedList(filtered);
-        renderCalendar(filtered);
+        renderGroupedList(filtered, overlaps);
+        renderCalendar(filtered, overlaps);
     }
 
     function updateStats(events) {
@@ -390,11 +469,18 @@
         document.getElementById('todayCb').innerText = todayCb;
     }
 
-    function renderGroupedList(events) {
+    function renderGroupedList(events, overlaps) {
         const container = document.getElementById('eventList');
         if (!events.length) {
             container.innerHTML = '<div class="loading">✨ لا توجد مواعيد في النطاق المحدد</div>';
             return;
+        }
+        
+        // إنشاء مجموعة من معرفات الأحداث المتداخلة
+        const overlapEventIds = new Set();
+        for (const ov of overlaps) {
+            overlapEventIds.add(ov.event1.id);
+            overlapEventIds.add(ov.event2.id);
         }
         
         const grouped = {};
@@ -424,9 +510,11 @@
                 const isCallback = ev.type !== TYPE_APP;
                 const icon = isCallback ? (ev.type === TYPE_CB_L ? '📞' : '📋') : '🏢';
                 const timeDisplay = ev.displayTime ? `🕐 ${ev.displayTime}` : '';
+                const isOverlap = overlapEventIds.has(ev.id);
                 
                 html += `
-                    <div class="event-item ${isCallback ? 'callback' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${dateStr}', '${ev.displayTime || ''}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${ev.type}')">
+                    <div class="event-item ${isCallback ? 'callback' : ''} ${isOverlap ? 'overlap' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${dateStr}', '${ev.displayTime || ''}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${ev.type}')">
+                        ${isOverlap ? '<div class="overlap-warning" title="تداخل في المواعيد">!</div>' : ''}
                         <div class="event-title">
                             <div class="event-name">
                                 <i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i>
@@ -446,11 +534,9 @@
         container.innerHTML = html;
     }
 
-    // إعادة بناء التقويم بالكامل
-    function renderCalendar(events) {
+    function renderCalendar(events, overlaps) {
         const calendarEl = document.getElementById('calendar');
         
-        // تدمير التقويم القديم إذا كان موجوداً
         if (calendar) {
             calendar.destroy();
             calendar = null;
@@ -461,14 +547,20 @@
             return;
         }
         
+        const overlapEventIds = new Set();
+        for (const ov of overlaps) {
+            overlapEventIds.add(ov.event1.id);
+            overlapEventIds.add(ov.event2.id);
+        }
+        
         const fcEvents = events.map(ev => ({
             id: ev.id,
             title: `${ev.type === TYPE_APP ? '🏢' : (ev.type === TYPE_CB_L ? '📞' : '📋')} ${ev.title}${ev.displayTime ? ` (${ev.displayTime})` : ''}`,
             start: ev.date,
-            backgroundColor: ev.type === TYPE_APP ? '#c9a03d' : (ev.type === TYPE_CB_L ? '#e67e22' : '#3b82f6')
+            backgroundColor: overlapEventIds.has(ev.id) ? '#dc2626' : (ev.type === TYPE_APP ? '#c9a03d' : (ev.type === TYPE_CB_L ? '#e67e22' : '#3b82f6')),
+            className: overlapEventIds.has(ev.id) ? 'overlap-event' : ''
         }));
         
-        // إنشاء تقويم جديد
         calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
             locale: 'ar',
@@ -481,11 +573,21 @@
             buttonText: { today: 'اليوم', month: 'شهر' },
             events: fcEvents,
             height: 'auto',
-            firstDay: 6
+            firstDay: 6,
+            eventDidMount: function(info) {
+                if (info.event.extendedProps.isOverlap) {
+                    info.el.style.border = '2px solid #dc2626';
+                    info.el.style.boxShadow = '0 0 5px rgba(220,38,38,0.5)';
+                }
+            }
         });
         
         calendar.render();
-        console.log(`التقويم تم تحديثه بـ ${fcEvents.length} حدث`);
+        
+        if (filterStartDate) {
+            const targetDate = new Date(filterStartDate);
+            calendar.gotoDate(targetDate);
+        }
     }
 
     function showDetails(title, date, time, phone, city, address, notes, type) {
@@ -509,25 +611,15 @@
         const start = document.getElementById('startDate').value;
         const end = document.getElementById('endDate').value;
         
-        if (start) {
-            filterStartDate = new Date(start);
-            filterStartDate.setHours(0, 0, 0, 0);
-        } else {
-            filterStartDate = null;
-        }
-        
-        if (end) {
-            filterEndDate = new Date(end);
-            filterEndDate.setHours(23, 59, 59, 999);
-        } else {
-            filterEndDate = null;
-        }
+        filterStartDate = start ? new Date(start) : null;
+        filterEndDate = end ? new Date(end) : null;
+        if (filterStartDate) filterStartDate.setHours(0, 0, 0, 0);
+        if (filterEndDate) filterEndDate.setHours(23, 59, 59, 999);
         
         const info = document.getElementById('rangeInfo');
         if (filterStartDate && filterEndDate) {
-            const startDate = new Date(filterStartDate);
-            const monthName = startDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
-            info.innerText = `${monthName}`;
+            const startMonth = filterStartDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+            info.innerText = startMonth;
         } else if (filterStartDate) {
             info.innerText = `من ${filterStartDate.toLocaleDateString('ar-EG')}`;
         } else if (filterEndDate) {
@@ -577,13 +669,6 @@
         document.getElementById('refreshBtn').addEventListener('click', loadData);
         document.getElementById('applyDateBtn').addEventListener('click', applyDateFilter);
         document.getElementById('clearDateBtn').addEventListener('click', clearDateFilter);
-        
-        // تعيين الفلتر الافتراضي لشهر مارس 2026
-        document.getElementById('startDate').value = '2026-03-01';
-        document.getElementById('endDate').value = '2026-03-31';
-        filterStartDate = new Date(2026, 2, 1);
-        filterEndDate = new Date(2026, 2, 31, 23, 59, 59);
-        document.getElementById('rangeInfo').innerText = 'مارس 2026';
         
         loadData();
         setInterval(loadData, 300000);
