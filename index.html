@@ -25,6 +25,56 @@
         .status-badge.error { background: #fee2e2; color: #dc2626; }
         .status-badge.success { background: #dcfce7; color: #16a34a; }
         
+        /* Date Range Filter Styles */
+        .date-range-filter {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            border: 1px solid rgba(201,160,61,0.3);
+        }
+        .date-range-filter label {
+            font-size: 0.75rem;
+            color: #8b6914;
+            font-weight: bold;
+        }
+        .date-range-filter input {
+            padding: 6px 10px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            font-size: 0.75rem;
+            background: white;
+            cursor: pointer;
+        }
+        .date-range-filter button {
+            background: linear-gradient(135deg, #c9a03d, #8b6914);
+            border: none;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            transition: all 0.2s;
+        }
+        .date-range-filter button:hover {
+            transform: translateY(-2px);
+        }
+        .date-range-filter .clear-btn {
+            background: #6c7a74;
+        }
+        .range-info {
+            font-size: 0.7rem;
+            color: #c9a03d;
+            background: #fef8e7;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+        
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
         @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
         
@@ -84,6 +134,17 @@
         </div>
     </div>
 
+    <!-- فلتر نطاق التاريخ -->
+    <div class="date-range-filter">
+        <label>📅 من:</label>
+        <input type="date" id="startDate" value="">
+        <label>إلى:</label>
+        <input type="date" id="endDate" value="">
+        <button id="applyDateRangeBtn"><i class="fas fa-filter"></i> تطبيق الفلتر</button>
+        <button id="clearDateRangeBtn" class="clear-btn"><i class="fas fa-times"></i> إلغاء الفلتر</button>
+        <span id="rangeInfo" class="range-info"></span>
+    </div>
+
     <div class="stats-grid">
         <div class="stat-card"><h3>🏢 إجمالي المعاينات</h3><div class="stat-number" id="totalApp">0</div></div>
         <div class="stat-card"><h3>📞 إجمالي المتابعات</h3><div class="stat-number" id="totalCb">0</div></div>
@@ -122,10 +183,74 @@
     let filteredEvents = [];
     let calendar = null;
     let currentFilter = 'all';
+    let dateRange = { start: null, end: null }; // فلتر التاريخ
     
     const TYPE_APPOINTMENT = 'معاينة';
     const TYPE_CALLBACK_AFTER_CALL = 'متابعة بعد المكالمة';
     const TYPE_CALLBACK_AFTER_APPT = 'متابعة بعد المعاينة';
+    
+    // تطبيق فلتر التاريخ
+    function applyDateRangeFilter() {
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const rangeInfo = document.getElementById('rangeInfo');
+        
+        if (startDateInput.value && endDateInput.value) {
+            dateRange.start = new Date(startDateInput.value);
+            dateRange.end = new Date(endDateInput.value);
+            dateRange.end.setHours(23, 59, 59, 999);
+            
+            // عرض معلومات الفلتر
+            const startFormatted = dateRange.start.toLocaleDateString('ar-EG');
+            const endFormatted = dateRange.end.toLocaleDateString('ar-EG');
+            rangeInfo.innerHTML = `📅 عرض المواعيد من ${startFormatted} إلى ${endFormatted}`;
+        } else if (startDateInput.value) {
+            dateRange.start = new Date(startDateInput.value);
+            dateRange.end = null;
+            rangeInfo.innerHTML = `📅 عرض المواعيد من ${dateRange.start.toLocaleDateString('ar-EG')}`;
+        } else if (endDateInput.value) {
+            dateRange.start = null;
+            dateRange.end = new Date(endDateInput.value);
+            dateRange.end.setHours(23, 59, 59, 999);
+            rangeInfo.innerHTML = `📅 عرض المواعيد حتى ${dateRange.end.toLocaleDateString('ar-EG')}`;
+        }
+        
+        applyFilters();
+    }
+    
+    // إلغاء فلتر التاريخ
+    function clearDateRangeFilter() {
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        dateRange = { start: null, end: null };
+        document.getElementById('rangeInfo').innerHTML = '';
+        applyFilters();
+    }
+    
+    // تطبيق جميع الفلاتر (النوع + التاريخ)
+    function applyFilters() {
+        let result = [...allEvents];
+        
+        // فلتر حسب النوع
+        if (currentFilter === 'appointment') {
+            result = result.filter(e => e.type === TYPE_APPOINTMENT);
+        } else if (currentFilter === 'callback') {
+            result = result.filter(e => e.type !== TYPE_APPOINTMENT);
+        }
+        
+        // فلتر حسب نطاق التاريخ
+        if (dateRange.start) {
+            result = result.filter(e => e.date >= dateRange.start);
+        }
+        if (dateRange.end) {
+            result = result.filter(e => e.date <= dateRange.end);
+        }
+        
+        filteredEvents = result;
+        updateStats(filteredEvents);
+        renderEventList(filteredEvents);
+        initCalendar(filteredEvents);
+    }
     
     function showError(message) {
         const calendarEl = document.getElementById('calendar');
@@ -375,7 +500,7 @@
     function renderEventList(events) {
         const container = document.getElementById('eventList');
         if (events.length === 0) {
-            container.innerHTML = '<div class="loading"><p>لا توجد مواعيد</p></div>';
+            container.innerHTML = '<div class="loading"><p>لا توجد مواعيد في النطاق المحدد</p></div>';
             return;
         }
         
@@ -406,7 +531,7 @@
         if (calendar) calendar.destroy();
         
         if (events.length === 0) {
-            calendarEl.innerHTML = '<div class="loading"><p>لا توجد مواعيد</p></div>';
+            calendarEl.innerHTML = '<div class="loading"><p>لا توجد مواعيد في النطاق المحدد</p></div>';
             return;
         }
         
@@ -448,29 +573,27 @@
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.filter === filter);
         });
-        
-        if (filter === 'all') filteredEvents = [...allEvents];
-        else if (filter === 'appointment') filteredEvents = allEvents.filter(e => e.type === TYPE_APPOINTMENT);
-        else filteredEvents = allEvents.filter(e => e.type !== TYPE_APPOINTMENT);
-        
-        updateStats(filteredEvents);
-        renderEventList(filteredEvents);
-        initCalendar(filteredEvents);
+        applyFilters();
     }
     
     async function refreshDashboard() {
         const events = await fetchData();
         if (events.length > 0) {
             allEvents = events;
-            setFilter(currentFilter);
+            applyFilters();
         }
     }
     
     window.addEventListener('load', () => {
+        // تعيين تاريخ اليوم كقيمة افتراضية لبداية الفلتر (اختياري)
+        const today = new Date().toISOString().split('T')[0];
+        
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => setFilter(btn.dataset.filter));
         });
         document.getElementById('refreshBtn').addEventListener('click', refreshDashboard);
+        document.getElementById('applyDateRangeBtn').addEventListener('click', applyDateRangeFilter);
+        document.getElementById('clearDateRangeBtn').addEventListener('click', clearDateRangeFilter);
         refreshDashboard();
         setInterval(refreshDashboard, 300000);
     });
