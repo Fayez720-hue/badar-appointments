@@ -48,7 +48,7 @@
         .event-type { font-size: 0.65rem; padding: 2px 8px; border-radius: 15px; background: #fef8e7; }
         .event-details { font-size: 0.7rem; display: flex; flex-wrap: wrap; gap: 10px; color: #6c7a74; }
         
-        /* Notifications Panel - مع زر الرجوع */
+        /* Notifications Panel */
         .notifications-panel { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000; display: none; flex-direction: column; overflow: hidden; }
         .notifications-header { background: linear-gradient(135deg, #c9a03d, #8b6914); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
         .back-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
@@ -125,10 +125,10 @@
             <div id="upcomingEventsList" class="event-list"><div class="loading"><div class="spinner"></div><p>جاري التحميل...</p></div></div>
         </div>
     </div>
-    <div class="footer-note"><i class="fas fa-bell"></i> إشعارات للمواعيد القادمة | <i class="fas fa-phone-alt"></i> يتم جلب المتابعات من الأعمدة L & S | <i class="fas fa-sync-alt"></i> تحديث تلقائي</div>
+    <div class="footer-note"><i class="fas fa-bell"></i> إشعارات للمواعيد القادمة | <i class="fas fa-map-marker-alt"></i> يتم عرض المدينة والعنوان في تفاصيل المعاينة | <i class="fas fa-sync-alt"></i> تحديث تلقائي</div>
 </div>
 
-<!-- Notifications Panel with Back Button -->
+<!-- Notifications Panel -->
 <div class="notifications-panel" id="notificationsPanel">
     <div class="notifications-header">
         <button class="back-btn" id="closeNotificationsBtn"><i class="fas fa-arrow-right"></i></button>
@@ -333,9 +333,11 @@
             // عرض العناوين للتأكد من الأعمدة
             if (rows[0]) {
                 console.log("📋 العناوين:", rows[0]);
-                console.log("📍 العمود L (index 11):", rows[0][11]);
-                console.log("📍 العمود S (index 18):", rows[0][18]);
-                console.log("📍 العمود O (index 14):", rows[0][14]);
+                console.log("📍 العمود G (index 6) - المدينة:", rows[0][6]);
+                console.log("📍 العمود H (index 7) - العنوان:", rows[0][7]);
+                console.log("📍 العمود L (index 11) - متابعة:", rows[0][11]);
+                console.log("📍 العمود S (index 18) - متابعة إضافية:", rows[0][18]);
+                console.log("📍 العمود O (index 14) - تاريخ المعاينة:", rows[0][14]);
             }
             
             for (let i = 1; i < rows.length; i++) {
@@ -344,6 +346,10 @@
                 
                 const name = row[1] || 'غير محدد';
                 const phone = row[2] || row[12] || '';
+                
+                // ========== بيانات المدينة والعنوان من العمود G و H ==========
+                const city = row[6] || '';           // العمود G - المدينة
+                const address = row[7] || '';        // العمود H - العنوان
                 
                 // ========== معاينات من العمود O (index 14) ==========
                 const appointmentDateRaw = row[14] || '';
@@ -356,21 +362,27 @@
                 
                 // ========== متابعات من العمود S (index 18) ==========
                 const callbackDateS = row[18] || '';      // العمود S - تاريخ متابعة إضافي
-                const callbackPhoneS = row[12] || '';     // نفس رقم الهاتف
                 const callbackNotesS = row[19] || '';     // العمود T - ملاحظات إضافية
                 
                 const generalNotes = row[8] || '';
                 
-                // معاينة
+                // معاينة مع إضافة المدينة والعنوان
                 if (appointmentDateRaw && appointmentDateRaw.toString().trim()) {
                     let date = parseDate(appointmentDateRaw, appointmentTime);
                     if (date) {
                         events.push({
-                            id: `app_${i}`, title: name, type: TYPE_APPOINTMENT,
-                            start: date, time: appointmentTime, phone: phone,
+                            id: `app_${i}`, 
+                            title: name, 
+                            type: TYPE_APPOINTMENT,
+                            start: date, 
+                            time: appointmentTime, 
+                            phone: phone,
+                            city: city,           // إضافة المدينة
+                            address: address,     // إضافة العنوان
                             notes: generalNotes || callbackNotesL || 'لا توجد ملاحظات'
                         });
                         appCount++;
+                        console.log(`✅ معاينة: ${name} - المدينة: ${city || 'غير محدد'} - العنوان: ${address || 'غير محدد'}`);
                     }
                 }
                 
@@ -379,8 +391,14 @@
                     let date = parseDate(callbackDateL, '');
                     if (date) {
                         events.push({
-                            id: `cbL_${i}`, title: name, type: TYPE_CALLBACK,
-                            start: date, time: '', phone: callbackPhoneL || phone,
+                            id: `cbL_${i}`, 
+                            title: name, 
+                            type: TYPE_CALLBACK,
+                            start: date, 
+                            time: '', 
+                            phone: callbackPhoneL || phone,
+                            city: '',            // لا توجد مدينة للمتابعات
+                            address: '',         // لا يوجد عنوان للمتابعات
                             notes: callbackNotesL || generalNotes || 'متابعة من السجل'
                         });
                         cbCount++;
@@ -393,8 +411,14 @@
                     let date = parseDate(callbackDateS, '');
                     if (date) {
                         events.push({
-                            id: `cbS_${i}`, title: name, type: TYPE_CALLBACK,
-                            start: date, time: '', phone: callbackPhoneS || phone,
+                            id: `cbS_${i}`, 
+                            title: name, 
+                            type: TYPE_CALLBACK,
+                            start: date, 
+                            time: '', 
+                            phone: phone,
+                            city: '',            // لا توجد مدينة للمتابعات
+                            address: '',         // لا يوجد عنوان للمتابعات
                             notes: callbackNotesS || generalNotes || 'متابعة إضافية'
                         });
                         cbCount++;
@@ -478,24 +502,55 @@
             const dateStr = ev.start.toLocaleDateString('ar-EG', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
             const timeStr = ev.time || ev.start.toLocaleTimeString('ar-EG', { hour:'2-digit', minute:'2-digit' });
             const isCallback = ev.type === TYPE_CALLBACK;
-            html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${ev.phone || ''}', '${(ev.notes || '').replace(/'/g, "\\'")}', '${ev.type}')">
+            
+            // عرض المدينة والعنوان في القائمة إذا كانت موجودة
+            let locationInfo = '';
+            if (!isCallback && (ev.city || ev.address)) {
+                if (ev.city && ev.address) {
+                    locationInfo = `<span><i class="fas fa-map-marker-alt"></i> ${ev.city} - ${ev.address}</span>`;
+                } else if (ev.city) {
+                    locationInfo = `<span><i class="fas fa-city"></i> ${ev.city}</span>`;
+                } else if (ev.address) {
+                    locationInfo = `<span><i class="fas fa-location-dot"></i> ${ev.address}</span>`;
+                }
+            }
+            
+            html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${ev.phone || ''}', '${(ev.notes || '').replace(/'/g, "\\'")}', '${ev.type}', '${(ev.city || '').replace(/'/g, "\\'")}', '${(ev.address || '').replace(/'/g, "\\'")}')">
                 <div class="event-title"><span><i class="fas ${isCallback ? 'fa-user-friends' : 'fa-building'}"></i> ${ev.title}</span><span class="event-type">${ev.type === TYPE_APPOINTMENT ? '🏢 معاينة' : '📞 متابعة'}</span></div>
-                <div class="event-details"><span><i class="far fa-calendar-alt"></i> ${dateStr}</span><span><i class="far fa-clock"></i> ${timeStr}</span><span><i class="fas fa-phone"></i> ${ev.phone || 'غير متوفر'}</span></div>
+                <div class="event-details">
+                    <span><i class="far fa-calendar-alt"></i> ${dateStr}</span>
+                    <span><i class="far fa-clock"></i> ${timeStr}</span>
+                    <span><i class="fas fa-phone"></i> ${ev.phone || 'غير متوفر'}</span>
+                    ${locationInfo}
+                </div>
             </div>`;
         }
         container.innerHTML = html;
     }
     
-    window.showDetails = function(title, phone, notes, type) {
+    // دالة عرض التفاصيل مع المدينة والعنوان
+    window.showDetails = function(title, phone, notes, type, city = '', address = '') {
+        let locationHtml = '';
+        if (type === TYPE_APPOINTMENT && (city || address)) {
+            locationHtml = `
+                <p><i class="fas fa-map-marker-alt"></i> <strong>الموقع:</strong></p>
+                ${city ? `<p style="margin-right: 20px;"><i class="fas fa-city"></i> المدينة: ${city}</p>` : ''}
+                ${address ? `<p style="margin-right: 20px;"><i class="fas fa-location-dot"></i> العنوان: ${address}</p>` : ''}
+                <hr>
+            `;
+        }
+        
         Swal.fire({ 
             title: title, 
             html: `<div style="text-align:right">
                 <p><i class="fas fa-tag"></i> <strong>النوع:</strong> ${type}</p>
                 <p><i class="fas fa-phone"></i> <strong>الهاتف:</strong> ${phone || 'غير متوفر'}</p>
+                ${locationHtml}
                 <p><i class="fas fa-sticky-note"></i> <strong>الملاحظات:</strong> ${notes || 'لا توجد'}</p>
             </div>`, 
             icon: type === TYPE_APPOINTMENT ? 'info' : 'warning', 
-            confirmButtonColor: '#c9a03d' 
+            confirmButtonColor: '#c9a03d',
+            confirmButtonText: 'إغلاق'
         });
     };
     
@@ -505,9 +560,17 @@
         if (events.length === 0) return;
         
         const fcEvents = events.map(ev => ({
-            id: ev.id, title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : '📞'} ${ev.title}`,
-            start: ev.start, backgroundColor: ev.type === TYPE_APPOINTMENT ? '#c9a03d' : '#e67e22',
-            extendedProps: { phone: ev.phone, notes: ev.notes, type: ev.type }
+            id: ev.id, 
+            title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : '📞'} ${ev.title}`,
+            start: ev.start, 
+            backgroundColor: ev.type === TYPE_APPOINTMENT ? '#c9a03d' : '#e67e22',
+            extendedProps: { 
+                phone: ev.phone, 
+                notes: ev.notes, 
+                type: ev.type,
+                city: ev.city || '',
+                address: ev.address || ''
+            }
         }));
         
         calendarInstance = new FullCalendar.Calendar(calendarEl, {
@@ -515,8 +578,19 @@
             locale: 'ar', direction: 'rtl',
             headerToolbar: { left: 'prev,next', center: 'title', right: window.innerWidth < 768 ? '' : 'dayGridMonth,timeGridWeek' },
             events: fcEvents,
-            eventClick: (info) => { const ext = info.event.extendedProps; showDetails(info.event.title.replace(/^[🏢📞] /, ''), ext.phone, ext.notes, ext.type); },
-            height: 'auto', firstDay: 6
+            eventClick: (info) => { 
+                const ext = info.event.extendedProps; 
+                showDetails(
+                    info.event.title.replace(/^[🏢📞] /, ''), 
+                    ext.phone, 
+                    ext.notes, 
+                    ext.type,
+                    ext.city,
+                    ext.address
+                ); 
+            },
+            height: 'auto', 
+            firstDay: 6
         });
         calendarInstance.render();
     }
