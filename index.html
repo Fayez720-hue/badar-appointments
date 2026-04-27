@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>نظام إدارة العقارات - المعاينات</title>
+    <title>نظام إدارة العقارات - معاينات ومتابعات</title>
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ar.js"></script>
@@ -15,11 +15,15 @@
         
         .header { background: rgba(255,255,255,0.97); border-radius: 20px; padding: 12px 16px; margin-bottom: 16px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; }
         h1 { font-size: 1.2rem; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .refresh-btn { background: linear-gradient(135deg, #c9a03d, #8b6914); border: none; color: white; padding: 8px 14px; border-radius: 30px; cursor: pointer; margin-right: 10px; }
+        
+        .filter-group { display: flex; gap: 6px; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 40px; }
+        .filter-btn { padding: 6px 12px; border-radius: 30px; border: none; cursor: pointer; font-size: 0.75rem; background: transparent; }
+        .filter-btn.active { background: linear-gradient(135deg, #c9a03d, #8b6914); color: white; }
+        .refresh-btn { background: linear-gradient(135deg, #c9a03d, #8b6914); border: none; color: white; padding: 8px 14px; border-radius: 30px; cursor: pointer; margin-left: 8px; }
         .status-badge { background: #eef2ff; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; }
         
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
-        .stat-card { background: rgba(255,255,255,0.95); border-radius: 16px; padding: 12px; border-right: 3px solid #c9a03d; }
+        .stat-card { background: rgba(255,255,255,0.95); border-radius: 16px; padding: 12px; border-right: 3px solid #c9a03d; cursor: pointer; }
         .stat-number { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
         .two-columns { display: flex; flex-direction: column; gap: 16px; }
@@ -29,30 +33,45 @@
         .calendar-panel { flex: 2; }
         .events-panel { flex: 1.2; }
         
-        .event-list { max-height: 400px; overflow-y: auto; }
-        .event-item { background: #f9fbfa; margin-bottom: 8px; padding: 10px; border-radius: 12px; border-right: 3px solid #c9a03d; cursor: pointer; }
-        .event-item:hover { transform: translateX(-5px); }
+        .event-list { max-height: 500px; overflow-y: auto; }
+        .event-item { background: #f9fbfa; margin-bottom: 8px; padding: 12px; border-radius: 12px; border-right: 3px solid #c9a03d; cursor: pointer; transition: all 0.2s; }
+        .event-item.callback { border-right-color: #e67e22; background: #fffbf0; }
+        .event-item:hover { transform: translateX(-5px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .event-title { font-weight: 700; font-size: 0.9rem; display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .event-type { font-size: 0.65rem; padding: 2px 8px; border-radius: 15px; background: #fef8e7; }
+        .event-type.callback-badge { background: #ffecb3; color: #b45f06; }
+        .event-details { font-size: 0.7rem; color: #4a5b54; }
         
         .fc { direction: rtl; }
         .fc .fc-toolbar { flex-direction: column; gap: 8px; margin-bottom: 15px; }
         @media (min-width: 768px) { .fc .fc-toolbar { flex-direction: row; } }
         
-        .debug-panel { background: #1e1e2e; color: #a6e3a1; font-family: monospace; font-size: 11px; padding: 12px; margin-top: 16px; border-radius: 12px; max-height: 250px; overflow-y: auto; direction: ltr; }
+        .debug-panel { background: #1e1e2e; color: #a6e3a1; font-family: monospace; font-size: 11px; padding: 12px; margin-top: 16px; border-radius: 12px; max-height: 200px; overflow-y: auto; direction: ltr; }
         .debug-line.success { color: #a6e3a1; }
         .debug-line.error { color: #f38ba8; }
+        .debug-line.warning { color: #f9e2af; }
         
         .loading { text-align: center; padding: 40px; }
         .spinner { width: 40px; height: 40px; border: 3px solid #fef8e7; border-top: 3px solid #c9a03d; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         .footer-note { margin-top: 16px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.2); padding: 8px; border-radius: 20px; }
+        
+        @media (min-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(4, 1fr); }
+        }
     </style>
 </head>
 <body>
 <div class="dashboard-container">
     <div class="header">
-        <h1><i class="fas fa-building"></i> نظام إدارة العقارات - المعاينات</h1>
-        <div>
+        <h1><i class="fas fa-building"></i> نظام إدارة العقارات <small>معاينات ومتابعات</small></h1>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <div class="filter-group">
+                <button class="filter-btn active" data-filter="all">📋 الكل</button>
+                <button class="filter-btn" data-filter="appointment">🏢 معاينات</button>
+                <button class="filter-btn" data-filter="callback">📞 متابعات</button>
+            </div>
             <button class="refresh-btn" id="refreshBtn"><i class="fas fa-sync-alt"></i> تحديث</button>
             <span class="status-badge" id="status">⏳ جاري...</span>
         </div>
@@ -60,17 +79,17 @@
 
     <div class="stats-grid">
         <div class="stat-card"><h3>🏢 إجمالي المعاينات</h3><div class="stat-number" id="totalApp">0</div></div>
+        <div class="stat-card"><h3>📞 إجمالي المتابعات</h3><div class="stat-number" id="totalCb">0</div></div>
         <div class="stat-card"><h3>📅 معاينات اليوم</h3><div class="stat-number" id="todayApp">0</div></div>
-        <div class="stat-card"><h3>🗓️ معاينات هذا الأسبوع</h3><div class="stat-number" id="weekApp">0</div></div>
-        <div class="stat-card"><h3>⏰ معاينات الشهر</h3><div class="stat-number" id="monthApp">0</div></div>
+        <div class="stat-card"><h3>⏰ متابعات اليوم</h3><div class="stat-number" id="todayCb">0</div></div>
     </div>
 
     <div class="two-columns">
-        <div class="calendar-panel"><div class="section-title">📆 تقويم المعاينات</div><div id="calendar"><div class="loading"><div class="spinner"></div></div></div></div>
-        <div class="events-panel"><div class="section-title">📋 قائمة المعاينات</div><div id="eventList"><div class="loading"><div class="spinner"></div></div></div></div>
+        <div class="calendar-panel"><div class="section-title">📆 تقويم المواعيد</div><div id="calendar"><div class="loading"><div class="spinner"></div></div></div></div>
+        <div class="events-panel"><div class="section-title">📋 قائمة المواعيد</div><div id="eventList"><div class="loading"><div class="spinner"></div></div></div></div>
     </div>
     
-    <div class="footer-note"><i class="fas fa-info-circle"></i> يتم استخراج البيانات من العمود O (تاريخ المعاينة)</div>
+    <div class="footer-note"><i class="fas fa-info-circle"></i> المعاينات من العمود O | المتابعات من العمود S (Callback Date Appointment)</div>
     
     <div class="debug-panel" id="debugPanel">
         <div id="debugLog">🔄 جاري تحميل البيانات...</div>
@@ -83,8 +102,24 @@
     const SHEET_NAME = 'مبيعات';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
     
+    // الأعمدة
+    const COL_NAME = 1;           // B - الاسم
+    const COL_PHONE = 2;          // C - الموبايل
+    const COL_CITY = 6;           // G - المحافظة
+    const COL_ADDRESS = 7;        // H - العنوان
+    const COL_NOTES = 8;          // I - ملاحظات
+    const COL_APPOINTMENT_DATE = 14;  // O - تاريخ المعاينة
+    const COL_APPOINTMENT_TIME = 15;  // P - وقت المعاينة
+    const COL_CALLBACK_DATE = 18;     // S - Callback Date Appointment (المتابعات)
+    const COL_CALLBACK_NOTES = 19;    // T - ملاحظات المتابعة
+    
     let allEvents = [];
+    let filteredEvents = [];
     let calendar = null;
+    let currentFilter = 'all';
+    
+    const TYPE_APPOINTMENT = 'معاينة';
+    const TYPE_CALLBACK = 'متابعة';
     
     function log(message, type = 'info') {
         const logDiv = document.getElementById('debugLog');
@@ -98,14 +133,13 @@
         while (logDiv.children.length > 50) logDiv.removeChild(logDiv.firstChild);
     }
     
-    // تحويل التاريخ من تنسيق "الجمعة, 27/02/2026" إلى Date object
+    // تحويل التاريخ من تنسيق "الجمعة, 27/02/2026" أو "3/01/2026" إلى Date
     function parseDate(dateStr) {
         if (!dateStr) return null;
         
         let original = dateStr.toString().trim();
-        log(`📅 تحويل: "${original}"`, 'info');
         
-        // إزالة اسم اليوم
+        // إزالة اسم اليوم إذا وجد
         let cleaned = original.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
         
         // تنسيق DD/MM/YYYY
@@ -116,13 +150,38 @@
             let year = parseInt(parts[3]);
             let dateObj = new Date(year, month, day, 12, 0);
             if (!isNaN(dateObj.getTime())) {
-                log(`   ✅ ${day}/${month+1}/${year} -> ${dateObj.toLocaleDateString('ar-EG')}`, 'success');
                 return dateObj;
             }
         }
         
-        log(`   ❌ فشل تحويل: "${original}"`, 'error');
+        // تنسيق D/M/YYYY
+        parts = cleaned.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (parts) {
+            let day = parseInt(parts[1]);
+            let month = parseInt(parts[2]) - 1;
+            let year = parseInt(parts[3]);
+            let dateObj = new Date(year, month, day, 12, 0);
+            if (!isNaN(dateObj.getTime())) {
+                return dateObj;
+            }
+        }
+        
         return null;
+    }
+    
+    // تنسيق الوقت
+    function formatTime(timeStr) {
+        if (!timeStr) return '';
+        let clean = timeStr.toString().trim();
+        let match = clean.match(/(\d{1,2}):(\d{2})/);
+        if (match) {
+            let hour = parseInt(match[1]);
+            let minute = parseInt(match[2]);
+            let hour12 = hour % 12 || 12;
+            let period = hour < 12 ? 'ص' : 'م';
+            return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+        }
+        return clean;
     }
     
     async function fetchData() {
@@ -133,7 +192,7 @@
         statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري...';
         
         try {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:V500?key=${API_KEY}`;
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:Z500?key=${API_KEY}`;
             const response = await fetch(url);
             
             if (!response.ok) {
@@ -152,50 +211,82 @@
             
             log(`✅ تم جلب ${rows.length} صف من البيانات`, 'success');
             
-            const events = [];
-            let count = 0;
+            // عرض العناوين للتأكد
+            if (rows[0]) {
+                log(`📋 العمود O (تاريخ المعاينة): "${rows[0][COL_APPOINTMENT_DATE] || 'فارغ'}"`, 'info');
+                log(`📋 العمود S (تاريخ المتابعة): "${rows[0][COL_CALLBACK_DATE] || 'فارغ'}"`, 'info');
+            }
             
-            // البدء من الصف 2 (تخطي العناوين)
+            const events = [];
+            let appointmentCount = 0;
+            let callbackCount = 0;
+            
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 if (!row) continue;
                 
-                const name = row[1] || 'غير محدد';      // العمود B
-                const phone = row[2] || '';             // العمود C
-                const city = row[6] || '';              // العمود G
-                const address = row[7] || '';           // العمود H
-                const notes = row[8] || '';             // العمود I
+                const name = row[COL_NAME] || 'غير محدد';
+                const phone = row[COL_PHONE] || '';
+                const city = row[COL_CITY] || '';
+                const address = row[COL_ADDRESS] || '';
+                const notes = row[COL_NOTES] || '';
                 
-                // تاريخ المعاينة من العمود O (index 14)
-                const appointmentDate = row[14];
-                const appointmentTime = row[15] || '';   // الوقت من العمود P
+                // ========== المعاينات من العمود O ==========
+                const appointmentDate = row[COL_APPOINTMENT_DATE];
+                const appointmentTime = row[COL_APPOINTMENT_TIME] || '';
                 
                 if (appointmentDate && appointmentDate.toString().trim()) {
                     const dateObj = parseDate(appointmentDate);
                     if (dateObj) {
                         events.push({
-                            id: i,
+                            id: `app_${i}`,
                             title: name,
+                            type: TYPE_APPOINTMENT,
                             date: dateObj,
-                            time: appointmentTime,
+                            time: formatTime(appointmentTime),
                             phone: phone,
                             city: city,
                             address: address,
                             notes: notes
                         });
-                        count++;
-                        log(`✅ المعاينة ${count}: ${name} - ${appointmentDate}`, 'success');
+                        appointmentCount++;
+                        log(`✅ معاينة: ${name} - ${appointmentDate}`, 'success');
+                    }
+                }
+                
+                // ========== المتابعات من العمود S ==========
+                const callbackDate = row[COL_CALLBACK_DATE];
+                const callbackNotes = row[COL_CALLBACK_NOTES] || '';
+                
+                if (callbackDate && callbackDate.toString().trim()) {
+                    const dateObj = parseDate(callbackDate);
+                    if (dateObj) {
+                        events.push({
+                            id: `cb_${i}`,
+                            title: name,
+                            type: TYPE_CALLBACK,
+                            date: dateObj,
+                            time: '',
+                            phone: phone,
+                            city: city,
+                            address: address,
+                            notes: callbackNotes || notes || 'متابعة'
+                        });
+                        callbackCount++;
+                        log(`✅ متابعة: ${name} - ${callbackDate}`, 'success');
+                    } else {
+                        log(`⚠️ فشل تحويل تاريخ متابعة: "${callbackDate}"`, 'warning');
                     }
                 }
             }
             
-            log(`📊 النتائج: تم العثور على ${count} معاينة`, 'success');
+            log(`📊 النتائج: ${appointmentCount} معاينة, ${callbackCount} متابعة, المجموع: ${events.length}`, 'success');
             
-            if (count === 0) {
-                log(`⚠️ لم يتم العثور على أي معاينات!`, 'error');
+            if (events.length === 0) {
+                log(`⚠️ لم يتم العثور على أي مواعيد!`, 'warning');
             }
             
-            statusSpan.innerHTML = `✅ ${count} معاينة`;
+            statusSpan.innerHTML = `✅ ${events.length} موعد`;
             return events;
             
         } catch (error) {
@@ -206,44 +297,36 @@
     }
     
     function updateStats(events) {
+        const totalApp = events.filter(e => e.type === TYPE_APPOINTMENT).length;
+        const totalCb = events.filter(e => e.type === TYPE_CALLBACK).length;
+        
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        const weekLater = new Date(today);
-        weekLater.setDate(today.getDate() + 7);
-        
-        const monthLater = new Date(today);
-        monthLater.setDate(today.getDate() + 30);
-        
-        const total = events.length;
-        const todayCount = events.filter(e => {
+        const todayApp = events.filter(e => {
+            if (e.type !== TYPE_APPOINTMENT) return false;
             const evDate = new Date(e.date);
             evDate.setHours(0, 0, 0, 0);
             return evDate.getTime() === today.getTime();
         }).length;
         
-        const weekCount = events.filter(e => {
+        const todayCb = events.filter(e => {
+            if (e.type !== TYPE_CALLBACK) return false;
             const evDate = new Date(e.date);
             evDate.setHours(0, 0, 0, 0);
-            return evDate >= today && evDate <= weekLater;
+            return evDate.getTime() === today.getTime();
         }).length;
         
-        const monthCount = events.filter(e => {
-            const evDate = new Date(e.date);
-            evDate.setHours(0, 0, 0, 0);
-            return evDate >= today && evDate <= monthLater;
-        }).length;
-        
-        document.getElementById('totalApp').innerText = total;
-        document.getElementById('todayApp').innerText = todayCount;
-        document.getElementById('weekApp').innerText = weekCount;
-        document.getElementById('monthApp').innerText = monthCount;
+        document.getElementById('totalApp').innerText = totalApp;
+        document.getElementById('totalCb').innerText = totalCb;
+        document.getElementById('todayApp').innerText = todayApp;
+        document.getElementById('todayCb').innerText = todayCb;
     }
     
     function renderEventList(events) {
         const container = document.getElementById('eventList');
         if (events.length === 0) {
-            container.innerHTML = '<div class="loading"><p>لا توجد معاينات</p></div>';
+            container.innerHTML = '<div class="loading"><p>لا توجد مواعيد</p></div>';
             return;
         }
         
@@ -253,9 +336,16 @@
         let html = '';
         for (const ev of sorted) {
             const dateStr = ev.date.toLocaleDateString('ar-EG', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
-            html += `<div class="event-item" onclick="alert('${ev.title}\\n📅 ${dateStr}\\n📞 ${ev.phone || 'غير متوفر'}\\n📍 ${ev.city || ''} ${ev.address || ''}\\n📝 ${ev.notes || ''}')">
-                <div class="event-title"><span><i class="fas fa-building"></i> ${ev.title}</span></div>
-                <div class="event-details">📅 ${dateStr} ${ev.time ? `🕐 ${ev.time}` : ''}<br>📞 ${ev.phone || 'غير متوفر'}</div>
+            const isCallback = ev.type === TYPE_CALLBACK;
+            html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="alert('${ev.title}\\n📅 ${dateStr}${ev.time ? ' 🕐 ' + ev.time : ''}\\n📞 ${ev.phone || 'غير متوفر'}\\n📍 ${ev.city || ''} ${ev.address || ''}\\n📝 ${ev.notes || ''}')">
+                <div class="event-title">
+                    <span><i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i> ${ev.title}</span>
+                    <span class="event-type ${isCallback ? 'callback-badge' : ''}">${ev.type}</span>
+                </div>
+                <div class="event-details">
+                    📅 ${dateStr} ${ev.time ? `🕐 ${ev.time}` : ''}<br>
+                    📞 ${ev.phone || 'غير متوفر'}
+                </div>
             </div>`;
         }
         container.innerHTML = html;
@@ -266,16 +356,16 @@
         if (calendar) calendar.destroy();
         
         if (events.length === 0) {
-            calendarEl.innerHTML = '<div class="loading"><p>لا توجد معاينات</p></div>';
+            calendarEl.innerHTML = '<div class="loading"><p>لا توجد مواعيد</p></div>';
             return;
         }
         
         const fcEvents = events.map(ev => ({
             id: ev.id,
-            title: ev.title,
+            title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : '📞'} ${ev.title}`,
             start: ev.date,
-            backgroundColor: '#c9a03d',
-            extendedProps: { phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes }
+            backgroundColor: ev.type === TYPE_APPOINTMENT ? '#c9a03d' : '#e67e22',
+            extendedProps: { phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, type: ev.type, time: ev.time }
         }));
         
         calendar = new FullCalendar.Calendar(calendarEl, {
@@ -285,32 +375,54 @@
             headerToolbar: {
                 left: 'prev,next today',
                 center: 'title',
-                right: 'dayGridMonth,listWeek'
+                right: window.innerWidth < 768 ? '' : 'dayGridMonth,listWeek'
             },
             buttonText: { today: 'اليوم', month: 'شهر', week: 'أسبوع', list: 'قائمة' },
             events: fcEvents,
             eventClick: (info) => {
                 const ev = info.event;
                 const ext = ev.extendedProps;
-                alert(`${ev.title}\n📅 ${ev.start.toLocaleDateString('ar-EG')}\n📞 ${ext.phone || 'غير متوفر'}\n📍 ${ext.city || ''} ${ext.address || ''}\n📝 ${ext.notes || ''}`);
+                alert(`${ev.title}\n📅 ${ev.start.toLocaleDateString('ar-EG')}${ext.time ? ' 🕐 ' + ext.time : ''}\n📞 ${ext.phone || 'غير متوفر'}\n📍 ${ext.city || ''} ${ext.address || ''}\n📝 ${ext.notes || ''}`);
             },
             height: 'auto',
             firstDay: 6
         });
         calendar.render();
-        log(`📅 تم تحديث التقويم بـ ${fcEvents.length} معاينة`, 'success');
+        log(`📅 تم تحديث التقويم بـ ${fcEvents.length} موعد`, 'success');
+    }
+    
+    function setFilter(filter) {
+        currentFilter = filter;
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.filter === filter);
+        });
+        
+        if (filter === 'all') filteredEvents = [...allEvents];
+        else if (filter === 'appointment') filteredEvents = allEvents.filter(e => e.type === TYPE_APPOINTMENT);
+        else filteredEvents = allEvents.filter(e => e.type === TYPE_CALLBACK);
+        
+        updateStats(filteredEvents);
+        renderEventList(filteredEvents);
+        initCalendar(filteredEvents);
     }
     
     async function refreshDashboard() {
         const events = await fetchData();
         allEvents = events;
-        updateStats(events);
-        renderEventList(events);
-        initCalendar(events);
+        filteredEvents = [...events];
+        updateStats(filteredEvents);
+        renderEventList(filteredEvents);
+        initCalendar(filteredEvents);
     }
     
     window.addEventListener('load', () => {
         log('🚀 بدء تشغيل التطبيق - نظام إدارة العقارات', 'success');
+        log(`📍 المعاينات من العمود O (index ${COL_APPOINTMENT_DATE})`, 'info');
+        log(`📍 المتابعات من العمود S (index ${COL_CALLBACK_DATE})`, 'info');
+        
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => setFilter(btn.dataset.filter));
+        });
         document.getElementById('refreshBtn').addEventListener('click', refreshDashboard);
         refreshDashboard();
         setInterval(refreshDashboard, 300000);
