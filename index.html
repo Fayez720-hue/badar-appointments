@@ -21,12 +21,11 @@
         .filter-btn.active { background: #c9a03d; color: white; }
         .refresh-btn { background: #c9a03d; border: none; color: white; padding: 5px 15px; border-radius: 25px; cursor: pointer; margin-right: 10px; }
         .status-badge { background: #eef2ff; padding: 5px 12px; border-radius: 25px; font-size: 0.7rem; }
-        .status-badge.error { background: #fee2e2; color: #dc2626; }
-        .status-badge.success { background: #dcfce7; color: #16a34a; }
         
         .date-range-filter { background: white; border-radius: 18px; padding: 12px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; border: 1px solid #eee; }
-        .date-range-filter input { padding: 6px 10px; border-radius: 10px; border: 1px solid #ddd; }
-        .date-range-filter button { background: #c9a03d; border: none; color: white; padding: 6px 15px; border-radius: 25px; cursor: pointer; }
+        .date-range-filter label { font-size: 0.75rem; color: #8b6914; }
+        .date-range-filter input { padding: 6px 10px; border-radius: 10px; border: 1px solid #ddd; font-size: 0.75rem; }
+        .date-range-filter button { background: #c9a03d; border: none; color: white; padding: 6px 15px; border-radius: 25px; cursor: pointer; font-size: 0.7rem; }
         .date-range-filter .clear-btn { background: #888; }
         .range-info { font-size: 0.7rem; background: #fef8e7; padding: 4px 12px; border-radius: 20px; color: #c9a03d; }
         
@@ -94,9 +93,9 @@
     </div>
 
     <div class="date-range-filter">
-        <span>📅 من:</span>
+        <label>📅 من:</label>
         <input type="date" id="startDate" value="2026-03-01">
-        <span>إلى:</span>
+        <label>إلى:</label>
         <input type="date" id="endDate" value="2026-03-31">
         <button id="applyDateBtn"><i class="fas fa-filter"></i> تطبيق</button>
         <button id="clearDateBtn" class="clear-btn"><i class="fas fa-times"></i> إلغاء</button>
@@ -159,16 +158,13 @@
     const TYPE_CB_L = 'متابعة مكالمة';
     const TYPE_CB_S = 'متابعة معاينة';
 
-    // دالة لتحويل التاريخ (تدعم تنسيقات متعددة)
+    // دالة لتحويل التاريخ
     function parseDate(dateStr) {
         if (!dateStr) return null;
         let s = dateStr.toString().trim();
         if (s === 'FALSE' || s === 'TRUE' || s === '') return null;
-        
-        // إزالة اسم اليوم العربي
         s = s.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
         
-        // محاولة تنسيقات مختلفة
         let parts = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
         if (!parts) parts = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})/);
         if (!parts) parts = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
@@ -189,7 +185,6 @@
         return !isNaN(d.getTime()) ? d : null;
     }
 
-    // دالة لتحويل الوقت
     function parseTime(timeStr) {
         if (!timeStr) return { hour: 12, minute: 0, display: '' };
         let s = timeStr.toString().trim();
@@ -206,11 +201,9 @@
         return { hour: 12, minute: 0, display: '' };
     }
 
-    // جلب البيانات الحقيقية من Google Sheets
     async function fetchRealData() {
         const statusSpan = document.getElementById('status');
         statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جلب البيانات...';
-        statusSpan.className = 'status-badge';
         
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:Z500?key=${API_KEY}`;
@@ -242,7 +235,7 @@
                 const address = row[COL_ADDRESS] || '';
                 const notes = row[COL_NOTES] || '';
                 
-                // المعاينات من العمود O
+                // المعاينات
                 const appDate = row[COL_APP_DATE];
                 const appTime = row[COL_APP_TIME] || '';
                 
@@ -309,13 +302,11 @@
             }
             
             statusSpan.innerHTML = `✅ ${events.length} موعد`;
-            statusSpan.className = 'status-badge success';
             return events;
             
         } catch (error) {
             console.error('خطأ:', error);
             statusSpan.innerHTML = '❌ فشل الجلب';
-            statusSpan.className = 'status-badge error';
             showError(error.message);
             return [];
         }
@@ -327,17 +318,13 @@
             <div class="error-message">
                 <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #dc2626;"></i>
                 <p style="margin-top: 10px;"><strong>⚠️ ${message}</strong></p>
-                <p style="margin-top: 10px; font-size: 0.8rem;">تأكد من:</p>
-                <ul style="text-align: right; padding-right: 20px; font-size: 0.75rem;">
-                    <li>مشاركة الجدول: اضغط "مشاركة" → "عام" → "أي شخص لديه الرابط"</li>
-                    <li>وجود بيانات في الأعمدة O (معاينات) أو L/S (متابعات)</li>
-                </ul>
+                <p style="margin-top: 10px; font-size: 0.8rem;">تأكد من مشاركة الجدول كـ "عام"</p>
                 <button onclick="location.reload()" style="margin-top: 15px; padding: 8px 20px; background: #c9a03d; border: none; border-radius: 25px; color: white; cursor: pointer;">🔄 إعادة المحاولة</button>
             </div>
         `;
     }
 
-    // تحديث جميع العناصر
+    // تحديث جميع العناصر - إعادة بناء التقويم بالكامل
     function refreshAll() {
         if (!allEvents.length) return;
         
@@ -350,7 +337,7 @@
             filtered = filtered.filter(e => e.type !== TYPE_APP);
         }
         
-        // فلتر التاريخ - مقارنة صحيحة باستخدام getTime()
+        // فلتر التاريخ
         if (filterStartDate) {
             const startTime = filterStartDate.getTime();
             filtered = filtered.filter(e => {
@@ -459,9 +446,11 @@
         container.innerHTML = html;
     }
 
+    // إعادة بناء التقويم بالكامل
     function renderCalendar(events) {
         const calendarEl = document.getElementById('calendar');
         
+        // تدمير التقويم القديم إذا كان موجوداً
         if (calendar) {
             calendar.destroy();
             calendar = null;
@@ -479,6 +468,7 @@
             backgroundColor: ev.type === TYPE_APP ? '#c9a03d' : (ev.type === TYPE_CB_L ? '#e67e22' : '#3b82f6')
         }));
         
+        // إنشاء تقويم جديد
         calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
             locale: 'ar',
@@ -495,6 +485,7 @@
         });
         
         calendar.render();
+        console.log(`التقويم تم تحديثه بـ ${fcEvents.length} حدث`);
     }
 
     function showDetails(title, date, time, phone, city, address, notes, type) {
@@ -534,8 +525,9 @@
         
         const info = document.getElementById('rangeInfo');
         if (filterStartDate && filterEndDate) {
-            const startMonth = filterStartDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
-            info.innerText = `${startMonth}`;
+            const startDate = new Date(filterStartDate);
+            const monthName = startDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+            info.innerText = `${monthName}`;
         } else if (filterStartDate) {
             info.innerText = `من ${filterStartDate.toLocaleDateString('ar-EG')}`;
         } else if (filterEndDate) {
