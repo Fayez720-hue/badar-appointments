@@ -95,12 +95,12 @@
 
     <div class="date-range-filter">
         <span>📅 من:</span>
-        <input type="date" id="startDate" value="">
+        <input type="date" id="startDate" value="2026-03-01">
         <span>إلى:</span>
-        <input type="date" id="endDate" value="">
+        <input type="date" id="endDate" value="2026-03-31">
         <button id="applyDateBtn"><i class="fas fa-filter"></i> تطبيق</button>
         <button id="clearDateBtn" class="clear-btn"><i class="fas fa-times"></i> إلغاء</button>
-        <span id="rangeInfo" class="range-info">جميع المواعيد</span>
+        <span id="rangeInfo" class="range-info">مارس 2026</span>
     </div>
 
     <div class="stats-grid">
@@ -150,8 +150,8 @@
 
     let allEvents = [];
     let currentType = 'all';
-    let startDate = null;
-    let endDate = null;
+    let filterStartDate = null;
+    let filterEndDate = null;
     let calendar = null;
     let isLoading = false;
 
@@ -159,13 +159,16 @@
     const TYPE_CB_L = 'متابعة مكالمة';
     const TYPE_CB_S = 'متابعة معاينة';
 
-    // دالة لتحويل التاريخ
+    // دالة لتحويل التاريخ (تدعم تنسيقات متعددة)
     function parseDate(dateStr) {
         if (!dateStr) return null;
         let s = dateStr.toString().trim();
         if (s === 'FALSE' || s === 'TRUE' || s === '') return null;
+        
+        // إزالة اسم اليوم العربي
         s = s.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
         
+        // محاولة تنسيقات مختلفة
         let parts = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
         if (!parts) parts = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})/);
         if (!parts) parts = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
@@ -181,6 +184,7 @@
             month = parseInt(parts[2]) - 1;
             year = parseInt(parts[3]);
         }
+        
         let d = new Date(year, month, day, 12, 0);
         return !isNaN(d.getTime()) ? d : null;
     }
@@ -333,6 +337,7 @@
         `;
     }
 
+    // تحديث جميع العناصر
     function refreshAll() {
         if (!allEvents.length) return;
         
@@ -345,14 +350,23 @@
             filtered = filtered.filter(e => e.type !== TYPE_APP);
         }
         
-        // فلتر التاريخ
-        if (startDate) {
-            const startTime = startDate.getTime();
-            filtered = filtered.filter(e => new Date(e.date).getTime() >= startTime);
+        // فلتر التاريخ - مقارنة صحيحة باستخدام getTime()
+        if (filterStartDate) {
+            const startTime = filterStartDate.getTime();
+            filtered = filtered.filter(e => {
+                const eventDate = new Date(e.date);
+                eventDate.setHours(0, 0, 0, 0);
+                return eventDate.getTime() >= startTime;
+            });
         }
-        if (endDate) {
-            const endTime = endDate.getTime();
-            filtered = filtered.filter(e => new Date(e.date).getTime() <= endTime);
+        
+        if (filterEndDate) {
+            const endTime = filterEndDate.getTime();
+            filtered = filtered.filter(e => {
+                const eventDate = new Date(e.date);
+                eventDate.setHours(0, 0, 0, 0);
+                return eventDate.getTime() <= endTime;
+            });
         }
         
         document.getElementById('eventsCount').innerText = filtered.length;
@@ -504,16 +518,31 @@
         const start = document.getElementById('startDate').value;
         const end = document.getElementById('endDate').value;
         
-        startDate = start ? new Date(start) : null;
-        endDate = end ? new Date(end) : null;
-        if (startDate) startDate.setHours(0, 0, 0, 0);
-        if (endDate) endDate.setHours(23, 59, 59, 999);
+        if (start) {
+            filterStartDate = new Date(start);
+            filterStartDate.setHours(0, 0, 0, 0);
+        } else {
+            filterStartDate = null;
+        }
+        
+        if (end) {
+            filterEndDate = new Date(end);
+            filterEndDate.setHours(23, 59, 59, 999);
+        } else {
+            filterEndDate = null;
+        }
         
         const info = document.getElementById('rangeInfo');
-        if (startDate && endDate) info.innerText = `${startDate.toLocaleDateString('ar-EG')} - ${endDate.toLocaleDateString('ar-EG')}`;
-        else if (startDate) info.innerText = `من ${startDate.toLocaleDateString('ar-EG')}`;
-        else if (endDate) info.innerText = `حتى ${endDate.toLocaleDateString('ar-EG')}`;
-        else info.innerText = 'جميع المواعيد';
+        if (filterStartDate && filterEndDate) {
+            const startMonth = filterStartDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+            info.innerText = `${startMonth}`;
+        } else if (filterStartDate) {
+            info.innerText = `من ${filterStartDate.toLocaleDateString('ar-EG')}`;
+        } else if (filterEndDate) {
+            info.innerText = `حتى ${filterEndDate.toLocaleDateString('ar-EG')}`;
+        } else {
+            info.innerText = 'جميع المواعيد';
+        }
         
         refreshAll();
     }
@@ -521,8 +550,8 @@
     function clearDateFilter() {
         document.getElementById('startDate').value = '';
         document.getElementById('endDate').value = '';
-        startDate = null;
-        endDate = null;
+        filterStartDate = null;
+        filterEndDate = null;
         document.getElementById('rangeInfo').innerText = 'جميع المواعيد';
         refreshAll();
     }
@@ -556,6 +585,13 @@
         document.getElementById('refreshBtn').addEventListener('click', loadData);
         document.getElementById('applyDateBtn').addEventListener('click', applyDateFilter);
         document.getElementById('clearDateBtn').addEventListener('click', clearDateFilter);
+        
+        // تعيين الفلتر الافتراضي لشهر مارس 2026
+        document.getElementById('startDate').value = '2026-03-01';
+        document.getElementById('endDate').value = '2026-03-31';
+        filterStartDate = new Date(2026, 2, 1);
+        filterEndDate = new Date(2026, 2, 31, 23, 59, 59);
+        document.getElementById('rangeInfo').innerText = 'مارس 2026';
         
         loadData();
         setInterval(loadData, 300000);
