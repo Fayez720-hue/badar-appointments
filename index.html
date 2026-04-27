@@ -22,7 +22,7 @@
         .refresh-btn { background: #c9a03d; border: none; color: white; padding: 5px 15px; border-radius: 25px; cursor: pointer; margin-right: 10px; }
         .status-badge { background: #eef2ff; padding: 5px 12px; border-radius: 25px; font-size: 0.7rem; }
         
-        .date-range-filter { background: white; border-radius: 18px; padding: 12px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; }
+        .date-range-filter { background: white; border-radius: 18px; padding: 12px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; border: 1px solid #eee; }
         .date-range-filter input { padding: 6px 10px; border-radius: 10px; border: 1px solid #ddd; }
         .date-range-filter button { background: #c9a03d; border: none; color: white; padding: 6px 15px; border-radius: 25px; cursor: pointer; }
         .date-range-filter .clear-btn { background: #888; }
@@ -44,10 +44,10 @@
         .section-title { font-size: 1rem; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #eee; color: #8b6914; display: flex; justify-content: space-between; align-items: center; }
         .events-count { background: #c9a03d; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; }
         
-        /* قائمة اليوميات - مجمعة حسب اليوم */
         .day-group { margin-bottom: 20px; border-right: 3px solid #c9a03d; padding-right: 12px; }
-        .day-header { font-weight: bold; font-size: 0.9rem; color: #8b6914; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed #ddd; display: flex; align-items: center; gap: 8px; }
-        .day-header span { background: #c9a03d20; padding: 3px 8px; border-radius: 20px; font-size: 0.7rem; color: #c9a03d; }
+        .day-header { font-weight: bold; font-size: 0.85rem; color: #8b6914; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed #ddd; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .day-header span { background: #c9a03d20; padding: 2px 8px; border-radius: 20px; font-size: 0.65rem; color: #c9a03d; }
+        .day-count { background: #c9a03d; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.6rem; }
         
         .event-list { max-height: 550px; overflow-y: auto; }
         .event-list::-webkit-scrollbar { width: 4px; }
@@ -62,7 +62,6 @@
         .event-type { font-size: 0.6rem; padding: 2px 8px; border-radius: 20px; background: #fef8e7; }
         .event-details { font-size: 0.65rem; color: #666; display: flex; flex-wrap: wrap; gap: 8px; }
         .event-phone { direction: ltr; font-family: monospace; background: #f0f0f0; padding: 1px 4px; border-radius: 6px; font-size: 0.6rem; }
-        .event-location { font-size: 0.65rem; color: #666; margin-top: 3px; display: flex; align-items: center; gap: 4px; }
         
         .fc { direction: rtl; }
         .fc .fc-toolbar { flex-direction: column; gap: 10px; margin-bottom: 15px; }
@@ -93,12 +92,12 @@
 
     <div class="date-range-filter">
         <span>📅 من:</span>
-        <input type="date" id="startDate" value="2026-04-01">
+        <input type="date" id="startDate" value="">
         <span>إلى:</span>
-        <input type="date" id="endDate" value="2026-04-30">
+        <input type="date" id="endDate" value="">
         <button id="applyDateBtn"><i class="fas fa-filter"></i> تطبيق</button>
         <button id="clearDateBtn" class="clear-btn"><i class="fas fa-times"></i> إلغاء</button>
-        <span id="rangeInfo" class="range-info">أبريل 2026</span>
+        <span id="rangeInfo" class="range-info">جميع المواعيد</span>
     </div>
 
     <div class="stats-grid">
@@ -111,51 +110,59 @@
     <div class="two-columns">
         <div class="calendar-panel">
             <div class="section-title">📆 التقويم</div>
-            <div id="calendar"><div class="loading"><div class="spinner"></div><p>جاري تحميل التقويم...</p></div></div>
+            <div id="calendar"><div class="loading"><div class="spinner"></div></div></div>
         </div>
         <div class="events-panel">
             <div class="section-title">
                 <span>📋 قائمة المواعيد</span>
                 <span class="events-count" id="eventsCount">0</span>
             </div>
-            <div id="eventList" class="event-list">
-                <div class="loading"><div class="spinner"></div><p>جاري تحميل البيانات...</p></div>
-            </div>
+            <div id="eventList" class="event-list"><div class="loading"><div class="spinner"></div></div></div>
         </div>
     </div>
 
     <div class="footer-note">
-        <i class="fas fa-info-circle"></i> 🏢 المعاينات: العمود O | 📞 متابعات المكالمات: العمود L | 📋 متابعات المعاينات: العمود S
+        📌 المعاينات من العمود O | 📞 متابعات المكالمات من العمود L | 📋 متابعات المعاينات من العمود S
     </div>
 </div>
 
 <script>
-    // Google Sheets Settings
+    // إعدادات Google Sheets
     const SPREADSHEET_ID = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
     const SHEET_NAME = 'مبيعات';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
 
-    // Column indices
+    // الأعمدة
     const COL_NAME = 1, COL_PHONE = 2, COL_CITY = 6, COL_ADDRESS = 7, COL_NOTES = 8;
     const COL_APP_DATE = 14, COL_APP_TIME = 15;
     const COL_CB_L_DATE = 11, COL_CB_L_NOTES = 13;
     const COL_CB_S_DATE = 18, COL_CB_S_NOTES = 20;
 
-    let allEvents = [], currentType = 'all', startDate = null, endDate = null, calendar = null;
+    let allEvents = [];
+    let currentType = 'all';
+    let startDate = null;
+    let endDate = null;
+    let calendar = null;
     let dataLoaded = false;
-    const TYPE_APP = 'معاينة', TYPE_CB_L = 'متابعة مكالمة', TYPE_CB_S = 'متابعة معاينة';
 
-    function updateDisplay() {
+    const TYPE_APP = 'معاينة';
+    const TYPE_CB_L = 'متابعة مكالمة';
+    const TYPE_CB_S = 'متابعة معاينة';
+
+    // دالة رئيسية لتحديث كل شيء
+    function refreshAll() {
         if (!dataLoaded) return;
         
         let filtered = [...allEvents];
         
+        // فلتر حسب النوع
         if (currentType === 'appointment') {
             filtered = filtered.filter(e => e.type === TYPE_APP);
         } else if (currentType === 'callback') {
             filtered = filtered.filter(e => e.type !== TYPE_APP);
         }
         
+        // فلتر حسب التاريخ
         if (startDate) {
             const startTime = startDate.getTime();
             filtered = filtered.filter(e => new Date(e.date).getTime() >= startTime);
@@ -165,10 +172,17 @@
             filtered = filtered.filter(e => new Date(e.date).getTime() <= endTime);
         }
         
+        // تحديث العداد
         document.getElementById('eventsCount').innerText = filtered.length;
+        
+        // تحديث الإحصائيات
         updateStats(filtered);
+        
+        // تحديث القائمة المجمعة
         renderGroupedList(filtered);
-        renderCalendar(filtered);
+        
+        // تحديث التقويم
+        updateCalendar(filtered);
     }
 
     function parseDate(str) {
@@ -200,6 +214,7 @@
         if (!str) return { hour: 12, minute: 0, display: '12:00 م' };
         let s = str.toString().trim();
         if (s === 'FALSE' || s === 'TRUE' || s === '') return { hour: 12, minute: 0, display: '12:00 م' };
+        
         let match = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*([مص])/);
         if (match) {
             let hour = parseInt(match[1]), minute = parseInt(match[2]), period = match[3];
@@ -214,24 +229,29 @@
     async function fetchData() {
         const statusSpan = document.getElementById('status');
         statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:Z500?key=${API_KEY}`;
             const res = await fetch(url);
             if (!res.ok) throw new Error('فشل الاتصال');
+            
             const data = await res.json();
             const rows = data.values;
             if (!rows || rows.length < 2) throw new Error('لا توجد بيانات');
             
             let events = [];
+            
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 if (!row) continue;
+                
                 const name = row[COL_NAME] || 'غير محدد';
                 const phone = row[COL_PHONE] || '';
                 const city = row[COL_CITY] || '';
                 const address = row[COL_ADDRESS] || '';
                 const notes = row[COL_NOTES] || '';
                 
+                // المعاينات
                 const appDate = row[COL_APP_DATE];
                 const appTime = row[COL_APP_TIME] || '';
                 if (appDate && appDate !== 'FALSE' && appDate.toString().trim()) {
@@ -243,23 +263,28 @@
                     }
                 }
                 
+                // متابعات من العمود L
                 const cbL = row[COL_CB_L_DATE];
                 if (cbL && cbL !== 'FALSE' && cbL.toString().trim()) {
                     const d = parseDate(cbL);
                     if (d) events.push({ id: `cbL_${i}`, title: name, type: TYPE_CB_L, date: d, displayTime: '', phone, city, address, notes: row[COL_CB_L_NOTES] || notes });
                 }
                 
+                // متابعات من العمود S
                 const cbS = row[COL_CB_S_DATE];
                 if (cbS && cbS !== 'FALSE' && cbS.toString().trim()) {
                     const d = parseDate(cbS);
                     if (d) events.push({ id: `cbS_${i}`, title: name, type: TYPE_CB_S, date: d, displayTime: '', phone, city, address, notes: row[COL_CB_S_NOTES] || notes });
                 }
             }
+            
             statusSpan.innerHTML = `✅ ${events.length}`;
             dataLoaded = true;
             return events;
+            
         } catch(e) {
             statusSpan.innerHTML = '❌ خطأ';
+            console.error(e);
             return [];
         }
     }
@@ -267,11 +292,24 @@
     function updateStats(events) {
         const totalApp = events.filter(e => e.type === TYPE_APP).length;
         const totalCb = events.filter(e => e.type !== TYPE_APP).length;
-        const today = new Date(); today.setHours(0,0,0,0);
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
         const todayTime = today.getTime();
         
-        const todayApp = events.filter(e => e.type === TYPE_APP && new Date(e.date).setHours(0,0,0,0) === todayTime).length;
-        const todayCb = events.filter(e => e.type !== TYPE_APP && new Date(e.date).setHours(0,0,0,0) === todayTime).length;
+        const todayApp = events.filter(e => {
+            if (e.type !== TYPE_APP) return false;
+            const evDate = new Date(e.date);
+            evDate.setHours(0, 0, 0, 0);
+            return evDate.getTime() === todayTime;
+        }).length;
+        
+        const todayCb = events.filter(e => {
+            if (e.type === TYPE_APP) return false;
+            const evDate = new Date(e.date);
+            evDate.setHours(0, 0, 0, 0);
+            return evDate.getTime() === todayTime;
+        }).length;
         
         document.getElementById('totalApp').innerText = totalApp;
         document.getElementById('totalCb').innerText = totalCb;
@@ -279,40 +317,35 @@
         document.getElementById('todayCb').innerText = todayCb;
     }
 
-    // عرض المواعيد مجمعة حسب اليوم
     function renderGroupedList(events) {
         const container = document.getElementById('eventList');
-        if (!events.length) { 
-            container.innerHTML = '<div class="loading">✨ لا توجد مواعيد في النطاق المحدد</div>'; 
-            return; 
+        if (!events.length) {
+            container.innerHTML = '<div class="loading">✨ لا توجد مواعيد في النطاق المحدد</div>';
+            return;
         }
         
-        // تجميع الأحداث حسب التاريخ
+        // تجميع حسب التاريخ
         const grouped = {};
         for (const ev of events) {
             const dateKey = ev.date.toDateString();
-            if (!grouped[dateKey]) {
-                grouped[dateKey] = [];
-            }
+            if (!grouped[dateKey]) grouped[dateKey] = [];
             grouped[dateKey].push(ev);
         }
         
-        // ترتيب الأيام
         const sortedDays = Object.keys(grouped).sort((a, b) => new Date(a) - new Date(b));
         
         let html = '';
         for (const dayKey of sortedDays) {
             const dayEvents = grouped[dayKey].sort((a, b) => a.date - b.date);
-            const firstEvent = dayEvents[0];
             const dateObj = new Date(dayKey);
             const dayName = dateObj.toLocaleDateString('ar-EG', { weekday: 'long' });
-            const dateStr = dateObj.toLocaleDateString('ar-EG', { day: 'numeric', month: 'numeric', year: 'numeric' });
+            const dateStr = dateObj.toLocaleDateString('ar-EG');
             
             html += `<div class="day-group">
                 <div class="day-header">
                     <i class="fas fa-calendar-day"></i> ${dayName}
                     <span>${dateStr}</span>
-                    <span style="margin-right: auto; background: #c9a03d; color: white;">${dayEvents.length} مواعيد</span>
+                    <span class="day-count">${dayEvents.length} مواعيد</span>
                 </div>`;
             
             for (const ev of dayEvents) {
@@ -321,7 +354,7 @@
                 const timeDisplay = ev.displayTime ? `🕐 ${ev.displayTime}` : '';
                 
                 html += `
-                    <div class="event-item ${isCallback ? 'callback' : ''}" onclick="showEventDetails('${ev.title.replace(/'/g, "\\'")}', '${dateStr}', '${ev.displayTime || ''}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${ev.type}')">
+                    <div class="event-item ${isCallback ? 'callback' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${dateStr}', '${ev.displayTime || ''}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${ev.type}')">
                         <div class="event-title">
                             <div class="event-name">
                                 <i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i>
@@ -331,9 +364,8 @@
                         </div>
                         <div class="event-details">
                             ${timeDisplay ? `<span>${timeDisplay}</span>` : ''}
-                            <span>📞 <span class="event-phone">${ev.phone || 'غير متوفر'}</span></span>
+                            <span>📞 ${ev.phone || 'غير متوفر'}</span>
                         </div>
-                        ${(ev.city || ev.address) ? `<div class="event-location"><i class="fas fa-map-marker-alt"></i> ${ev.city || ''} ${ev.address || ''}</div>` : ''}
                     </div>
                 `;
             }
@@ -342,7 +374,46 @@
         container.innerHTML = html;
     }
 
-    function showEventDetails(title, date, time, phone, city, address, notes, type) {
+    function updateCalendar(events) {
+        const calendarEl = document.getElementById('calendar');
+        
+        // تدمير التقويم القديم
+        if (calendar) {
+            calendar.destroy();
+            calendar = null;
+        }
+        
+        if (!events.length) {
+            calendarEl.innerHTML = '<div class="loading">📅 لا توجد مواعيد في النطاق المحدد</div>';
+            return;
+        }
+        
+        const fcEvents = events.map(ev => ({
+            id: ev.id,
+            title: `${ev.type === TYPE_APP ? '🏢' : (ev.type === TYPE_CB_L ? '📞' : '📋')} ${ev.title}${ev.displayTime ? ` (${ev.displayTime})` : ''}`,
+            start: ev.date,
+            backgroundColor: ev.type === TYPE_APP ? '#c9a03d' : (ev.type === TYPE_CB_L ? '#e67e22' : '#3b82f6')
+        }));
+        
+        calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            locale: 'ar',
+            direction: 'rtl',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: window.innerWidth < 768 ? '' : 'dayGridMonth'
+            },
+            buttonText: { today: 'اليوم', month: 'شهر' },
+            events: fcEvents,
+            height: 'auto',
+            firstDay: 6
+        });
+        
+        calendar.render();
+    }
+
+    function showDetails(title, date, time, phone, city, address, notes, type) {
         Swal.fire({
             title: title,
             html: `<div style="text-align:right">
@@ -359,80 +430,76 @@
         });
     }
 
-    function renderCalendar(events) {
-        const el = document.getElementById('calendar');
-        if (calendar) { calendar.destroy(); calendar = null; }
-        
-        if (!events.length) { 
-            el.innerHTML = '<div class="loading">📅 لا توجد مواعيد في النطاق المحدد</div>'; 
-            return; 
-        }
-        
-        const fcEvents = events.map(ev => ({
-            id: ev.id, 
-            title: `${ev.type === TYPE_APP ? '🏢' : (ev.type === TYPE_CB_L ? '📞' : '📋')} ${ev.title}${ev.displayTime ? ` (${ev.displayTime})` : ''}`,
-            start: ev.date, 
-            backgroundColor: ev.type === TYPE_APP ? '#c9a03d' : (ev.type === TYPE_CB_L ? '#e67e22' : '#3b82f6')
-        }));
-        
-        calendar = new FullCalendar.Calendar(el, {
-            initialView: 'dayGridMonth', locale: 'ar', direction: 'rtl',
-            headerToolbar: { left: 'prev,next today', center: 'title', right: window.innerWidth < 768 ? '' : 'dayGridMonth' },
-            buttonText: { today: 'اليوم', month: 'شهر' },
-            events: fcEvents, height: 'auto', firstDay: 6
-        });
-        calendar.render();
-    }
-
+    // تطبيق فلتر التاريخ
     function applyDateFilter() {
         const start = document.getElementById('startDate').value;
         const end = document.getElementById('endDate').value;
         
-        startDate = start ? new Date(start) : null;
-        endDate = end ? new Date(end) : null;
-        if (startDate) startDate.setHours(0, 0, 0, 0);
-        if (endDate) endDate.setHours(23, 59, 59, 999);
+        if (start) {
+            startDate = new Date(start);
+            startDate.setHours(0, 0, 0, 0);
+        } else {
+            startDate = null;
+        }
+        
+        if (end) {
+            endDate = new Date(end);
+            endDate.setHours(23, 59, 59, 999);
+        } else {
+            endDate = null;
+        }
         
         const info = document.getElementById('rangeInfo');
-        if (startDate && endDate) info.innerText = `${startDate.toLocaleDateString('ar-EG')} - ${endDate.toLocaleDateString('ar-EG')}`;
-        else if (startDate) info.innerText = `من ${startDate.toLocaleDateString('ar-EG')}`;
-        else if (endDate) info.innerText = `حتى ${endDate.toLocaleDateString('ar-EG')}`;
-        else info.innerText = 'جميع المواعيد';
+        if (startDate && endDate) {
+            info.innerText = `${startDate.toLocaleDateString('ar-EG')} - ${endDate.toLocaleDateString('ar-EG')}`;
+        } else if (startDate) {
+            info.innerText = `من ${startDate.toLocaleDateString('ar-EG')}`;
+        } else if (endDate) {
+            info.innerText = `حتى ${endDate.toLocaleDateString('ar-EG')}`;
+        } else {
+            info.innerText = 'جميع المواعيد';
+        }
         
-        updateDisplay();
+        refreshAll();
     }
 
     function clearDateFilter() {
         document.getElementById('startDate').value = '';
         document.getElementById('endDate').value = '';
-        startDate = null; endDate = null;
+        startDate = null;
+        endDate = null;
         document.getElementById('rangeInfo').innerText = 'جميع المواعيد';
-        updateDisplay();
+        refreshAll();
     }
 
     function setTypeFilter(type) {
         currentType = type;
-        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.filter === type));
-        updateDisplay();
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.filter === type);
+        });
+        refreshAll();
     }
 
-    async function refresh() { 
-        const events = await fetchData(); 
-        if (events.length) { 
-            allEvents = events; 
-            dataLoaded = true;
-            updateDisplay(); 
-        } 
+    async function refreshData() {
+        const events = await fetchData();
+        if (events.length) {
+            allEvents = events;
+            refreshAll();
+        }
     }
 
+    // أحداث الصفحة
     window.addEventListener('load', () => {
-        document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => setTypeFilter(btn.dataset.filter)));
-        document.getElementById('refreshBtn').addEventListener('click', refresh);
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => setTypeFilter(btn.dataset.filter));
+        });
+        
+        document.getElementById('refreshBtn').addEventListener('click', refreshData);
         document.getElementById('applyDateBtn').addEventListener('click', applyDateFilter);
         document.getElementById('clearDateBtn').addEventListener('click', clearDateFilter);
         
-        refresh();
-        setInterval(refresh, 300000);
+        refreshData();
+        setInterval(refreshData, 300000);
     });
 </script>
 </body>
