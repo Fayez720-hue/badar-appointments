@@ -67,7 +67,9 @@
         .spinner { width: 40px; height: 40px; border: 3px solid #fef8e7; border-top: 3px solid #c9a03d; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .debug-panel { background: #1a1a2e; color: #0f0; font-family: monospace; font-size: 10px; padding: 10px; margin-top: 10px; border-radius: 10px; max-height: 200px; overflow-y: auto; display: none; }
+        .debug-panel { background: #1a1a2e; color: #0f0; font-family: monospace; font-size: 11px; padding: 12px; margin-top: 16px; border-radius: 12px; max-height: 300px; overflow-y: auto; direction: ltr; text-align: left; }
+        .debug-panel h4 { color: #ff0; margin-bottom: 8px; text-align: right; }
+        .debug-log-line { border-bottom: 1px solid #333; padding: 4px 0; font-family: monospace; }
         
         @media (min-width: 768px) {
             body { padding: 20px; }
@@ -117,11 +119,11 @@
             <div id="upcomingEventsList" class="event-list"><div class="loading"><div class="spinner"></div><p>جاري التحميل...</p></div></div>
         </div>
     </div>
-    <div class="footer-note"><i class="fas fa-bell"></i> إشعارات للمواعيد القادمة | <i class="fas fa-phone-alt"></i> يتم جلب المتابعات من الأعمدة L & S | <i class="fas fa-sync-alt"></i> تحديث تلقائي</div>
+    <div class="footer-note"><i class="fas fa-bell"></i> إشعارات للمواعيد القادمة | <i class="fas fa-clock"></i> الأعمدة: O (تاريخ المعاينة), P (وقت المعاينة), L و S (متابعات)</div>
     
-    <!-- Debug Panel (يمكن إخفاؤه بعد التأكد من عمل كل شيء) -->
+    <!-- Debug Panel -->
     <div class="debug-panel" id="debugPanel">
-        <strong>📋 سجل التصحيح (Debug):</strong><br>
+        <h4>🔍 سجل التصحيح (Debug Log) - آخر 30 حدث</h4>
         <div id="debugLog"></div>
     </div>
 </div>
@@ -153,28 +155,28 @@
     const TYPE_APPOINTMENT = 'معاينة عقار';
     const TYPE_CALLBACK = 'متابعة عميل';
     
-    function addDebugLog(message) {
-        const timestamp = new Date().toLocaleTimeString();
-        const log = `[${timestamp}] ${message}`;
-        debugLogs.unshift(log);
-        if (debugLogs.length > 20) debugLogs.pop();
+    function addDebugLog(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString('ar-EG');
+        const logEntry = `[${timestamp}] ${message}`;
+        debugLogs.unshift(logEntry);
+        if (debugLogs.length > 30) debugLogs.pop();
         
         const debugDiv = document.getElementById('debugLog');
         if (debugDiv) {
-            debugDiv.innerHTML = debugLogs.map(l => `<div style="font-size:10px;margin:2px 0;">${l}</div>`).join('');
+            debugDiv.innerHTML = debugLogs.map(log => `<div class="debug-log-line">${escapeHtml(log)}</div>`).join('');
         }
-        console.log(log);
+        console.log(logEntry);
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
     function requestNotificationPermission() {
         if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
             Notification.requestPermission();
-        }
-    }
-    
-    function sendBrowserNotification(title, body, tag) {
-        if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(title, { body: body, tag: tag });
         }
     }
     
@@ -186,7 +188,6 @@
         notifications.unshift({ id, title, message, type, time: new Date(), read: false });
         if (notifications.length > 50) notifications.pop();
         updateNotificationUI();
-        sendBrowserNotification(title, message, `notif_${id}`);
     }
     
     function updateNotificationUI() {
@@ -271,109 +272,141 @@
         updateStats(filteredEvents);
     }
     
-    // دالة محسنة لتحويل التاريخ من أي تنسيق
-    function smartParseDate(dateValue, timeValue) {
+    // دالة قوية لتحويل التاريخ من أي تنسيق
+    function parseDateRobust(dateValue, timeValue) {
         if (!dateValue) return null;
         
         let dateStr = dateValue.toString().trim();
-        addDebugLog(`📅 محاولة تحويل التاريخ: "${dateStr}"`);
+        addDebugLog(`📅 معالجة التاريخ: "${dateStr}" (الوقت: "${timeValue || 'غير محدد'}")`);
         
-        // محاولة تحويل Excel serial number (رقم Excel)
-        if (!isNaN(dateStr) && dateStr.length > 5 && dateStr.indexOf('/') === -1 && dateStr.indexOf('-') === -1) {
-            let excelDate = parseFloat(dateStr);
-            let utc_days = excelDate - 25569;
-            let dateObj = new Date(utc_days * 86400 * 1000);
-            addDebugLog(`📅 تم التحويل من رقم Excel: ${excelDate} -> ${dateObj.toDateString()}`);
-            return dateObj;
+        // حالة 1: التاريخ فارغ أو غير صالح
+        if (dateStr === '' || dateStr === '0' || dateStr.toLowerCase() === 'null') {
+            addDebugLog(`❌ تجاهل: تاريخ فارغ`);
+            return null;
         }
         
         let day, month, year;
         
-        // تنسيق DD/MM/YYYY
-        let match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-        if (match) {
-            day = parseInt(match[1]);
-            month = parseInt(match[2]) - 1;
-            year = parseInt(match[3]);
-            addDebugLog(`📅 تنسيق DD/MM/YYYY: يوم=${day}, شهر=${month+1}, سنة=${year}`);
+        // محاولة تنسيق DD/MM/YYYY
+        let matchDDMMYYYY = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (matchDDMMYYYY) {
+            day = parseInt(matchDDMMYYYY[1]);
+            month = parseInt(matchDDMMYYYY[2]) - 1;
+            year = parseInt(matchDDMMYYYY[3]);
+            addDebugLog(`   ✓ تنسيق DD/MM/YYYY: يوم=${day}, شهر=${month+1}, سنة=${year}`);
         }
-        // تنسيق YYYY-MM-DD
+        // محاولة تنسيق YYYY-MM-DD
         else {
-            match = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-            if (match) {
-                year = parseInt(match[1]);
-                month = parseInt(match[2]) - 1;
-                day = parseInt(match[3]);
-                addDebugLog(`📅 تنسيق YYYY-MM-DD: سنة=${year}, شهر=${month+1}, يوم=${day}`);
+            let matchYYYYMMDD = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+            if (matchYYYYMMDD) {
+                year = parseInt(matchYYYYMMDD[1]);
+                month = parseInt(matchYYYYMMDD[2]) - 1;
+                day = parseInt(matchYYYYMMDD[3]);
+                addDebugLog(`   ✓ تنسيق YYYY-MM-DD: سنة=${year}, شهر=${month+1}, يوم=${day}`);
             }
-            // تنسيق DD-MM-YYYY
+            // محاولة تنسيق DD-MM-YYYY
             else {
-                match = dateStr.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
-                if (match) {
-                    day = parseInt(match[1]);
-                    month = parseInt(match[2]) - 1;
-                    year = parseInt(match[3]);
-                    addDebugLog(`📅 تنسيق DD-MM-YYYY: يوم=${day}, شهر=${month+1}, سنة=${year}`);
+                let matchDDMMYYYY2 = dateStr.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+                if (matchDDMMYYYY2) {
+                    day = parseInt(matchDDMMYYYY2[1]);
+                    month = parseInt(matchDDMMYYYY2[2]) - 1;
+                    year = parseInt(matchDDMMYYYY2[3]);
+                    addDebugLog(`   ✓ تنسيق DD-MM-YYYY: يوم=${day}, شهر=${month+1}, سنة=${year}`);
                 }
+                // محاولة new Date مباشرة
                 else {
                     let d = new Date(dateStr);
                     if (!isNaN(d.getTime())) {
-                        addDebugLog(`📅 تم التحويل عبر new Date(): ${d.toDateString()}`);
+                        addDebugLog(`   ✓ تم التحويل عبر new Date(): ${d.toDateString()}`);
                         return d;
                     }
-                    addDebugLog(`❌ فشل تحويل التاريخ: "${dateStr}"`);
+                    addDebugLog(`   ❌ فشل تحويل التاريخ: "${dateStr}"`);
                     return null;
                 }
             }
         }
         
-        if (year && year < 100) year += 2000;
-        
+        // معالجة الوقت
         let hour = 12, minute = 0;
         if (timeValue && timeValue.toString().trim()) {
             let timeStr = timeValue.toString().trim();
-            let tp = timeStr.match(/(\d{1,2}):(\d{2})/);
-            if (tp) {
-                hour = parseInt(tp[1]);
-                minute = parseInt(tp[2]);
+            let timeMatch = timeStr.match(/(\d{1,2}):(\d{2})/);
+            if (timeMatch) {
+                hour = parseInt(timeMatch[1]);
+                minute = parseInt(timeMatch[2]);
+                addDebugLog(`   ✓ الوقت: ${hour}:${minute}`);
+            } else {
+                addDebugLog(`   ⚠ لم يتم التعرف على تنسيق الوقت: "${timeStr}"، سيتم استخدام 12:00`);
             }
         }
         
         let dateObj = new Date(year, month, day, hour, minute);
         if (!isNaN(dateObj.getTime())) {
-            addDebugLog(`✅ تم إنشاء التاريخ: ${dateObj.toLocaleString('ar-EG')}`);
+            addDebugLog(`   ✅ تم إنشاء التاريخ بنجاح: ${dateObj.toLocaleString('ar-EG')}`);
             return dateObj;
         }
         
-        addDebugLog(`❌ فشل إنشاء التاريخ النهائي`);
+        addDebugLog(`   ❌ فشل إنشاء التاريخ النهائي`);
         return null;
     }
     
     async function fetchRealSheetData() {
+        addDebugLog("═══════════════════════════════════════════════════");
         addDebugLog("🔄 بدء جلب البيانات من Google Sheets...");
+        addDebugLog(`📋 معرف الجدول: ${SPREADSHEET_ID}`);
+        addDebugLog(`📄 اسم الورقة: ${SHEET_NAME}`);
+        
         try {
             const range = `${SHEET_NAME}!A1:V1000`;
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${range}?key=${API_KEY}`;
+            
+            addDebugLog(`🌐 إرسال طلب إلى Google Sheets API...`);
             const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            if (!response.ok) {
+                addDebugLog(`❌ خطأ HTTP: ${response.status} ${response.statusText}`);
+                throw new Error(`HTTP ${response.status}`);
+            }
             
             const data = await response.json();
             const rows = data.values;
-            if (!rows || rows.length < 2) throw new Error("لا توجد بيانات");
             
-            addDebugLog(`✅ تم جلب ${rows.length} صف من البيانات`);
+            if (!rows || rows.length < 2) {
+                addDebugLog(`❌ لا توجد بيانات في الجدول (تم العثور على ${rows ? rows.length : 0} صف)`);
+                throw new Error("لا توجد بيانات");
+            }
+            
+            addDebugLog(`✅ تم جلب ${rows.length} صف من البيانات (بما في ذلك العنوان)`);
+            
+            // عرض العناوين والأعمدة المهمة
+            if (rows[0]) {
+                addDebugLog(`📋 العناوين:`);
+                for (let idx = 0; idx < Math.min(rows[0].length, 22); idx++) {
+                    if (rows[0][idx]) {
+                        let colLetter = '';
+                        if (idx === 6) colLetter = 'G';
+                        else if (idx === 7) colLetter = 'H';
+                        else if (idx === 11) colLetter = 'L';
+                        else if (idx === 13) colLetter = 'N';
+                        else if (idx === 14) colLetter = 'O';
+                        else if (idx === 15) colLetter = 'P';
+                        else if (idx === 18) colLetter = 'S';
+                        else if (idx === 19) colLetter = 'T';
+                        
+                        if (colLetter) {
+                            addDebugLog(`   العمود ${colLetter} (index ${idx}): "${rows[0][idx]}"`);
+                        }
+                    }
+                }
+            }
             
             const events = [];
             let appCount = 0, cbCount = 0;
+            let rowsWithAppointments = 0;
+            let rowsWithCallbacksL = 0;
+            let rowsWithCallbacksS = 0;
             
-            if (rows[0]) {
-                addDebugLog(`📋 العناوين: ${JSON.stringify(rows[0])}`);
-                addDebugLog(`📍 العمود L (index 11): "${rows[0][11] || 'فارغ'}"`);
-                addDebugLog(`📍 العمود S (index 18): "${rows[0][18] || 'فارغ'}"`);
-                addDebugLog(`📍 العمود O (index 14): "${rows[0][14] || 'فارغ'}"`);
-                addDebugLog(`📍 العمود G (index 6): "${rows[0][6] || 'فارغ'}"`);
-                addDebugLog(`📍 العمود H (index 7): "${rows[0][7] || 'فارغ'}"`);
-            }
+            addDebugLog(`\n📊 بدء معالجة الصفوف من 2 إلى ${rows.length}...`);
             
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
@@ -385,12 +418,15 @@
                 const address = row[7] || '';
                 const generalNotes = row[8] || '';
                 
-                // معاينة من العمود O (index 14)
+                // ========== معاينة من العمود O (index 14) والوقت من العمود P (index 15) ==========
                 const appointmentDateRaw = row[14] || '';
                 const appointmentTime = row[15] || '';
                 
                 if (appointmentDateRaw && appointmentDateRaw.toString().trim() !== '') {
-                    let date = smartParseDate(appointmentDateRaw, appointmentTime);
+                    rowsWithAppointments++;
+                    addDebugLog(`\n🔍 الصف ${i}: "${name}" - تاريخ المعاينة: "${appointmentDateRaw}" - الوقت: "${appointmentTime || 'غير محدد'}"`);
+                    
+                    let date = parseDateRobust(appointmentDateRaw, appointmentTime);
                     if (date && !isNaN(date.getTime())) {
                         events.push({
                             id: `app_${i}_${Date.now()}`,
@@ -404,16 +440,21 @@
                             notes: generalNotes || 'لا توجد ملاحظات'
                         });
                         appCount++;
-                        addDebugLog(`✅ معاينة ${appCount}: ${name} - ${appointmentDateRaw} -> ${date.toDateString()}`);
+                        addDebugLog(`   ✅ تمت إضافة المعاينة رقم ${appCount}`);
+                    } else {
+                        addDebugLog(`   ❌ فشل تحويل التاريخ للمعاينة`);
                     }
                 }
                 
-                // متابعة من العمود L (index 11)
+                // ========== متابعة من العمود L (index 11) ==========
                 const callbackDateL = row[11] || '';
                 const callbackNotesL = row[13] || '';
                 
                 if (callbackDateL && callbackDateL.toString().trim() !== '') {
-                    let date = smartParseDate(callbackDateL, '');
+                    rowsWithCallbacksL++;
+                    addDebugLog(`\n🔍 الصف ${i}: "${name}" - متابعة L: "${callbackDateL}"`);
+                    
+                    let date = parseDateRobust(callbackDateL, '');
                     if (date && !isNaN(date.getTime())) {
                         events.push({
                             id: `cbL_${i}_${Date.now()}`,
@@ -427,16 +468,19 @@
                             notes: callbackNotesL || generalNotes || 'متابعة'
                         });
                         cbCount++;
-                        addDebugLog(`✅ متابعة L ${cbCount}: ${name} - ${callbackDateL} -> ${date.toDateString()}`);
+                        addDebugLog(`   ✅ تمت إضافة المتابعة رقم ${cbCount} (من العمود L)`);
                     }
                 }
                 
-                // متابعة من العمود S (index 18) - تاريخ متابعة إضافي
+                // ========== متابعة من العمود S (index 18) ==========
                 const callbackDateS = row[18] || '';
                 const callbackNotesS = row[19] || '';
                 
                 if (callbackDateS && callbackDateS.toString().trim() !== '') {
-                    let date = smartParseDate(callbackDateS, '');
+                    rowsWithCallbacksS++;
+                    addDebugLog(`\n🔍 الصف ${i}: "${name}" - متابعة S: "${callbackDateS}"`);
+                    
+                    let date = parseDateRobust(callbackDateS, '');
                     if (date && !isNaN(date.getTime())) {
                         events.push({
                             id: `cbS_${i}_${Date.now()}`,
@@ -450,21 +494,31 @@
                             notes: callbackNotesS || generalNotes || 'متابعة إضافية'
                         });
                         cbCount++;
-                        addDebugLog(`✅ متابعة S ${cbCount}: ${name} - ${callbackDateS} -> ${date.toDateString()}`);
+                        addDebugLog(`   ✅ تمت إضافة المتابعة رقم ${cbCount} (من العمود S)`);
                     }
                 }
             }
             
-            addDebugLog(`📊 النتائج النهائية: ${appCount} معاينة, ${cbCount} متابعة, المجموع: ${events.length}`);
+            addDebugLog(`\n═══════════════════════════════════════════════════`);
+            addDebugLog(`📊 تقرير المعالجة النهائي:`);
+            addDebugLog(`   • صفوف تحتوي على معاينات: ${rowsWithAppointments}`);
+            addDebugLog(`   • معاينات تمت إضافتها بنجاح: ${appCount}`);
+            addDebugLog(`   • متابعات من العمود L: ${rowsWithCallbacksL} (تمت إضافة: ${cbCount > 0 ? 'نعم' : 'لا'})`);
+            addDebugLog(`   • متابعات من العمود S: ${rowsWithCallbacksS}`);
+            addDebugLog(`   • إجمالي الأحداث المضافة: ${events.length}`);
+            addDebugLog(`═══════════════════════════════════════════════════`);
             
             if (events.length === 0) {
-                addDebugLog(`⚠️ لم يتم العثور على أي مواعيد صالحة!`);
-                addDebugLog(`💡 تأكد من وجود تواريخ صحيحة في الأعمدة O (معاينة) أو L/S (متابعة)`);
+                addDebugLog(`⚠️ تحذير: لم يتم العثور على أي مواعيد صالحة!`);
+                addDebugLog(`💡 تأكد من أن الأعمدة تحتوي على تواريخ بالتنسيق الصحيح (مثال: 27/04/2026 أو 2026-04-27)`);
+                addDebugLog(`💡 تأكد من أن العمود O يحتوي على تاريخ المعاينة والعمود P على وقت المعاينة`);
+            } else {
+                addDebugLog(`✅ نجاح: تم العثور على ${events.length} موعد!`);
             }
             
             return events;
         } catch (error) {
-            addDebugLog(`❌ خطأ في الجلب: ${error.message}`);
+            addDebugLog(`❌ خطأ في جلب البيانات: ${error.message}`);
             return [];
         }
     }
@@ -495,9 +549,8 @@
         document.getElementById('todayAppointments').innerText = todayApps;
         document.getElementById('todayCallbacks').innerText = todayCbs;
         
-        addDebugLog(`📊 إحصائيات: إجمالي معاينات=${totalApp}, إجمالي متابعات=${totalCb}, معاينات اليوم=${todayApps}, متابعات اليوم=${todayCbs}`);
+        addDebugLog(`📈 الإحصائيات المحدثة: معاينات=${totalApp}, متابعات=${totalCb}, معاينات اليوم=${todayApps}, متابعات اليوم=${todayCbs}`);
         
-        // إشعار لمواعيد اليوم
         if (todayApps > 0) {
             addNotification('🏢 معاينات اليوم', `${todayApps} معاينة عقار اليوم`, 'appointment', `today_app_${today.toDateString()}`);
         }
@@ -576,7 +629,10 @@
     function initCalendar(events) {
         const calendarEl = document.getElementById('calendar');
         if (calendarInstance) calendarInstance.destroy();
-        if (events.length === 0) return;
+        if (events.length === 0) {
+            addDebugLog(`📅 التقويم: لا توجد أحداث للعرض`);
+            return;
+        }
         
         const fcEvents = events.map(ev => ({
             id: ev.id, 
@@ -598,15 +654,16 @@
             height: 'auto', firstDay: 6
         });
         calendarInstance.render();
+        addDebugLog(`📅 تم تحديث التقويم بـ ${fcEvents.length} حدث`);
     }
     
     async function refreshDashboard() {
-        addDebugLog("🔄 تحديث لوحة التحكم...");
+        addDebugLog(`\n🔄 === بدء عملية التحديث ===`);
         const realEvents = await fetchRealSheetData();
         if (realEvents.length > 0) {
             originalEvents = realEvents;
             applyFilter();
-            addDebugLog(`✅ تم تحديث الواجهة بـ ${realEvents.length} موعد`);
+            addDebugLog(`✅ تم تحديث الواجهة بنجاح بـ ${realEvents.length} موعد`);
         } else {
             originalEvents = [];
             filteredEvents = [];
@@ -615,9 +672,13 @@
             initCalendar([]);
             addDebugLog(`⚠️ لم يتم العثور على مواعيد بعد التحديث`);
         }
+        addDebugLog(`🔄 === انتهاء عملية التحديث ===\n`);
     }
     
     window.addEventListener('load', () => {
+        addDebugLog(`🚀 بدء تشغيل التطبيق - نظام إدارة العقارات`);
+        addDebugLog(`📅 التاريخ الحالي: ${new Date().toLocaleString('ar-EG')}`);
+        
         requestNotificationPermission();
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => setFilter(btn.dataset.filter));
@@ -626,18 +687,9 @@
         document.getElementById('notificationBell').addEventListener('click', toggleNotifications);
         document.getElementById('closeNotificationsBtn').addEventListener('click', closeNotifications);
         document.getElementById('clearNotifications').addEventListener('click', clearAllNotifications);
-        document.addEventListener('click', (e) => {
-            const panel = document.getElementById('notificationsPanel');
-            const bell = document.getElementById('notificationBell');
-            if (window.innerWidth >= 768 && !bell.contains(e.target) && !panel.contains(e.target) && panel.style.display === 'flex') {
-                panel.style.display = 'none';
-            }
-        });
+        
         refreshDashboard();
         setInterval(refreshDashboard, 300000);
-        
-        // إظهار لوحة التصحيح (يمكن إزالة هذا السطر بعد التأكد من عمل كل شيء)
-        document.getElementById('debugPanel').style.display = 'block';
     });
 </script>
 </body>
