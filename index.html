@@ -11,7 +11,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', sans-serif; }
         body { background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 100%); min-height: 100vh; padding: 15px; direction: rtl; }
-        .dashboard-container { max-width: 1400px; margin: 0 auto; }
+        .dashboard-container { max-width: 1600px; margin: 0 auto; }
         
         .header { background: white; border-radius: 20px; padding: 15px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         h1 { font-size: 1.2rem; color: #c9a03d; display: flex; align-items: center; gap: 8px; }
@@ -35,27 +35,30 @@
         .stat-card h3 { font-size: 0.75rem; color: #666; margin-bottom: 8px; }
         .stat-number { font-size: 1.6rem; font-weight: bold; color: #c9a03d; }
         
-        .two-columns { display: flex; flex-direction: column; gap: 20px; }
-        @media (min-width: 768px) { .two-columns { flex-direction: row; } }
+        .two-columns { display: flex; flex-direction: row; gap: 20px; }
+        @media (max-width: 768px) { .two-columns { flex-direction: column; } }
         
-        .calendar-panel, .events-panel { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .calendar-panel { flex: 2; }
-        .events-panel { flex: 1.2; }
+        .calendar-panel { background: white; border-radius: 20px; padding: 20px; flex: 2; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .events-panel { background: white; border-radius: 20px; padding: 20px; flex: 1.2; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         
-        .section-title { font-size: 1rem; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #eee; color: #8b6914; display: flex; justify-content: space-between; }
+        .section-title { font-size: 1rem; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #eee; color: #8b6914; display: flex; justify-content: space-between; align-items: center; }
         .events-count { background: #c9a03d; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; }
         
         .event-list { max-height: 550px; overflow-y: auto; }
+        .event-list::-webkit-scrollbar { width: 4px; }
+        .event-list::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 10px; }
+        .event-list::-webkit-scrollbar-thumb { background: #c9a03d; border-radius: 10px; }
+        
         .event-item { background: #f9fbfa; margin-bottom: 12px; padding: 12px; border-radius: 14px; border-right: 4px solid #c9a03d; transition: all 0.2s; }
         .event-item.callback { border-right-color: #e67e22; background: #fffbf0; }
         .event-item:hover { transform: translateX(-5px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .event-title { font-weight: bold; font-size: 0.9rem; display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .event-title { font-weight: bold; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .event-name { display: flex; align-items: center; gap: 8px; }
         .event-type { font-size: 0.6rem; padding: 3px 10px; border-radius: 20px; background: #fef8e7; }
         .event-details { font-size: 0.7rem; color: #666; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px; }
         .event-phone { direction: ltr; font-family: monospace; background: #f0f0f0; padding: 2px 6px; border-radius: 8px; }
         .event-location { font-size: 0.7rem; color: #666; margin-top: 5px; display: flex; align-items: center; gap: 5px; }
-        .event-notes { font-size: 0.7rem; color: #888; margin-top: 5px; font-style: italic; }
+        .event-notes { font-size: 0.7rem; color: #888; margin-top: 5px; }
         
         .fc { direction: rtl; }
         .fc .fc-toolbar { flex-direction: column; gap: 10px; margin-bottom: 15px; }
@@ -85,9 +88,9 @@
     </div>
 
     <div class="date-range-filter">
-        <span>📅</span>
+        <span>📅 من:</span>
         <input type="date" id="startDate" value="2026-04-01">
-        <span>إلى</span>
+        <span>إلى:</span>
         <input type="date" id="endDate" value="2026-04-30">
         <button id="applyDateBtn"><i class="fas fa-filter"></i> تطبيق</button>
         <button id="clearDateBtn" class="clear-btn"><i class="fas fa-times"></i> إلغاء</button>
@@ -107,12 +110,19 @@
             <div id="calendar"><div class="loading"><div class="spinner"></div><p>جاري تحميل التقويم...</p></div></div>
         </div>
         <div class="events-panel">
-            <div class="section-title"><span>📋 قائمة المواعيد</span><span class="events-count" id="eventsCount">0</span></div>
-            <div id="eventList" class="event-list"><div class="loading"><div class="spinner"></div><p>جاري تحميل البيانات...</p></div></div>
+            <div class="section-title">
+                <span>📋 قائمة المواعيد</span>
+                <span class="events-count" id="eventsCount">0</span>
+            </div>
+            <div id="eventList" class="event-list">
+                <div class="loading"><div class="spinner"></div><p>جاري تحميل البيانات...</p></div>
+            </div>
         </div>
     </div>
 
-    <div class="footer-note">📌 المعاينات من العمود O | 📞 متابعات المكالمات من العمود L | 📋 متابعات المعاينات من العمود S</div>
+    <div class="footer-note">
+        <i class="fas fa-info-circle"></i> 🏢 المعاينات: العمود O | 📞 متابعات المكالمات: العمود L | 📋 متابعات المعاينات: العمود S
+    </div>
 </div>
 
 <script>
@@ -136,46 +146,27 @@
         
         let filtered = [...allEvents];
         
-        // تطبيق فلتر النوع
+        // فلتر النوع
         if (currentType === 'appointment') {
             filtered = filtered.filter(e => e.type === TYPE_APP);
         } else if (currentType === 'callback') {
             filtered = filtered.filter(e => e.type !== TYPE_APP);
         }
         
-        // تطبيق فلتر التاريخ
+        // فلتر التاريخ
         if (startDate) {
-            filtered = filtered.filter(e => {
-                const eventDate = new Date(e.date);
-                eventDate.setHours(0, 0, 0, 0);
-                const filterDate = new Date(startDate);
-                filterDate.setHours(0, 0, 0, 0);
-                return eventDate >= filterDate;
-            });
+            const startTime = startDate.getTime();
+            filtered = filtered.filter(e => new Date(e.date).getTime() >= startTime);
         }
-        
         if (endDate) {
-            filtered = filtered.filter(e => {
-                const eventDate = new Date(e.date);
-                eventDate.setHours(0, 0, 0, 0);
-                const filterDate = new Date(endDate);
-                filterDate.setHours(0, 0, 0, 0);
-                return eventDate <= filterDate;
-            });
+            const endTime = endDate.getTime();
+            filtered = filtered.filter(e => new Date(e.date).getTime() <= endTime);
         }
         
-        // تحديث العدد والإحصائيات
+        // تحديث الواجهة
         document.getElementById('eventsCount').innerText = filtered.length;
         updateStats(filtered);
-        
-        // تحديث القائمة
         renderList(filtered);
-        
-        // تحديث التقويم
-        if (calendar) {
-            calendar.destroy();
-            calendar = null;
-        }
         renderCalendar(filtered);
     }
 
@@ -184,14 +175,23 @@
         let s = str.toString().trim();
         if (s === 'FALSE' || s === 'TRUE' || s === '') return null;
         s = s.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
+        
         let parts = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
         if (!parts) parts = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})/);
         if (!parts) parts = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
         if (!parts) return null;
         
         let day, month, year;
-        if (parts[1].length === 4) { year = parseInt(parts[1]); month = parseInt(parts[2])-1; day = parseInt(parts[3]); }
-        else { day = parseInt(parts[1]); month = parseInt(parts[2])-1; year = parseInt(parts[3]); }
+        if (parts[1].length === 4) {
+            year = parseInt(parts[1]);
+            month = parseInt(parts[2]) - 1;
+            day = parseInt(parts[3]);
+        } else {
+            day = parseInt(parts[1]);
+            month = parseInt(parts[2]) - 1;
+            year = parseInt(parts[3]);
+        }
+        
         let d = new Date(year, month, day, 12, 0);
         return !isNaN(d.getTime()) ? d : null;
     }
@@ -200,6 +200,7 @@
         if (!str) return { hour: 12, minute: 0, display: '12:00 م' };
         let s = str.toString().trim();
         if (s === 'FALSE' || s === 'TRUE' || s === '') return { hour: 12, minute: 0, display: '12:00 م' };
+        
         let match = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*([مص])/);
         if (match) {
             let hour = parseInt(match[1]), minute = parseInt(match[2]), period = match[3];
@@ -232,7 +233,7 @@
                 const address = row[COL_ADDRESS] || '';
                 const notes = row[COL_NOTES] || '';
                 
-                // Appointments
+                // المعاينات
                 const appDate = row[COL_APP_DATE];
                 const appTime = row[COL_APP_TIME] || '';
                 if (appDate && appDate !== 'FALSE' && appDate.toString().trim()) {
@@ -243,13 +244,13 @@
                         events.push({ id: `app_${i}`, title: name, type: TYPE_APP, date: d, displayTime: t.display, phone, city, address, notes });
                     }
                 }
-                // Callbacks from column L
+                // متابعات من العمود L
                 const cbL = row[COL_CB_L_DATE];
                 if (cbL && cbL !== 'FALSE' && cbL.toString().trim()) {
                     const d = parseDate(cbL);
                     if (d) events.push({ id: `cbL_${i}`, title: name, type: TYPE_CB_L, date: d, displayTime: '', phone, city, address, notes: row[COL_CB_L_NOTES] || notes });
                 }
-                // Callbacks from column S
+                // متابعات من العمود S
                 const cbS = row[COL_CB_S_DATE];
                 if (cbS && cbS !== 'FALSE' && cbS.toString().trim()) {
                     const d = parseDate(cbS);
@@ -261,7 +262,6 @@
             return events;
         } catch(e) {
             statusSpan.innerHTML = '❌ خطأ';
-            console.error(e);
             return [];
         }
     }
@@ -270,8 +270,11 @@
         const totalApp = events.filter(e => e.type === TYPE_APP).length;
         const totalCb = events.filter(e => e.type !== TYPE_APP).length;
         const today = new Date(); today.setHours(0,0,0,0);
-        const todayApp = events.filter(e => e.type === TYPE_APP && new Date(e.date).setHours(0,0,0,0) === today.getTime()).length;
-        const todayCb = events.filter(e => e.type !== TYPE_APP && new Date(e.date).setHours(0,0,0,0) === today.getTime()).length;
+        const todayTime = today.getTime();
+        
+        const todayApp = events.filter(e => e.type === TYPE_APP && new Date(e.date).setHours(0,0,0,0) === todayTime).length;
+        const todayCb = events.filter(e => e.type !== TYPE_APP && new Date(e.date).setHours(0,0,0,0) === todayTime).length;
+        
         document.getElementById('totalApp').innerText = totalApp;
         document.getElementById('totalCb').innerText = totalCb;
         document.getElementById('todayApp').innerText = todayApp;
@@ -308,7 +311,7 @@
                         <span>📞 <span class="event-phone">${ev.phone || 'غير متوفر'}</span></span>
                     </div>
                     ${(ev.city || ev.address) ? `<div class="event-location"><i class="fas fa-map-marker-alt"></i> ${ev.city || ''} ${ev.address || ''}</div>` : ''}
-                    ${ev.notes ? `<div class="event-notes"><i class="fas fa-sticky-note"></i> ${ev.notes.length > 100 ? ev.notes.substring(0, 100) + '...' : ev.notes}</div>` : ''}
+                    ${ev.notes ? `<div class="event-notes"><i class="fas fa-sticky-note"></i> ${ev.notes.length > 80 ? ev.notes.substring(0, 80) + '...' : ev.notes}</div>` : ''}
                 </div>
             `;
         }
@@ -318,8 +321,13 @@
     function renderCalendar(events) {
         const el = document.getElementById('calendar');
         
+        if (calendar) {
+            calendar.destroy();
+            calendar = null;
+        }
+        
         if (!events.length) { 
-            el.innerHTML = '<div class="loading">لا توجد مواعيد في النطاق المحدد</div>'; 
+            el.innerHTML = '<div class="loading">📅 لا توجد مواعيد في النطاق المحدد</div>'; 
             return; 
         }
         
@@ -398,6 +406,7 @@
         const events = await fetchData(); 
         if (events.length) { 
             allEvents = events; 
+            dataLoaded = true;
             updateDisplay(); 
         } 
     }
