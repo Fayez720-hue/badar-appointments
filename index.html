@@ -94,7 +94,7 @@
         .event-list::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 10px; }
         .event-list::-webkit-scrollbar-thumb { background: #c9a03d; border-radius: 10px; }
         
-        .event-item { background: #f9fbfa; margin-bottom: 8px; padding: 12px; border-radius: 12px; border-right: 3px solid #c9a03d; cursor: pointer; transition: all 0.2s; }
+        .event-item { background: #f9fbfa; margin-bottom: 8px; padding: 12px; border-radius: 12px; border-right: 4px solid #c9a03d; cursor: pointer; transition: all 0.2s; }
         .event-item.callback { border-right-color: #e67e22; background: #fffbf0; }
         .event-item:hover { transform: translateX(-5px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .event-title { font-weight: 700; font-size: 0.9rem; display: flex; justify-content: space-between; margin-bottom: 6px; }
@@ -183,7 +183,7 @@
     let filteredEvents = [];
     let calendar = null;
     let currentFilter = 'all';
-    let dateRange = { start: null, end: null }; // فلتر التاريخ
+    let dateRange = { start: null, end: null };
     
     const TYPE_APPOINTMENT = 'معاينة';
     const TYPE_CALLBACK_AFTER_CALL = 'متابعة بعد المكالمة';
@@ -195,24 +195,31 @@
         const endDateInput = document.getElementById('endDate');
         const rangeInfo = document.getElementById('rangeInfo');
         
-        if (startDateInput.value && endDateInput.value) {
+        if (startDateInput.value) {
             dateRange.start = new Date(startDateInput.value);
+            dateRange.start.setHours(0, 0, 0, 0);
+        } else {
+            dateRange.start = null;
+        }
+        
+        if (endDateInput.value) {
             dateRange.end = new Date(endDateInput.value);
             dateRange.end.setHours(23, 59, 59, 999);
-            
-            // عرض معلومات الفلتر
+        } else {
+            dateRange.end = null;
+        }
+        
+        // عرض معلومات الفلتر
+        if (dateRange.start && dateRange.end) {
             const startFormatted = dateRange.start.toLocaleDateString('ar-EG');
             const endFormatted = dateRange.end.toLocaleDateString('ar-EG');
             rangeInfo.innerHTML = `📅 عرض المواعيد من ${startFormatted} إلى ${endFormatted}`;
-        } else if (startDateInput.value) {
-            dateRange.start = new Date(startDateInput.value);
-            dateRange.end = null;
+        } else if (dateRange.start) {
             rangeInfo.innerHTML = `📅 عرض المواعيد من ${dateRange.start.toLocaleDateString('ar-EG')}`;
-        } else if (endDateInput.value) {
-            dateRange.start = null;
-            dateRange.end = new Date(endDateInput.value);
-            dateRange.end.setHours(23, 59, 59, 999);
+        } else if (dateRange.end) {
             rangeInfo.innerHTML = `📅 عرض المواعيد حتى ${dateRange.end.toLocaleDateString('ar-EG')}`;
+        } else {
+            rangeInfo.innerHTML = '';
         }
         
         applyFilters();
@@ -238,12 +245,24 @@
             result = result.filter(e => e.type !== TYPE_APPOINTMENT);
         }
         
-        // فلتر حسب نطاق التاريخ
+        // فلتر حسب نطاق التاريخ - تحسين المقارنة
         if (dateRange.start) {
-            result = result.filter(e => e.date >= dateRange.start);
+            result = result.filter(e => {
+                const eventDate = new Date(e.date);
+                eventDate.setHours(0, 0, 0, 0);
+                const startDate = new Date(dateRange.start);
+                startDate.setHours(0, 0, 0, 0);
+                return eventDate >= startDate;
+            });
         }
         if (dateRange.end) {
-            result = result.filter(e => e.date <= dateRange.end);
+            result = result.filter(e => {
+                const eventDate = new Date(e.date);
+                eventDate.setHours(0, 0, 0, 0);
+                const endDate = new Date(dateRange.end);
+                endDate.setHours(0, 0, 0, 0);
+                return eventDate <= endDate;
+            });
         }
         
         filteredEvents = result;
@@ -405,7 +424,6 @@
                 const address = row[COL_ADDRESS] || '';
                 const notes = row[COL_NOTES] || '';
                 
-                // المعاينات
                 const appointmentDate = row[COL_APPOINTMENT_DATE];
                 const appointmentTimeRaw = row[COL_APPOINTMENT_TIME] || '';
                 
@@ -422,7 +440,6 @@
                     }
                 }
                 
-                // متابعة بعد المكالمة من العمود L
                 const callbackDate = row[COL_CALLBACK_AFTER_CALL_DATE];
                 const callbackNotes = row[COL_CALLBACK_AFTER_CALL_NOTES] || '';
                 
@@ -437,7 +454,6 @@
                     }
                 }
                 
-                // متابعة بعد المعاينة من العمود S
                 const callbackApptDate = row[COL_CALLBACK_AFTER_APPT_DATE];
                 const callbackApptNotes = row[COL_CALLBACK_AFTER_APPT_NOTES] || '';
                 
@@ -585,9 +601,6 @@
     }
     
     window.addEventListener('load', () => {
-        // تعيين تاريخ اليوم كقيمة افتراضية لبداية الفلتر (اختياري)
-        const today = new Date().toISOString().split('T')[0];
-        
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => setFilter(btn.dataset.filter));
         });
