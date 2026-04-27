@@ -13,28 +13,24 @@
         body { background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 100%); min-height: 100vh; padding: 15px; direction: rtl; }
         .dashboard-container { max-width: 1600px; margin: 0 auto; }
         
-        .header { background: rgba(255,255,255,0.97); border-radius: 24px; padding: 15px 24px; margin-bottom: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        h1 { font-size: 1.3rem; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: flex; align-items: center; gap: 10px; }
+        .header { background: rgba(255,255,255,0.97); border-radius: 24px; padding: 15px 24px; margin-bottom: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+        h1 { font-size: 1.3rem; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
         .filter-group { display: flex; gap: 8px; background: rgba(0,0,0,0.05); padding: 5px; border-radius: 50px; }
-        .filter-btn { padding: 6px 18px; border-radius: 40px; border: none; cursor: pointer; font-size: 0.75rem; font-weight: 600; background: transparent; transition: all 0.2s; }
+        .filter-btn { padding: 6px 18px; border-radius: 40px; border: none; cursor: pointer; font-size: 0.75rem; font-weight: 600; background: transparent; }
         .filter-btn.active { background: linear-gradient(135deg, #c9a03d, #8b6914); color: white; }
-        .refresh-btn { background: linear-gradient(135deg, #c9a03d, #8b6914); border: none; color: white; padding: 6px 16px; border-radius: 30px; cursor: pointer; font-size: 0.75rem; font-weight: 600; margin-left: 10px; transition: all 0.2s; }
-        .refresh-btn:hover { transform: translateY(-2px); }
-        .status-badge { background: #eef2ff; padding: 4px 12px; border-radius: 25px; font-size: 0.7rem; }
+        .refresh-btn { background: linear-gradient(135deg, #c9a03d, #8b6914); border: none; color: white; padding: 6px 16px; border-radius: 30px; cursor: pointer; margin-left: 10px; }
         
-        .date-range-filter { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 12px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; border: 1px solid rgba(201,160,61,0.3); }
-        .date-range-filter label { font-size: 0.75rem; color: #8b6914; font-weight: bold; }
-        .date-range-filter input { padding: 6px 12px; border-radius: 12px; border: 1px solid #ddd; font-size: 0.75rem; }
-        .date-range-filter button { background: linear-gradient(135deg, #c9a03d, #8b6914); border: none; color: white; padding: 6px 16px; border-radius: 25px; cursor: pointer; font-size: 0.7rem; }
+        .date-range-filter { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 12px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; }
+        .date-range-filter input { padding: 6px 12px; border-radius: 12px; border: 1px solid #ddd; }
+        .date-range-filter button { background: linear-gradient(135deg, #c9a03d, #8b6914); border: none; color: white; padding: 6px 16px; border-radius: 25px; cursor: pointer; }
         .date-range-filter .clear-btn { background: #6c7a74; }
         .range-info { font-size: 0.7rem; color: #c9a03d; background: #fef8e7; padding: 4px 12px; border-radius: 20px; }
         
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
         @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
         
-        .stat-card { background: rgba(255,255,255,0.95); border-radius: 18px; padding: 15px; border-right: 4px solid #c9a03d; transition: all 0.2s; }
-        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .stat-card { background: rgba(255,255,255,0.95); border-radius: 18px; padding: 15px; border-right: 4px solid #c9a03d; }
         .stat-card h3 { font-size: 0.75rem; color: #6c7a74; margin-bottom: 8px; }
         .stat-number { font-size: 1.6rem; font-weight: 800; background: linear-gradient(135deg, #c9a03d, #8b6914); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         
@@ -45,46 +41,36 @@
         .calendar-panel { flex: 2; }
         .events-panel { flex: 1.2; }
         
-        .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; color: #8b6914; display: flex; justify-content: space-between; align-items: center; }
+        .section-title { font-size: 1rem; font-weight: 700; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #e2e8f0; color: #8b6914; display: flex; justify-content: space-between; }
         .events-count { background: #c9a03d; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; }
         
         .event-list { max-height: 550px; overflow-y: auto; }
-        .event-list::-webkit-scrollbar { width: 4px; }
-        .event-list::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 10px; }
-        .event-list::-webkit-scrollbar-thumb { background: #c9a03d; border-radius: 10px; }
-        
-        .event-item { background: white; margin-bottom: 12px; padding: 14px; border-radius: 16px; border-right: 4px solid #c9a03d; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .event-item { background: white; margin-bottom: 12px; padding: 14px; border-radius: 16px; border-right: 4px solid #c9a03d; cursor: pointer; transition: all 0.2s; }
         .event-item.callback { border-right-color: #e67e22; background: #fffbf0; }
         .event-item:hover { transform: translateX(-5px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .event-title { font-weight: 700; font-size: 0.9rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .event-title { font-weight: 700; font-size: 0.9rem; display: flex; justify-content: space-between; margin-bottom: 8px; }
         .event-name { display: flex; align-items: center; gap: 8px; }
         .event-type { font-size: 0.6rem; padding: 3px 10px; border-radius: 20px; background: #fef8e7; }
-        .event-type.callback-badge { background: #ffecb3; color: #b45f06; }
         .event-details { font-size: 0.7rem; color: #4a5b54; display: flex; flex-wrap: wrap; gap: 12px; margin-top: 5px; }
-        .event-details span { display: inline-flex; align-items: center; gap: 4px; }
         .event-phone { direction: ltr; font-family: monospace; background: #f0f0f0; padding: 2px 6px; border-radius: 8px; }
         
         .fc { direction: rtl; }
         .fc .fc-toolbar { flex-direction: column; gap: 10px; margin-bottom: 15px; }
         @media (min-width: 768px) { .fc .fc-toolbar { flex-direction: row; } }
         .fc .fc-button { background: #c9a03d !important; border: none !important; }
-        .fc .fc-button:hover { background: #8b6914 !important; }
         
         .loading { text-align: center; padding: 40px; }
-        .spinner { width: 40px; height: 40px; border: 3px solid #fef8e7; border-top: 3px solid #c9a03d; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 15px; }
+        .spinner { width: 40px; height: 40px; border: 3px solid #fef8e7; border-top: 3px solid #c9a03d; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         .footer-note { margin-top: 20px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.8); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 25px; }
-        .error-message { text-align: center; padding: 40px; background: #fee2e2; border-radius: 16px; margin: 20px; }
-        .error-message i { font-size: 2rem; color: #dc2626; margin-bottom: 15px; display: block; }
-        .error-message button { background: #c9a03d; border: none; padding: 8px 20px; border-radius: 25px; color: white; cursor: pointer; margin-top: 15px; }
     </style>
 </head>
 <body>
 <div class="dashboard-container">
     <div class="header">
         <h1><i class="fas fa-building"></i> نظام إدارة العقارات <small>معاينات ومتابعات</small></h1>
-        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; gap: 8px; align-items: center;">
             <div class="filter-group">
                 <button class="filter-btn active" data-filter="all">📋 الكل</button>
                 <button class="filter-btn" data-filter="appointment">🏢 معاينات</button>
@@ -127,296 +113,117 @@
     </div>
 
     <div class="footer-note">
-        <i class="fas fa-info-circle"></i> 🏢 المعاينات من العمود O | 📞 متابعات بعد المكالمة من العمود L | 📋 متابعات بعد المعاينة من العمود S
+        <i class="fas fa-info-circle"></i> 🏢 المعاينات: العمود O | 📞 متابعات المكالمة: العمود L | 📋 متابعات المعاينة: العمود S
     </div>
 </div>
 
 <script>
-    // إعدادات Google Sheets
     const SPREADSHEET_ID = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
     const SHEET_NAME = 'مبيعات';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
 
-    // الأعمدة
-    const COL_NAME = 1;
-    const COL_PHONE = 2;
-    const COL_CITY = 6;
-    const COL_ADDRESS = 7;
-    const COL_NOTES = 8;
-    const COL_APPOINTMENT_DATE = 14;
-    const COL_APPOINTMENT_TIME = 15;
-    const COL_CALLBACK_L_DATE = 11;
-    const COL_CALLBACK_L_NOTES = 13;
-    const COL_CALLBACK_S_DATE = 18;
-    const COL_CALLBACK_S_NOTES = 20;
+    const COL_NAME = 1, COL_PHONE = 2, COL_CITY = 6, COL_ADDRESS = 7, COL_NOTES = 8;
+    const COL_APPOINTMENT_DATE = 14, COL_APPOINTMENT_TIME = 15;
+    const COL_CALLBACK_L_DATE = 11, COL_CALLBACK_L_NOTES = 13;
+    const COL_CALLBACK_S_DATE = 18, COL_CALLBACK_S_NOTES = 20;
 
-    let allEvents = [];
-    let currentFilterType = 'all';
-    let currentStartDate = null;
-    let currentEndDate = null;
-    let calendar = null;  // تعريف المتغير calendar
+    let allEvents = [], currentFilter = 'all', startDate = null, endDate = null, calendar = null;
+    const TYPE_APPOINTMENT = 'معاينة', TYPE_CALLBACK_L = 'متابعة المكالمة', TYPE_CALLBACK_S = 'متابعة المعاينة';
 
-    const TYPE_APPOINTMENT = 'معاينة';
-    const TYPE_CALLBACK_L = 'متابعة المكالمة';
-    const TYPE_CALLBACK_S = 'متابعة المعاينة';
-
-    // دالة لتحديث جميع عناصر الواجهة
     function updateDisplay() {
         let filtered = [...allEvents];
-
-        // تطبيق فلتر النوع
-        if (currentFilterType === 'appointment') {
-            filtered = filtered.filter(e => e.type === TYPE_APPOINTMENT);
-        } else if (currentFilterType === 'callback') {
-            filtered = filtered.filter(e => e.type !== TYPE_APPOINTMENT);
-        }
-
-        // تطبيق فلتر التاريخ
-        if (currentStartDate) {
-            filtered = filtered.filter(e => {
-                const eventDate = new Date(e.date);
-                eventDate.setHours(0, 0, 0, 0);
-                const startDate = new Date(currentStartDate);
-                startDate.setHours(0, 0, 0, 0);
-                return eventDate >= startDate;
-            });
-        }
-
-        if (currentEndDate) {
-            filtered = filtered.filter(e => {
-                const eventDate = new Date(e.date);
-                eventDate.setHours(0, 0, 0, 0);
-                const endDate = new Date(currentEndDate);
-                endDate.setHours(0, 0, 0, 0);
-                return eventDate <= endDate;
-            });
-        }
-
-        // تحديث الإحصائيات والقائمة والتقويم
+        if (currentFilter === 'appointment') filtered = filtered.filter(e => e.type === TYPE_APPOINTMENT);
+        else if (currentFilter === 'callback') filtered = filtered.filter(e => e.type !== TYPE_APPOINTMENT);
+        if (startDate) filtered = filtered.filter(e => new Date(e.date) >= startDate);
+        if (endDate) filtered = filtered.filter(e => new Date(e.date) <= endDate);
+        
+        document.getElementById('eventsCount').innerText = filtered.length;
         updateStats(filtered);
         renderEventList(filtered);
         initCalendar(filtered);
-        document.getElementById('eventsCount').innerText = filtered.length;
     }
 
-    function applyDateRangeFilter() {
-        const startInput = document.getElementById('startDate');
-        const endInput = document.getElementById('endDate');
-        const rangeInfo = document.getElementById('rangeInfo');
-
-        if (startInput.value) {
-            currentStartDate = new Date(startInput.value);
-            currentStartDate.setHours(0, 0, 0, 0);
-        } else {
-            currentStartDate = null;
-        }
-
-        if (endInput.value) {
-            currentEndDate = new Date(endInput.value);
-            currentEndDate.setHours(23, 59, 59, 999);
-        } else {
-            currentEndDate = null;
-        }
-
-        if (currentStartDate && currentEndDate) {
-            rangeInfo.innerHTML = `📅 ${currentStartDate.toLocaleDateString('ar-EG')} - ${currentEndDate.toLocaleDateString('ar-EG')}`;
-        } else if (currentStartDate) {
-            rangeInfo.innerHTML = `📅 من ${currentStartDate.toLocaleDateString('ar-EG')}`;
-        } else if (currentEndDate) {
-            rangeInfo.innerHTML = `📅 حتى ${currentEndDate.toLocaleDateString('ar-EG')}`;
-        } else {
-            rangeInfo.innerHTML = '📅 جميع المواعيد';
-        }
-
-        updateDisplay();
-    }
-
-    function clearDateRangeFilter() {
-        document.getElementById('startDate').value = '';
-        document.getElementById('endDate').value = '';
-        currentStartDate = null;
-        currentEndDate = null;
-        document.getElementById('rangeInfo').innerHTML = '📅 جميع المواعيد';
-        updateDisplay();
-    }
-
-    function parseDate(dateStr) {
-        if (!dateStr) return null;
-        let original = dateStr.toString().trim();
-        if (original === 'FALSE' || original === 'TRUE' || original === '') return null;
-        let cleaned = original.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
-
+    function parseDate(str) {
+        if (!str) return null;
+        let s = str.toString().trim();
+        if (s === 'FALSE' || s === 'TRUE' || s === '') return null;
+        s = s.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
+        let parts = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (!parts) parts = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+        if (!parts) parts = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if (!parts) parts = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+        if (!parts) return null;
+        
         let day, month, year;
-        let parts = cleaned.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-        if (parts) {
-            day = parseInt(parts[1]);
-            month = parseInt(parts[2]) - 1;
-            year = parseInt(parts[3]);
-        } else {
-            parts = cleaned.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
-            if (parts) {
-                year = parseInt(parts[1]);
-                month = parseInt(parts[2]) - 1;
-                day = parseInt(parts[3]);
-            } else {
-                parts = cleaned.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-                if (parts) {
-                    year = parseInt(parts[1]);
-                    month = parseInt(parts[2]) - 1;
-                    day = parseInt(parts[3]);
-                } else {
-                    parts = cleaned.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
-                    if (parts) {
-                        day = parseInt(parts[1]);
-                        month = parseInt(parts[2]) - 1;
-                        year = parseInt(parts[3]);
-                    } else {
-                        return null;
-                    }
-                }
-            }
-        }
-
-        let dateObj = new Date(year, month, day, 12, 0);
-        return !isNaN(dateObj.getTime()) ? dateObj : null;
+        if (parts[1].length === 4) { year = parseInt(parts[1]); month = parseInt(parts[2])-1; day = parseInt(parts[3]); }
+        else { day = parseInt(parts[1]); month = parseInt(parts[2])-1; year = parseInt(parts[3]); }
+        let d = new Date(year, month, day, 12, 0);
+        return !isNaN(d.getTime()) ? d : null;
     }
 
-    function parseTime(timeStr) {
-        if (!timeStr) return { hour24: 12, minute: 0, display: '12:00 م' };
-        let clean = timeStr.toString().trim();
-        if (clean === 'FALSE' || clean === 'TRUE' || clean === '') {
-            return { hour24: 12, minute: 0, display: '12:00 م' };
-        }
-
-        let hour24 = 12, minute = 0, displayTime = '';
-
-        let match = clean.match(/(\d{1,2}):(\d{2}):(\d{2})\s*([مص])/);
+    function parseTime(str) {
+        if (!str) return { hour: 12, minute: 0, display: '12:00 م' };
+        let s = str.toString().trim();
+        if (s === 'FALSE' || s === 'TRUE' || s === '') return { hour: 12, minute: 0, display: '12:00 م' };
+        let match = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*([مص])/);
         if (match) {
-            let hour = parseInt(match[1]);
-            minute = parseInt(match[2]);
-            let period = match[4];
-            if (period === 'م') {
-                hour24 = hour === 12 ? 12 : hour + 12;
-            } else {
-                hour24 = hour === 12 ? 0 : hour;
-            }
+            let hour = parseInt(match[1]), minute = parseInt(match[2]), period = match[3];
+            let hour24 = period === 'م' ? (hour === 12 ? 12 : hour + 12) : (hour === 12 ? 0 : hour);
             let hour12 = hour24 % 12 || 12;
-            let displayPeriod = hour24 < 12 ? 'ص' : 'م';
-            displayTime = `${hour12}:${minute.toString().padStart(2, '0')} ${displayPeriod}`;
-            return { hour24, minute, display: displayTime };
+            let display = `${hour12}:${minute.toString().padStart(2,'0')} ${period}`;
+            return { hour: hour24, minute, display };
         }
-
-        match = clean.match(/(\d{1,2}):(\d{2})\s*([مص])/);
-        if (match) {
-            let hour = parseInt(match[1]);
-            minute = parseInt(match[2]);
-            let period = match[3];
-            if (period === 'م') {
-                hour24 = hour === 12 ? 12 : hour + 12;
-            } else {
-                hour24 = hour === 12 ? 0 : hour;
-            }
-            let hour12 = hour24 % 12 || 12;
-            let displayPeriod = hour24 < 12 ? 'ص' : 'م';
-            displayTime = `${hour12}:${minute.toString().padStart(2, '0')} ${displayPeriod}`;
-            return { hour24, minute, display: displayTime };
-        }
-
-        if (clean.includes('12:00:00 ص')) return { hour24: 0, minute: 0, display: '12:00 ص' };
-        if (clean.includes('12:00:00 م')) return { hour24: 12, minute: 0, display: '12:00 م' };
-
-        return { hour24: 12, minute: 0, display: '12:00 م' };
+        return { hour: 12, minute: 0, display: '12:00 م' };
     }
 
     async function fetchData() {
-        const statusSpan = document.getElementById('status');
-        statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري...';
-
+        document.getElementById('status').innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري...';
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:Z500?key=${API_KEY}`;
-            const response = await fetch(url);
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            const data = await response.json();
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
             const rows = data.values;
-
-            if (!rows || rows.length < 2) {
-                throw new Error("لا توجد بيانات");
-            }
-
-            const events = [];
-
+            if (!rows || rows.length < 2) throw new Error("لا توجد بيانات");
+            
+            let events = [];
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 if (!row) continue;
-
                 const name = row[COL_NAME] || 'غير محدد';
                 const phone = row[COL_PHONE] || '';
                 const city = row[COL_CITY] || '';
                 const address = row[COL_ADDRESS] || '';
                 const notes = row[COL_NOTES] || '';
-
-                // المعاينة
+                
+                // معاينة
                 const appDate = row[COL_APPOINTMENT_DATE];
                 const appTime = row[COL_APPOINTMENT_TIME] || '';
-
-                if (appDate && appDate.toString().trim() && appDate !== 'FALSE') {
-                    const dateObj = parseDate(appDate);
-                    if (dateObj) {
-                        const timeInfo = parseTime(appTime);
-                        dateObj.setHours(timeInfo.hour24, timeInfo.minute, 0);
-                        events.push({
-                            id: `app_${i}`, title: name, type: TYPE_APPOINTMENT,
-                            date: dateObj, displayTime: timeInfo.display,
-                            phone: phone, city: city, address: address, notes: notes
-                        });
+                if (appDate && appDate !== 'FALSE' && appDate.toString().trim()) {
+                    const d = parseDate(appDate);
+                    if (d) {
+                        const t = parseTime(appTime);
+                        d.setHours(t.hour, t.minute);
+                        events.push({ id: `app_${i}`, title: name, type: TYPE_APPOINTMENT, date: d, displayTime: t.display, phone, city, address, notes });
                     }
                 }
-
-                // متابعة من العمود L
-                const cbLDate = row[COL_CALLBACK_L_DATE];
-                const cbLNotes = row[COL_CALLBACK_L_NOTES] || '';
-
-                if (cbLDate && cbLDate.toString().trim() && cbLDate !== 'FALSE') {
-                    const dateObj = parseDate(cbLDate);
-                    if (dateObj) {
-                        events.push({
-                            id: `cbL_${i}`, title: name, type: TYPE_CALLBACK_L,
-                            date: dateObj, displayTime: '', phone: phone,
-                            city: city, address: address, notes: cbLNotes || notes || 'متابعة المكالمة'
-                        });
-                    }
+                // متابعة L
+                const cbL = row[COL_CALLBACK_L_DATE];
+                if (cbL && cbL !== 'FALSE' && cbL.toString().trim()) {
+                    const d = parseDate(cbL);
+                    if (d) events.push({ id: `cbL_${i}`, title: name, type: TYPE_CALLBACK_L, date: d, displayTime: '', phone, city, address, notes: row[COL_CALLBACK_L_NOTES] || notes });
                 }
-
-                // متابعة من العمود S
-                const cbSDate = row[COL_CALLBACK_S_DATE];
-                const cbSNotes = row[COL_CALLBACK_S_NOTES] || '';
-
-                if (cbSDate && cbSDate.toString().trim() && cbSDate !== 'FALSE') {
-                    const dateObj = parseDate(cbSDate);
-                    if (dateObj) {
-                        events.push({
-                            id: `cbS_${i}`, title: name, type: TYPE_CALLBACK_S,
-                            date: dateObj, displayTime: '', phone: phone,
-                            city: city, address: address, notes: cbSNotes || notes || 'متابعة المعاينة'
-                        });
-                    }
+                // متابعة S
+                const cbS = row[COL_CALLBACK_S_DATE];
+                if (cbS && cbS !== 'FALSE' && cbS.toString().trim()) {
+                    const d = parseDate(cbS);
+                    if (d) events.push({ id: `cbS_${i}`, title: name, type: TYPE_CALLBACK_S, date: d, displayTime: '', phone, city, address, notes: row[COL_CALLBACK_S_NOTES] || notes });
                 }
             }
-
-            if (events.length === 0) {
-                throw new Error("لم يتم العثور على أي مواعيد");
-            }
-
-            statusSpan.innerHTML = `✅ ${events.length} موعد`;
+            document.getElementById('status').innerHTML = `✅ ${events.length} موعد`;
             return events;
-
-        } catch (error) {
-            console.error("خطأ:", error);
-            statusSpan.innerHTML = '❌ فشل الجلب';
+        } catch(e) {
+            document.getElementById('status').innerHTML = '❌ فشل الجلب';
             return [];
         }
     }
@@ -424,24 +231,9 @@
     function updateStats(events) {
         const totalApp = events.filter(e => e.type === TYPE_APPOINTMENT).length;
         const totalCb = events.filter(e => e.type !== TYPE_APPOINTMENT).length;
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const todayApp = events.filter(e => {
-            if (e.type !== TYPE_APPOINTMENT) return false;
-            const evDate = new Date(e.date);
-            evDate.setHours(0, 0, 0, 0);
-            return evDate.getTime() === today.getTime();
-        }).length;
-
-        const todayCb = events.filter(e => {
-            if (e.type === TYPE_APPOINTMENT) return false;
-            const evDate = new Date(e.date);
-            evDate.setHours(0, 0, 0, 0);
-            return evDate.getTime() === today.getTime();
-        }).length;
-
+        const today = new Date(); today.setHours(0,0,0,0);
+        const todayApp = events.filter(e => e.type === TYPE_APPOINTMENT && new Date(e.date).setHours(0,0,0,0) === today.getTime()).length;
+        const todayCb = events.filter(e => e.type !== TYPE_APPOINTMENT && new Date(e.date).setHours(0,0,0,0) === today.getTime()).length;
         document.getElementById('totalApp').innerText = totalApp;
         document.getElementById('totalCb').innerText = totalCb;
         document.getElementById('todayApp').innerText = todayApp;
@@ -450,146 +242,82 @@
 
     function renderEventList(events) {
         const container = document.getElementById('eventList');
-        if (events.length === 0) {
-            container.innerHTML = '<div class="loading"><p>✨ لا توجد مواعيد في النطاق المحدد</p></div>';
-            return;
-        }
-
-        const sorted = [...events].sort((a, b) => a.date - b.date);
+        if (!events.length) { container.innerHTML = '<div class="loading"><p>لا توجد مواعيد</p></div>'; return; }
         let html = '';
-
-        for (const ev of sorted) {
-            const dateStr = ev.date.toLocaleDateString('ar-EG', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
-            const timeDisplay = ev.displayTime ? `🕐 ${ev.displayTime}` : '';
-            const isCallback = (ev.type !== TYPE_APPOINTMENT);
-            let typeIcon = isCallback ? (ev.type === TYPE_CALLBACK_L ? '📞' : '📋') : '🏢';
-
-            html += `
-                <div class="event-item ${isCallback ? 'callback' : ''}" onclick="showDetails('${ev.title.replace(/'/g, "\\'")}', '${dateStr}', '${timeDisplay}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${ev.type}')">
-                    <div class="event-title">
-                        <div class="event-name">
-                            <i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i>
-                            <span>${ev.title}</span>
-                        </div>
-                        <span class="event-type ${isCallback ? 'callback-badge' : ''}">${typeIcon} ${ev.type}</span>
-                    </div>
-                    <div class="event-details">
-                        <span><i class="far fa-calendar-alt"></i> ${dateStr}</span>
-                        ${timeDisplay ? `<span>${timeDisplay}</span>` : ''}
-                        <span><i class="fas fa-phone"></i> <span class="event-phone">${ev.phone || 'غير متوفر'}</span></span>
-                    </div>
-                </div>
-            `;
+        for (const ev of [...events].sort((a,b)=>a.date-b.date)) {
+            const dateStr = ev.date.toLocaleDateString('ar-EG', { year:'numeric', month:'short', day:'numeric' });
+            const isCallback = ev.type !== TYPE_APPOINTMENT;
+            html += `<div class="event-item ${isCallback ? 'callback' : ''}" onclick="Swal.fire({title:'${ev.title.replace(/'/g,"\\'")}', html:'<div style=\"text-align:right\"><p><strong>النوع:</strong> ${ev.type}</p><p><strong>التاريخ:</strong> ${dateStr}</p>${ev.displayTime ? `<p><strong>الوقت:</strong> ${ev.displayTime}</p>` : ''}<p><strong>الهاتف:</strong> ${ev.phone || 'غير متوفر'}</p><p><strong>الموقع:</strong> ${ev.city || ''} ${ev.address || ''}</p><p><strong>الملاحظات:</strong> ${ev.notes || 'لا توجد'}</p></div>', icon:'${isCallback ? 'warning' : 'info'}'})">
+                <div class="event-title"><div class="event-name"><i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i> ${ev.title}</div><span class="event-type">${ev.type}</span></div>
+                <div class="event-details"><span>📅 ${dateStr}</span>${ev.displayTime ? `<span>🕐 ${ev.displayTime}</span>` : ''}<span>📞 <span class="event-phone">${ev.phone || 'غير متوفر'}</span></span></div>
+            </div>`;
         }
         container.innerHTML = html;
     }
 
-    function showDetails(title, date, time, phone, city, address, notes, type) {
-        let locationHtml = '';
-        if (city || address) {
-            locationHtml = `<hr><p><i class="fas fa-map-marker-alt"></i> <strong>الموقع:</strong><br>${city ? `🏙️ ${city}<br>` : ''}${address ? `📍 ${address}` : ''}</p>`;
-        }
-
-        Swal.fire({
-            title: title,
-            html: `<div style="text-align:right">
-                <p><i class="fas fa-tag"></i> <strong>النوع:</strong> ${type}</p>
-                <p><i class="far fa-calendar-alt"></i> <strong>التاريخ:</strong> ${date}</p>
-                ${time ? `<p><i class="far fa-clock"></i> <strong>الوقت:</strong> ${time.replace('🕐 ', '')}</p>` : ''}
-                <p><i class="fas fa-phone"></i> <strong>الهاتف:</strong> ${phone || 'غير متوفر'}</p>
-                ${locationHtml}
-                <hr>
-                <p><i class="fas fa-sticky-note"></i> <strong>الملاحظات:</strong> ${notes || 'لا توجد'}</p>
-            </div>`,
-            icon: type.includes('معاينة') ? 'info' : 'warning',
-            confirmButtonColor: '#c9a03d',
-            confirmButtonText: 'إغلاق'
-        });
-    }
-
     function initCalendar(events) {
-        const calendarEl = document.getElementById('calendar');
-        
-        // تدمير التقويم القديم إذا كان موجوداً
-        if (calendar) {
-            calendar.destroy();
-            calendar = null;
-        }
-
-        if (events.length === 0) {
-            calendarEl.innerHTML = '<div class="loading"><p>لا توجد مواعيد في النطاق المحدد</p></div>';
-            return;
-        }
-
-        const fcEvents = events.map(ev => {
-            let color = '#c9a03d';
-            let icon = '🏢';
-            if (ev.type === TYPE_CALLBACK_L) { color = '#e67e22'; icon = '📞'; }
-            if (ev.type === TYPE_CALLBACK_S) { color = '#3b82f6'; icon = '📋'; }
-
-            let titleWithTime = ev.title;
-            if (ev.displayTime && ev.displayTime !== '') {
-                titleWithTime = `${ev.title} (${ev.displayTime})`;
-            }
-
-            return {
-                id: ev.id, title: `${icon} ${titleWithTime}`,
-                start: ev.date, backgroundColor: color,
-                extendedProps: { phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, displayTime: ev.displayTime, type: ev.type }
-            };
-        });
-
-        calendar = new FullCalendar.Calendar(calendarEl, {
+        const el = document.getElementById('calendar');
+        if (calendar) { calendar.destroy(); calendar = null; }
+        if (!events.length) { el.innerHTML = '<div class="loading"><p>لا توجد مواعيد</p></div>'; return; }
+        const fcEvents = events.map(ev => ({
+            id: ev.id, title: `${ev.type === TYPE_APPOINTMENT ? '🏢' : (ev.type === TYPE_CALLBACK_L ? '📞' : '📋')} ${ev.title}${ev.displayTime ? ` (${ev.displayTime})` : ''}`,
+            start: ev.date, backgroundColor: ev.type === TYPE_APPOINTMENT ? '#c9a03d' : (ev.type === TYPE_CALLBACK_L ? '#e67e22' : '#3b82f6'),
+            extendedProps: { phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, type: ev.type }
+        }));
+        calendar = new FullCalendar.Calendar(el, {
             initialView: 'dayGridMonth', locale: 'ar', direction: 'rtl',
-            headerToolbar: { left: 'prev,next today', center: 'title', right: window.innerWidth < 768 ? '' : 'dayGridMonth,listWeek' },
-            buttonText: { today: 'اليوم', month: 'شهر', week: 'أسبوع', list: 'قائمة' },
+            headerToolbar: { left: 'prev,next today', center: 'title', right: window.innerWidth < 768 ? '' : 'dayGridMonth' },
+            buttonText: { today: 'اليوم', month: 'شهر' },
             events: fcEvents,
             eventClick: (info) => {
                 const ext = info.event.extendedProps;
-                const dateStr = info.event.start.toLocaleDateString('ar-EG', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
-                const timeDisplay = ext.displayTime ? `🕐 ${ext.displayTime}` : '';
-                showDetails(info.event.title.replace(/^[🏢📞📋] /, '').replace(/\([^)]*\)/, '').trim(), dateStr, timeDisplay, ext.phone, ext.city, ext.address, ext.notes, ext.type);
+                Swal.fire({ title: info.event.title.replace(/^[🏢📞📋] /, ''), html: `<div style="text-align:right"><p><strong>النوع:</strong> ${ext.type}</p><p><strong>التاريخ:</strong> ${info.event.start.toLocaleDateString('ar-EG')}</p><p><strong>الهاتف:</strong> ${ext.phone || 'غير متوفر'}</p><p><strong>الموقع:</strong> ${ext.city || ''} ${ext.address || ''}</p><p><strong>الملاحظات:</strong> ${ext.notes || 'لا توجد'}</p></div>`, icon: ext.type === TYPE_APPOINTMENT ? 'info' : 'warning' });
             },
             height: 'auto', firstDay: 6
         });
-        
         calendar.render();
     }
 
-    function setFilter(filter) {
-        currentFilterType = filter;
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.filter === filter);
-        });
+    function setFilter(f) {
+        currentFilter = f;
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.filter === f));
         updateDisplay();
     }
 
-    async function refreshDashboard() {
-        const events = await fetchData();
-        if (events.length > 0) {
-            allEvents = events;
-            updateDisplay();
-        }
+    function applyDateFilter() {
+        const startInput = document.getElementById('startDate'), endInput = document.getElementById('endDate');
+        startDate = startInput.value ? new Date(startInput.value) : null;
+        endDate = endInput.value ? new Date(endInput.value) : null;
+        if (startDate) startDate.setHours(0,0,0,0);
+        if (endDate) endDate.setHours(23,59,59,999);
+        const info = document.getElementById('rangeInfo');
+        if (startDate && endDate) info.innerHTML = `📅 ${startDate.toLocaleDateString('ar-EG')} - ${endDate.toLocaleDateString('ar-EG')}`;
+        else if (startDate) info.innerHTML = `📅 من ${startDate.toLocaleDateString('ar-EG')}`;
+        else if (endDate) info.innerHTML = `📅 حتى ${endDate.toLocaleDateString('ar-EG')}`;
+        else info.innerHTML = '📅 جميع المواعيد';
+        updateDisplay();
     }
 
-    // Event Listeners
-    window.addEventListener('load', () => {
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => setFilter(btn.dataset.filter));
-        });
-        document.getElementById('refreshBtn').addEventListener('click', refreshDashboard);
-        document.getElementById('applyDateRangeBtn').addEventListener('click', applyDateRangeFilter);
-        document.getElementById('clearDateRangeBtn').addEventListener('click', clearDateRangeFilter);
+    function clearDateFilter() {
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        startDate = null; endDate = null;
+        document.getElementById('rangeInfo').innerHTML = '📅 جميع المواعيد';
+        updateDisplay();
+    }
 
-        // تعيين الفلتر الافتراضي لأبريل 2026
+    async function refresh() { const e = await fetchData(); if (e.length) { allEvents = e; updateDisplay(); } }
+
+    window.addEventListener('load', () => {
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => setFilter(btn.dataset.filter)));
+        document.getElementById('refreshBtn').addEventListener('click', refresh);
+        document.getElementById('applyDateRangeBtn').addEventListener('click', applyDateFilter);
+        document.getElementById('clearDateRangeBtn').addEventListener('click', clearDateFilter);
         document.getElementById('startDate').value = '2026-04-01';
         document.getElementById('endDate').value = '2026-04-30';
-        currentStartDate = new Date(2026, 3, 1);
-        currentEndDate = new Date(2026, 3, 30, 23, 59, 59);
-        document.getElementById('rangeInfo').innerHTML = '📅 1/4/2026 - 30/4/2026';
-
-        refreshDashboard();
-        setInterval(refreshDashboard, 300000);
+        startDate = new Date(2026, 3, 1); endDate = new Date(2026, 3, 30, 23, 59, 59);
+        refresh();
+        setInterval(refresh, 300000);
     });
 </script>
 </body>
