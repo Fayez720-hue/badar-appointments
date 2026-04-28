@@ -2,8 +2,12 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>نظام إدارة العقارات - المعاينات والمتابعات</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#c9a03d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ar.js"></script>
@@ -83,7 +87,7 @@
         .footer-note { margin-top: 20px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 25px; }
         .error-message { text-align: center; padding: 30px; background: #fee2e2; border-radius: 16px; margin: 20px; }
         
-        /* إشعارات داخل التطبيق - تعمل على الجوال */
+        /* إشعارات داخل التطبيق - تعمل على جميع الأجهزة */
         .in-app-toast {
             position: fixed;
             bottom: 20px;
@@ -127,6 +131,18 @@
         .notification-title { font-weight: bold; font-size: 0.85rem; }
         .notification-message { font-size: 0.7rem; color: #666; margin-top: 4px; }
         .notification-time { font-size: 0.6rem; color: #999; margin-top: 4px; }
+        
+        /* زر تثبيت التطبيق */
+        .install-btn {
+            background: #c9a03d;
+            border: none;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -184,7 +200,6 @@
     </div>
 </div>
 
-<!-- لوحة الإشعارات -->
 <div class="notification-panel" id="notificationPanel">
     <div class="notification-header">
         <span><i class="fas fa-bell"></i> الإشعارات</span>
@@ -196,7 +211,71 @@
 </div>
 
 <script>
-    // ======================= إعدادات Google Sheets =======================
+    // تسجيل Service Worker للإشعارات (للتطبيقات المثبتة)
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').then(reg => {
+            console.log('Service Worker registered');
+        }).catch(err => {
+            console.log('Service Worker registration failed:', err);
+        });
+    }
+    
+    // دالة لإرسال إشعارات داخل التطبيق (تعمل على الجوال)
+    function showInAppNotification(title, message, type) {
+        const toast = document.createElement('div');
+        toast.className = `in-app-toast ${type === 'overlap' ? 'overlap' : 'warning'}`;
+        const icon = type === 'overlap' ? '⚠️' : '🔔';
+        toast.innerHTML = `<strong>${icon} ${title}</strong><br><small>${message}</small>`;
+        toast.onclick = () => toast.remove();
+        document.body.appendChild(toast);
+        setTimeout(() => { if (toast.parentNode) toast.remove(); }, 8000);
+    }
+    
+    // دالة لإضافة إشعار إلى القائمة
+    function addToNotificationList(title, message, type) {
+        const list = document.getElementById('notificationList');
+        const notifDiv = document.createElement('div');
+        notifDiv.className = 'notification-item unread';
+        notifDiv.innerHTML = `
+            <div class="notification-title">${title}</div>
+            <div class="notification-message">${message}</div>
+            <div class="notification-time">الآن</div>
+        `;
+        notifDiv.onclick = () => {
+            notifDiv.classList.remove('unread');
+            updateNotificationCount();
+        };
+        list.insertBefore(notifDiv, list.firstChild);
+        
+        // إزالة رسالة "لا توجد إشعارات"
+        if (list.children.length > 0 && list.children[0].innerText.includes('لا توجد إشعارات')) {
+            list.innerHTML = '';
+            list.appendChild(notifDiv);
+        }
+        
+        updateNotificationCount();
+        
+        // عرض الإشعار المنبثق
+        showInAppNotification(title, message, type);
+    }
+    
+    function updateNotificationCount() {
+        const unread = document.querySelectorAll('#notificationList .notification-item.unread').length;
+        const badge = document.getElementById('notificationCount');
+        if (unread > 0) {
+            badge.style.display = 'flex';
+            badge.innerText = unread > 9 ? '9+' : unread;
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+    
+    function clearAllNotifications() {
+        document.getElementById('notificationList').innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">لا توجد إشعارات</div>';
+        updateNotificationCount();
+    }
+    
+    // ======================= باقي الكود (جلب البيانات، التقويم، إلخ) =======================
     const SPREADSHEET_ID = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
     const SHEET_NAME = 'مبيعات';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
@@ -206,216 +285,61 @@
     const COL_CB_L_DATE = 11, COL_CB_L_NOTES = 13;
     const COL_CB_S_DATE = 18, COL_CB_S_NOTES = 20;
 
-    let allEvents = [];
-    let currentType = 'all';
-    let filterStartDate = null;
-    let filterEndDate = null;
-    let calendar = null;
-    let isLoading = false;
-    let shownOverlapAlerts = new Set();
+    let allEvents = [], currentType = 'all', filterStartDate = null, filterEndDate = null, calendar = null, isLoading = false;
     let shownUpcomingAlerts = new Set();
-    let notifications = [];
-    let notificationId = 0;
-
-    const TYPE_APP = 'معاينة';
-    const TYPE_CB_L = 'متابعة مكالمة';
-    const TYPE_CB_S = 'متابعة معاينة';
-
-    // إضافة إشعار داخل التطبيق
-    function addNotification(title, message, type, eventId) {
-        const id = notificationId++;
-        const notificationKey = `${eventId}_${type}`;
-        
-        if (shownUpcomingAlerts.has(notificationKey)) return;
-        shownUpcomingAlerts.add(notificationKey);
-        
-        notifications.unshift({
-            id: id,
-            title: title,
-            message: message,
-            type: type,
-            time: new Date(),
-            read: false,
-            eventId: eventId
-        });
-        
-        if (notifications.length > 50) notifications.pop();
-        
-        updateNotificationUI();
-        showInAppToast(message, type);
-        
-        // محاولة إرسال إشعار المتصفح إذا كان مسموحاً (للمتصفحات التي تدعم ذلك)
-        if (Notification.permission === 'granted' && window.innerWidth >= 768) {
-            new Notification(title, { body: message });
-        }
-    }
-    
-    // طلب إذن الإشعارات (للمتصفحات التي تدعمها)
-    function requestNotificationPermission() {
-        if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied' && window.innerWidth >= 768) {
-            Notification.requestPermission();
-        }
-    }
-    
-    // إشعار داخل التطبيق (يعمل على الجوال)
-    function showInAppToast(message, type) {
-        const toast = document.createElement('div');
-        toast.className = `in-app-toast ${type === 'overlap' ? 'overlap' : 'warning'}`;
-        const icon = type === 'overlap' ? '⚠️' : '🔔';
-        toast.innerHTML = `${icon} ${message}<br><small style="font-size: 10px;">اضغط للإغلاق</small>`;
-        toast.onclick = () => toast.remove();
-        document.body.appendChild(toast);
-        
-        // إزالة الإشعار تلقائياً بعد 6 ثوانٍ
-        setTimeout(() => {
-            if (toast.parentNode) toast.remove();
-        }, 6000);
-    }
-    
-    function updateNotificationUI() {
-        const unreadCount = notifications.filter(n => !n.read).length;
-        const countBadge = document.getElementById('notificationCount');
-        if (unreadCount > 0) {
-            countBadge.style.display = 'flex';
-            countBadge.innerText = unreadCount > 9 ? '9+' : unreadCount;
-        } else {
-            countBadge.style.display = 'none';
-        }
-        
-        const container = document.getElementById('notificationList');
-        if (notifications.length === 0) {
-            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">لا توجد إشعارات</div>';
-            return;
-        }
-        
-        let html = '';
-        for (const n of notifications) {
-            const timeStr = formatTimeAgo(n.time);
-            html += `
-                <div class="notification-item ${!n.read ? 'unread' : ''}" onclick="markNotificationRead(${n.id})">
-                    <div class="notification-title">${n.title}</div>
-                    <div class="notification-message">${n.message}</div>
-                    <div class="notification-time">${timeStr}</div>
-                </div>
-            `;
-        }
-        container.innerHTML = html;
-    }
-    
-    function formatTimeAgo(date) {
-        const seconds = Math.floor((new Date() - date) / 1000);
-        if (seconds < 60) return 'الآن';
-        const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) return `منذ ${minutes} دقيقة`;
-        const hours = Math.floor(minutes / 60);
-        if (hours < 24) return `منذ ${hours} ساعة`;
-        return `منذ ${Math.floor(hours / 24)} يوم`;
-    }
-    
-    window.markNotificationRead = function(id) {
-        const n = notifications.find(n => n.id === id);
-        if (n) {
-            n.read = true;
-            updateNotificationUI();
-        }
-    };
-    
-    function clearAllNotifications() {
-        notifications = [];
-        updateNotificationUI();
-    }
+    const TYPE_APP = 'معاينة', TYPE_CB_L = 'متابعة مكالمة', TYPE_CB_S = 'متابعة معاينة';
 
     window.showEventDetails = function(title, date, time, phone, city, address, notes, type) {
         let locationHtml = '';
-        if (city || address) {
-            locationHtml = `<p><strong>📍 الموقع:</strong> ${city || ''} ${address || ''}</p>`;
-        }
-        
+        if (city || address) locationHtml = `<p><strong>📍 الموقع:</strong> ${city || ''} ${address || ''}</p>`;
         Swal.fire({
-            title: title,
-            html: `<div style="text-align:right">
-                <p><strong>📋 النوع:</strong> ${type}</p>
-                <p><strong>📅 التاريخ:</strong> ${date}</p>
-                ${time ? `<p><strong>🕐 الوقت:</strong> ${time}</p>` : ''}
-                <p><strong>📞 الهاتف:</strong> ${phone || 'غير متوفر'}</p>
-                ${locationHtml}
-                <p><strong>📝 الملاحظات:</strong> ${notes || 'لا توجد'}</p>
-            </div>`,
-            icon: type === TYPE_APP ? 'info' : 'warning',
-            confirmButtonColor: '#c9a03d',
-            confirmButtonText: 'إغلاق'
+            title: title, html: `<div style="text-align:right"><p><strong>📋 النوع:</strong> ${type}</p><p><strong>📅 التاريخ:</strong> ${date}</p>${time ? `<p><strong>🕐 الوقت:</strong> ${time}</p>` : ''}<p><strong>📞 الهاتف:</strong> ${phone || 'غير متوفر'}</p>${locationHtml}<p><strong>📝 الملاحظات:</strong> ${notes || 'لا توجد'}</p></div>`,
+            icon: type === TYPE_APP ? 'info' : 'warning', confirmButtonColor: '#c9a03d', confirmButtonText: 'إغلاق'
         });
     };
 
-    // كشف التداخلات للمعاينات فقط
     function detectOverlaps(events) {
         const appointmentsOnly = events.filter(e => e.type === TYPE_APP);
         const overlaps = [];
-        
         for (let i = 0; i < appointmentsOnly.length; i++) {
             for (let j = i + 1; j < appointmentsOnly.length; j++) {
-                const event1 = appointmentsOnly[i];
-                const event2 = appointmentsOnly[j];
-                const date1 = new Date(event1.date);
-                const date2 = new Date(event2.date);
-                
-                if (date1.toDateString() === date2.toDateString()) {
-                    const time1 = event1.date.getHours() * 60 + event1.date.getMinutes();
-                    const time2 = event2.date.getHours() * 60 + event2.date.getMinutes();
-                    
-                    if (Math.abs(time1 - time2) < 60) {
-                        overlaps.push({ event1, event2, date: date1 });
-                    }
+                const e1 = appointmentsOnly[i], e2 = appointmentsOnly[j];
+                if (new Date(e1.date).toDateString() === new Date(e2.date).toDateString()) {
+                    const t1 = e1.date.getHours() * 60 + e1.date.getMinutes();
+                    const t2 = e2.date.getHours() * 60 + e2.date.getMinutes();
+                    if (Math.abs(t1 - t2) < 60) overlaps.push({ event1: e1, event2: e2, date: new Date(e1.date) });
                 }
             }
         }
         return overlaps;
     }
     
-    // كشف المواعيد القادمة خلال 24 ساعة
     function detectUpcomingEvents(events) {
-        const now = new Date();
-        const next24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-        const upcoming = [];
-        
-        for (const ev of events) {
-            const eventDate = new Date(ev.date);
-            if (eventDate < now) continue;
-            if (eventDate <= next24Hours) {
-                upcoming.push(ev);
-            }
-        }
-        return upcoming;
+        const now = new Date(), next24 = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        return events.filter(ev => { const ed = new Date(ev.date); return ed >= now && ed <= next24; });
     }
     
-    function showUpcomingNotifications(upcomingEvents) {
-        for (const ev of upcomingEvents) {
-            const eventDate = new Date(ev.date);
-            const hoursDiff = Math.round((eventDate - new Date()) / (1000 * 60 * 60));
-            let timeText = '';
-            if (hoursDiff < 1) {
-                timeText = 'خلال أقل من ساعة';
-            } else if (hoursDiff === 1) {
-                timeText = 'بعد ساعة';
-            } else {
-                timeText = `بعد ${hoursDiff} ساعات`;
-            }
-            
+    function showUpcomingNotifications(upcoming) {
+        for (const ev of upcoming) {
+            const key = `upcoming_${ev.id}`;
+            if (shownUpcomingAlerts.has(key)) continue;
+            shownUpcomingAlerts.add(key);
+            const hours = Math.round((new Date(ev.date) - new Date()) / (1000 * 60 * 60));
+            const timeText = hours < 1 ? 'خلال أقل من ساعة' : `بعد ${hours} ساعات`;
             const title = `🔔 ${ev.type === TYPE_APP ? 'معاينة' : 'متابعة'} قريب`;
-            const message = `${ev.title} - ${timeText} (${eventDate.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })})`;
-            addNotification(title, message, 'upcoming', ev.id);
+            const message = `${ev.title} - ${timeText}`;
+            addToNotificationList(title, message, 'upcoming');
         }
     }
     
     function showOverlapAlerts(overlaps) {
         for (const ov of overlaps) {
-            const dateStr = ov.date.toLocaleDateString('ar-EG');
-            const time1Str = ov.event1.displayTime || `${ov.event1.date.getHours()}:${ov.event1.date.getMinutes().toString().padStart(2, '0')}`;
-            const time2Str = ov.event2.displayTime || `${ov.event2.date.getHours()}:${ov.event2.date.getMinutes().toString().padStart(2, '0')}`;
-            
+            const key = `overlap_${ov.event1.id}_${ov.event2.id}`;
+            if (shownUpcomingAlerts.has(key)) continue;
+            shownUpcomingAlerts.add(key);
             const title = `⚠️ تداخل في مواعيد المعاينات`;
-            const message = `${dateStr}: ${ov.event1.title} (${time1Str}) و ${ov.event2.title} (${time2Str})`;
-            addNotification(title, message, 'overlap', `${ov.event1.id}_${ov.event2.id}`);
+            const message = `${ov.date.toLocaleDateString('ar-EG')}: ${ov.event1.title} و ${ov.event2.title}`;
+            addToNotificationList(title, message, 'overlap');
         }
     }
 
@@ -424,23 +348,13 @@
         let s = dateStr.toString().trim();
         if (s === 'FALSE' || s === 'TRUE' || s === '') return null;
         s = s.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
-        
         let parts = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
         if (!parts) parts = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})/);
         if (!parts) parts = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
         if (!parts) return null;
-        
         let day, month, year;
-        if (parts[1].length === 4) {
-            year = parseInt(parts[1]);
-            month = parseInt(parts[2]) - 1;
-            day = parseInt(parts[3]);
-        } else {
-            day = parseInt(parts[1]);
-            month = parseInt(parts[2]) - 1;
-            year = parseInt(parts[3]);
-        }
-        
+        if (parts[1].length === 4) { year = parseInt(parts[1]); month = parseInt(parts[2])-1; day = parseInt(parts[3]); }
+        else { day = parseInt(parts[1]); month = parseInt(parts[2])-1; year = parseInt(parts[3]); }
         let d = new Date(year, month, day, 12, 0);
         return !isNaN(d.getTime()) ? d : null;
     }
@@ -449,7 +363,6 @@
         if (!timeStr) return { hour: 12, minute: 0, display: '' };
         let s = timeStr.toString().trim();
         if (s === 'FALSE' || s === 'TRUE' || s === '') return { hour: 12, minute: 0, display: '' };
-        
         let match = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*([مص])/);
         if (match) {
             let hour = parseInt(match[1]), minute = parseInt(match[2]), period = match[3];
@@ -464,184 +377,77 @@
     async function fetchRealData() {
         const statusSpan = document.getElementById('status');
         statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جلب البيانات...';
-        
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:Z500?key=${API_KEY}`;
             const response = await fetch(url);
-            
-            if (!response.ok) {
-                if (response.status === 403) throw new Error('خطأ 403: يرجى مشاركة الجدول كـ "عام"');
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
+            if (!response.ok) throw new Error('فشل الاتصال');
             const data = await response.json();
             const rows = data.values;
-            if (!rows || rows.length < 2) throw new Error('لا توجد بيانات في الجدول');
-            
+            if (!rows || rows.length < 2) throw new Error('لا توجد بيانات');
             const events = [];
-            
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 if (!row) continue;
-                
                 const name = row[COL_NAME] || 'غير محدد';
                 const phone = row[COL_PHONE] || '';
                 const city = row[COL_CITY] || '';
                 const address = row[COL_ADDRESS] || '';
                 const notes = row[COL_NOTES] || '';
                 
-                const appDate = row[COL_APP_DATE];
-                const appTime = row[COL_APP_TIME] || '';
-                
+                const appDate = row[COL_APP_DATE], appTime = row[COL_APP_TIME] || '';
                 if (appDate && appDate !== 'FALSE' && appDate.toString().trim()) {
                     const d = parseDate(appDate);
                     if (d) {
                         const t = parseTime(appTime);
                         d.setHours(t.hour, t.minute);
-                        events.push({
-                            id: `app_${i}`,
-                            title: name,
-                            type: TYPE_APP,
-                            date: d,
-                            displayTime: t.display,
-                            phone: phone,
-                            city: city,
-                            address: address,
-                            notes: notes
-                        });
+                        events.push({ id: `app_${i}`, title: name, type: TYPE_APP, date: d, displayTime: t.display, phone, city, address, notes });
                     }
                 }
-                
-                const cbL = row[COL_CB_L_DATE];
-                const cbLNotes = row[COL_CB_L_NOTES] || '';
-                
+                const cbL = row[COL_CB_L_DATE], cbLNotes = row[COL_CB_L_NOTES] || '';
                 if (cbL && cbL !== 'FALSE' && cbL.toString().trim()) {
                     const d = parseDate(cbL);
-                    if (d) {
-                        events.push({
-                            id: `cbL_${i}`,
-                            title: name,
-                            type: TYPE_CB_L,
-                            date: d,
-                            displayTime: '',
-                            phone: phone,
-                            city: city,
-                            address: address,
-                            notes: cbLNotes || notes
-                        });
-                    }
+                    if (d) events.push({ id: `cbL_${i}`, title: name, type: TYPE_CB_L, date: d, displayTime: '', phone, city, address, notes: cbLNotes || notes });
                 }
-                
-                const cbS = row[COL_CB_S_DATE];
-                const cbSNotes = row[COL_CB_S_NOTES] || '';
-                
+                const cbS = row[COL_CB_S_DATE], cbSNotes = row[COL_CB_S_NOTES] || '';
                 if (cbS && cbS !== 'FALSE' && cbS.toString().trim()) {
                     const d = parseDate(cbS);
-                    if (d) {
-                        events.push({
-                            id: `cbS_${i}`,
-                            title: name,
-                            type: TYPE_CB_S,
-                            date: d,
-                            displayTime: '',
-                            phone: phone,
-                            city: city,
-                            address: address,
-                            notes: cbSNotes || notes
-                        });
-                    }
+                    if (d) events.push({ id: `cbS_${i}`, title: name, type: TYPE_CB_S, date: d, displayTime: '', phone, city, address, notes: cbSNotes || notes });
                 }
             }
-            
             statusSpan.innerHTML = `✅ ${events.length} موعد`;
             return events;
-            
         } catch (error) {
-            console.error('خطأ:', error);
             statusSpan.innerHTML = '❌ فشل الجلب';
-            showError(error.message);
             return [];
         }
     }
 
-    function showError(message) {
-        const container = document.getElementById('eventList');
-        container.innerHTML = `
-            <div class="error-message">
-                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #dc2626;"></i>
-                <p style="margin-top: 10px;"><strong>⚠️ ${message}</strong></p>
-                <button onclick="location.reload()" style="margin-top: 15px; padding: 8px 20px; background: #c9a03d; border: none; border-radius: 25px; color: white; cursor: pointer;">🔄 إعادة المحاولة</button>
-            </div>
-        `;
-    }
-
     function refreshAll() {
         if (!allEvents.length) return;
-        
         let filtered = [...allEvents];
-        
-        if (currentType === 'appointment') {
-            filtered = filtered.filter(e => e.type === TYPE_APP);
-        } else if (currentType === 'callback') {
-            filtered = filtered.filter(e => e.type !== TYPE_APP);
-        }
-        
-        if (filterStartDate) {
-            const startTime = filterStartDate.getTime();
-            filtered = filtered.filter(e => {
-                const eventDate = new Date(e.date);
-                eventDate.setHours(0, 0, 0, 0);
-                return eventDate.getTime() >= startTime;
-            });
-        }
-        
-        if (filterEndDate) {
-            const endTime = filterEndDate.getTime();
-            filtered = filtered.filter(e => {
-                const eventDate = new Date(e.date);
-                eventDate.setHours(0, 0, 0, 0);
-                return eventDate.getTime() <= endTime;
-            });
-        }
+        if (currentType === 'appointment') filtered = filtered.filter(e => e.type === TYPE_APP);
+        else if (currentType === 'callback') filtered = filtered.filter(e => e.type !== TYPE_APP);
+        if (filterStartDate) filtered = filtered.filter(e => new Date(e.date).setHours(0,0,0,0) >= filterStartDate.getTime());
+        if (filterEndDate) filtered = filtered.filter(e => new Date(e.date).setHours(0,0,0,0) <= filterEndDate.getTime());
         
         const overlaps = detectOverlaps(filtered);
-        if (overlaps.length > 0) {
-            showOverlapAlerts(overlaps);
-        }
-        
-        const upcomingEvents = detectUpcomingEvents(filtered);
-        if (upcomingEvents.length > 0) {
-            showUpcomingNotifications(upcomingEvents);
-        }
+        if (overlaps.length > 0) showOverlapAlerts(overlaps);
+        const upcoming = detectUpcomingEvents(filtered);
+        if (upcoming.length > 0) showUpcomingNotifications(upcoming);
         
         document.getElementById('eventsCount').innerText = filtered.length;
         updateStats(filtered);
-        renderGroupedList(filtered, overlaps, upcomingEvents);
-        renderCalendar(filtered, overlaps, upcomingEvents);
+        renderGroupedList(filtered, overlaps, upcoming);
+        renderCalendar(filtered, overlaps, upcoming);
     }
 
     function updateStats(events) {
         const totalApp = events.filter(e => e.type === TYPE_APP).length;
         const totalCb = events.filter(e => e.type !== TYPE_APP).length;
-        
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = new Date(); today.setHours(0,0,0,0);
         const todayTime = today.getTime();
-        
-        const todayApp = events.filter(e => {
-            if (e.type !== TYPE_APP) return false;
-            const d = new Date(e.date);
-            d.setHours(0, 0, 0, 0);
-            return d.getTime() === todayTime;
-        }).length;
-        
-        const todayCb = events.filter(e => {
-            if (e.type === TYPE_APP) return false;
-            const d = new Date(e.date);
-            d.setHours(0, 0, 0, 0);
-            return d.getTime() === todayTime;
-        }).length;
-        
+        const todayApp = events.filter(e => e.type === TYPE_APP && new Date(e.date).setHours(0,0,0,0) === todayTime).length;
+        const todayCb = events.filter(e => e.type !== TYPE_APP && new Date(e.date).setHours(0,0,0,0) === todayTime).length;
         document.getElementById('totalApp').innerText = totalApp;
         document.getElementById('totalCb').innerText = totalCb;
         document.getElementById('todayApp').innerText = todayApp;
@@ -650,81 +456,36 @@
 
     function renderGroupedList(events, overlaps, upcomingEvents) {
         const container = document.getElementById('eventList');
-        if (!events.length) {
-            container.innerHTML = '<div class="loading">✨ لا توجد مواعيد في النطاق المحدد</div>';
-            return;
-        }
-        
-        const overlapEventIds = new Set();
-        for (const ov of overlaps) {
-            overlapEventIds.add(ov.event1.id);
-            overlapEventIds.add(ov.event2.id);
-        }
-        
-        const upcomingEventIds = new Set();
-        for (const ev of upcomingEvents) {
-            upcomingEventIds.add(ev.id);
-        }
-        
+        if (!events.length) { container.innerHTML = '<div class="loading">✨ لا توجد مواعيد في النطاق المحدد</div>'; return; }
+        const overlapIds = new Set(overlaps.flatMap(o => [o.event1.id, o.event2.id]));
+        const upcomingIds = new Set(upcomingEvents.map(e => e.id));
         const grouped = {};
         for (const ev of events) {
-            const dateKey = ev.date.toDateString();
-            if (!grouped[dateKey]) grouped[dateKey] = [];
-            grouped[dateKey].push(ev);
+            const key = ev.date.toDateString();
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(ev);
         }
-        
-        const sortedDays = Object.keys(grouped).sort((a, b) => new Date(a) - new Date(b));
-        
+        const sortedDays = Object.keys(grouped).sort((a,b) => new Date(a) - new Date(b));
         let html = '';
         for (const dayKey of sortedDays) {
-            const dayEvents = grouped[dayKey].sort((a, b) => a.date - b.date);
+            const dayEvents = grouped[dayKey].sort((a,b) => a.date - b.date);
             const dateObj = new Date(dayKey);
             const dayName = dateObj.toLocaleDateString('ar-EG', { weekday: 'long' });
             const dateStr = dateObj.toLocaleDateString('ar-EG');
-            
-            html += `<div class="day-group">
-                <div class="day-header">
-                    <i class="fas fa-calendar-day"></i> ${dayName}
-                    <span>${dateStr}</span>
-                    <span class="day-count">${dayEvents.length} مواعيد</span>
-                </div>`;
-            
+            html += `<div class="day-group"><div class="day-header"><i class="fas fa-calendar-day"></i> ${dayName}<span>${dateStr}</span><span class="day-count">${dayEvents.length} مواعيد</span></div>`;
             for (const ev of dayEvents) {
                 const isCallback = ev.type !== TYPE_APP;
                 const icon = isCallback ? (ev.type === TYPE_CB_L ? '📞' : '📋') : '🏢';
                 const timeDisplay = ev.displayTime ? `🕐 ${ev.displayTime}` : '';
-                const isOverlap = overlapEventIds.has(ev.id);
-                const isUpcoming = upcomingEventIds.has(ev.id);
-                let extraClass = '';
-                if (isOverlap) extraClass = 'overlap';
-                else if (isUpcoming) extraClass = 'upcoming';
-                
-                const safeTitle = ev.title.replace(/'/g, "\\'");
-                const safeDate = dateStr.replace(/'/g, "\\'");
-                const safeTime = (ev.displayTime || '').replace(/'/g, "\\'");
-                const safePhone = (ev.phone || '').replace(/'/g, "\\'");
-                const safeCity = (ev.city || '').replace(/'/g, "\\'");
-                const safeAddress = (ev.address || '').replace(/'/g, "\\'");
-                const safeNotes = (ev.notes || '').replace(/'/g, "\\'");
-                const safeType = ev.type.replace(/'/g, "\\'");
-                
-                html += `
-                    <div class="event-item ${isCallback ? 'callback' : ''} ${extraClass}" onclick="showEventDetails('${safeTitle}', '${safeDate}', '${safeTime}', '${safePhone}', '${safeCity}', '${safeAddress}', '${safeNotes}', '${safeType}')">
-                        ${isOverlap ? '<div class="overlap-warning" title="تداخل في مواعيد المعاينات">!</div>' : ''}
-                        ${isUpcoming && !isOverlap ? '<div class="upcoming-badge" title="موعد خلال 24 ساعة">⏰</div>' : ''}
-                        <div class="event-title">
-                            <div class="event-name">
-                                <i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i>
-                                <span>${ev.title}</span>
-                            </div>
-                            <span class="event-type">${icon} ${ev.type}</span>
-                        </div>
-                        <div class="event-details">
-                            ${timeDisplay ? `<span>${timeDisplay}</span>` : ''}
-                            <span>📞 ${ev.phone || 'غير متوفر'}</span>
-                        </div>
-                    </div>
-                `;
+                const isOverlap = overlapIds.has(ev.id);
+                const isUpcoming = upcomingIds.has(ev.id);
+                let extraClass = isOverlap ? 'overlap' : (isUpcoming ? 'upcoming' : '');
+                html += `<div class="event-item ${isCallback ? 'callback' : ''} ${extraClass}" onclick="showEventDetails('${ev.title.replace(/'/g,"\\'")}', '${dateStr}', '${ev.displayTime || ''}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${ev.type}')">
+                    ${isOverlap ? '<div class="overlap-warning" title="تداخل في مواعيد المعاينات">!</div>' : ''}
+                    ${isUpcoming && !isOverlap ? '<div class="upcoming-badge" title="موعد خلال 24 ساعة">⏰</div>' : ''}
+                    <div class="event-title"><div class="event-name"><i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i> ${ev.title}</div><span class="event-type">${icon} ${ev.type}</span></div>
+                    <div class="event-details">${timeDisplay ? `<span>${timeDisplay}</span>` : ''}<span>📞 ${ev.phone || 'غير متوفر'}</span></div>
+                </div>`;
             }
             html += `</div>`;
         }
@@ -732,160 +493,77 @@
     }
 
     function renderCalendar(events, overlaps, upcomingEvents) {
-        const calendarEl = document.getElementById('calendar');
-        
-        if (calendar) {
-            calendar.destroy();
-            calendar = null;
-        }
-        
-        if (!events.length) {
-            calendarEl.innerHTML = '<div class="loading">📅 لا توجد مواعيد في النطاق المحدد</div>';
-            return;
-        }
-        
-        const overlapEventIds = new Set();
-        for (const ov of overlaps) {
-            overlapEventIds.add(ov.event1.id);
-            overlapEventIds.add(ov.event2.id);
-        }
-        
-        const upcomingEventIds = new Set();
-        for (const ev of upcomingEvents) {
-            upcomingEventIds.add(ev.id);
-        }
-        
+        const el = document.getElementById('calendar');
+        if (calendar) { calendar.destroy(); calendar = null; }
+        if (!events.length) { el.innerHTML = '<div class="loading">📅 لا توجد مواعيد</div>'; return; }
+        const overlapIds = new Set(overlaps.flatMap(o => [o.event1.id, o.event2.id]));
+        const upcomingIds = new Set(upcomingEvents.map(e => e.id));
         const fcEvents = events.map(ev => ({
-            id: ev.id,
-            title: `${ev.type === TYPE_APP ? '🏢' : (ev.type === TYPE_CB_L ? '📞' : '📋')} ${ev.title}${ev.displayTime ? ` (${ev.displayTime})` : ''}`,
-            start: ev.date,
-            backgroundColor: overlapEventIds.has(ev.id) ? '#dc2626' : (upcomingEventIds.has(ev.id) ? '#f4b942' : (ev.type === TYPE_APP ? '#c9a03d' : (ev.type === TYPE_CB_L ? '#e67e22' : '#3b82f6'))),
-            className: overlapEventIds.has(ev.id) ? 'overlap-event' : (upcomingEventIds.has(ev.id) ? 'upcoming-event' : ''),
-            extendedProps: {
-                title: ev.title,
-                dateStr: ev.date.toLocaleDateString('ar-EG'),
-                time: ev.displayTime,
-                phone: ev.phone,
-                city: ev.city,
-                address: ev.address,
-                notes: ev.notes,
-                type: ev.type
-            }
+            id: ev.id, title: `${ev.type === TYPE_APP ? '🏢' : (ev.type === TYPE_CB_L ? '📞' : '📋')} ${ev.title}${ev.displayTime ? ` (${ev.displayTime})` : ''}`,
+            start: ev.date, backgroundColor: overlapIds.has(ev.id) ? '#dc2626' : (upcomingIds.has(ev.id) ? '#f4b942' : (ev.type === TYPE_APP ? '#c9a03d' : (ev.type === TYPE_CB_L ? '#e67e22' : '#3b82f6'))),
+            className: overlapIds.has(ev.id) ? 'overlap-event' : (upcomingIds.has(ev.id) ? 'upcoming-event' : ''),
+            extendedProps: { title: ev.title, dateStr: ev.date.toLocaleDateString('ar-EG'), time: ev.displayTime, phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, type: ev.type }
         }));
-        
-        calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            locale: 'ar',
-            direction: 'rtl',
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: window.innerWidth < 768 ? '' : 'dayGridMonth'
-            },
-            buttonText: { today: 'اليوم', month: 'شهر' },
-            events: fcEvents,
-            height: 'auto',
-            firstDay: 6,
-            eventClick: function(info) {
-                const ext = info.event.extendedProps;
-                showEventDetails(
-                    ext.title,
-                    ext.dateStr,
-                    ext.time || '',
-                    ext.phone || '',
-                    ext.city || '',
-                    ext.address || '',
-                    ext.notes || '',
-                    ext.type
-                );
-            }
+        calendar = new FullCalendar.Calendar(el, {
+            initialView: 'dayGridMonth', locale: 'ar', direction: 'rtl',
+            headerToolbar: { left: 'prev,next today', center: 'title', right: window.innerWidth < 768 ? '' : 'dayGridMonth' },
+            buttonText: { today: 'اليوم', month: 'شهر' }, events: fcEvents, height: 'auto', firstDay: 6,
+            eventClick: (info) => { const e = info.event.extendedProps; showEventDetails(e.title, e.dateStr, e.time || '', e.phone || '', e.city || '', e.address || '', e.notes || '', e.type); }
         });
-        
         calendar.render();
-        
-        if (filterStartDate) {
-            const targetDate = new Date(filterStartDate);
-            calendar.gotoDate(targetDate);
-        }
+        if (filterStartDate) calendar.gotoDate(filterStartDate);
     }
 
     function applyDateFilter() {
-        const start = document.getElementById('startDate').value;
-        const end = document.getElementById('endDate').value;
-        
+        const start = document.getElementById('startDate').value, end = document.getElementById('endDate').value;
         filterStartDate = start ? new Date(start) : null;
         filterEndDate = end ? new Date(end) : null;
-        if (filterStartDate) filterStartDate.setHours(0, 0, 0, 0);
-        if (filterEndDate) filterEndDate.setHours(23, 59, 59, 999);
-        
+        if (filterStartDate) filterStartDate.setHours(0,0,0,0);
+        if (filterEndDate) filterEndDate.setHours(23,59,59,999);
         const info = document.getElementById('rangeInfo');
-        if (filterStartDate && filterEndDate) {
-            const startMonth = filterStartDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
-            info.innerText = startMonth;
-        } else if (filterStartDate) {
-            info.innerText = `من ${filterStartDate.toLocaleDateString('ar-EG')}`;
-        } else if (filterEndDate) {
-            info.innerText = `حتى ${filterEndDate.toLocaleDateString('ar-EG')}`;
-        } else {
-            info.innerText = 'جميع المواعيد';
-        }
-        
+        if (filterStartDate && filterEndDate) info.innerText = filterStartDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+        else if (filterStartDate) info.innerText = `من ${filterStartDate.toLocaleDateString('ar-EG')}`;
+        else if (filterEndDate) info.innerText = `حتى ${filterEndDate.toLocaleDateString('ar-EG')}`;
+        else info.innerText = 'جميع المواعيد';
         refreshAll();
     }
 
     function clearDateFilter() {
         document.getElementById('startDate').value = '';
         document.getElementById('endDate').value = '';
-        filterStartDate = null;
-        filterEndDate = null;
+        filterStartDate = null; filterEndDate = null;
         document.getElementById('rangeInfo').innerText = 'جميع المواعيد';
         refreshAll();
     }
 
     function setTypeFilter(type) {
         currentType = type;
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.filter === type);
-        });
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.filter === type));
         refreshAll();
     }
 
     async function loadData() {
         if (isLoading) return;
         isLoading = true;
-        
         const events = await fetchRealData();
-        if (events.length > 0) {
-            allEvents = events;
-            refreshAll();
-        }
-        
+        if (events.length > 0) { allEvents = events; refreshAll(); }
         isLoading = false;
     }
 
     window.addEventListener('load', () => {
-        requestNotificationPermission();
-        
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => setTypeFilter(btn.dataset.filter));
-        });
-        
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => setTypeFilter(btn.dataset.filter)));
         document.getElementById('refreshBtn').addEventListener('click', loadData);
         document.getElementById('applyDateBtn').addEventListener('click', applyDateFilter);
         document.getElementById('clearDateBtn').addEventListener('click', clearDateFilter);
         
         const bell = document.getElementById('notificationBell');
         const panel = document.getElementById('notificationPanel');
-        bell.addEventListener('click', () => {
-            panel.classList.toggle('show');
+        bell.addEventListener('click', () => panel.classList.toggle('show'));
+        document.getElementById('clearNotificationsBtn').addEventListener('click', () => {
+            document.getElementById('notificationList').innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">لا توجد إشعارات</div>';
+            updateNotificationCount();
         });
-        document.getElementById('clearNotificationsBtn').addEventListener('click', clearAllNotifications);
-        
-        document.addEventListener('click', (e) => {
-            if (!bell.contains(e.target) && !panel.contains(e.target)) {
-                panel.classList.remove('show');
-            }
-        });
+        document.addEventListener('click', (e) => { if (!bell.contains(e.target) && !panel.contains(e.target)) panel.classList.remove('show'); });
         
         loadData();
         setInterval(loadData, 300000);
