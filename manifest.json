@@ -1,0 +1,21 @@
+{
+  "name": "نظام إدارة العقارات",
+  "short_name": "عقارات",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#1a472a",
+  "theme_color": "#c9a03d",
+  "description": "نظام إدارة المعاينات والمتابعات للعقارات",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/color/96/real-estate.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "https://img.icons8.com/color/144/real-estate.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    }
+  ]
+}
