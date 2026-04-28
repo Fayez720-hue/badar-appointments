@@ -6,7 +6,6 @@
     <title>نظام إدارة العقارات - المعاينات والمتابعات</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#c9a03d">
-    <!-- تم استبدال العلامة القديمة بالعلامة المقترحة -->
     <meta name="mobile-web-app-capable" content="yes">
     <link rel="apple-touch-icon" href="https://img.icons8.com/color/96/real-estate.png">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
@@ -15,7 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* جميع الـ CSS كما هي بدون تغيير */
+        /* جميع الأنماط كما هي بالكامل دون تغيير */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', sans-serif; }
         body { background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 100%); min-height: 100vh; padding: 15px; direction: rtl; }
         .dashboard-container { max-width: 1600px; margin: 0 auto; }
@@ -25,7 +24,7 @@
         .filter-btn { padding: 5px 15px; border-radius: 30px; border: none; cursor: pointer; font-size: 0.75rem; background: transparent; }
         .filter-btn.active { background: #c9a03d; color: white; }
         .refresh-btn { background: #c9a03d; border: none; color: white; padding: 5px 15px; border-radius: 25px; cursor: pointer; margin-right: 10px; }
-        .test-notif-btn { background: #3b82f6; border: none; color: white; padding: 5px 12px; border-radius: 25px; cursor: pointer; font-size: 0.7rem; margin-right: 10px; }
+        /* زر اختبار الإشعار تمت إزالته من HTML وبالتالي نزيل تنسيقه */
         .status-badge { background: #eef2ff; padding: 5px 12px; border-radius: 25px; font-size: 0.7rem; }
         .date-range-filter { background: white; border-radius: 18px; padding: 12px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; border: 1px solid #eee; }
         .date-range-filter input { padding: 6px 10px; border-radius: 10px; border: 1px solid #ddd; }
@@ -52,6 +51,8 @@
         .event-item.callback { border-right-color: #e67e22; background: #fffbf0; }
         .event-item.overlap { background: #fee2e2; border-right-color: #dc2626; }
         .event-item.upcoming { background: #fef8e7; border-right-color: #f4b942; }
+        /* إضافة نمط للحدث من النوع الجديد */
+        .event-item.done { border-right-color: #10b981; background: #ecfdf5; }
         .event-title { font-weight: bold; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .event-name { display: flex; align-items: center; gap: 6px; }
         .event-type { font-size: 0.6rem; padding: 2px 8px; border-radius: 20px; background: #fef8e7; }
@@ -101,8 +102,10 @@
                 <button class="filter-btn active" data-filter="all">الكل</button>
                 <button class="filter-btn" data-filter="appointment">معاينات</button>
                 <button class="filter-btn" data-filter="callback">متابعات</button>
+                <!-- الزر الجديد -->
+                <button class="filter-btn" data-filter="done">معاينات تمت</button>
             </div>
-            <button class="test-notif-btn" id="testNotifBtn"><i class="fas fa-bell"></i> اختبار الإشعار</button>
+            <!-- زر الجرس والإشعارات فقط -->
             <div class="notification-bell" id="notificationBell">
                 <i class="fas fa-bell" style="font-size: 1.2rem; color: #c9a03d;"></i>
                 <span class="notification-count" id="notificationCount" style="display: none;">0</span>
@@ -133,7 +136,7 @@
         <div class="calendar-panel"><div class="section-title">📆 التقويم</div><div id="calendar"><div class="loading"><div class="spinner"></div><p>جاري تحميل التقويم...</p></div></div></div>
         <div class="events-panel"><div class="section-title"><span>📋 قائمة المواعيد</span><span class="events-count" id="eventsCount">0</span></div><div id="eventList" class="event-list"><div class="loading"><div class="spinner"></div><p>جاري تحميل البيانات...</p></div></div></div>
     </div>
-    <div class="footer-note">📌 المعاينات من العمود O | 📞 متابعات المكالمات من العمود L | 📋 متابعات المعاينات من العمود S</div>
+    <div class="footer-note">📌 المعاينات من العمود O | 📞 متابعات المكالمات من العمود L | 📋 متابعات المعاينات من العمود S | ✅ معاينات تمت من جدول ثانوي</div>
 </div>
 
 <div class="notification-panel" id="notificationPanel">
@@ -147,7 +150,7 @@
         navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed:', err));
     }
 
-    // ========== System Notification Support (corrected) ==========
+    // ========== System Notification Support ==========
     async function requestNotificationPermission() {
         if (!('Notification' in window)) return false;
         if (Notification.permission === 'granted') return true;
@@ -161,15 +164,9 @@
     async function sendSystemNotification(title, body, tag = null) {
         if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
             const permission = await Notification.requestPermission();
-            if (permission !== 'granted') {
-                console.warn('Notification permission denied');
-                return;
-            }
+            if (permission !== 'granted') return;
         }
-        if (Notification.permission !== 'granted') {
-            console.warn('Notifications are disabled');
-            return;
-        }
+        if (Notification.permission !== 'granted') return;
         try {
             if ('serviceWorker' in navigator) {
                 const registration = await navigator.serviceWorker.ready;
@@ -188,17 +185,8 @@
             }
         } catch (error) {
             console.error("Service Worker notification failed:", error);
-            try {
-                new Notification(title, { body: body });
-            } catch (e) {
-                console.error("Standard notification also failed:", e);
-            }
+            try { new Notification(title, { body: body }); } catch (e) {}
         }
-    }
-
-    function testSystemNotification() {
-        sendSystemNotification('اختبار النظام', 'هذا إشعار تجريبي من نظام العقارات', 'test-notif');
-        showInAppNotification('إشعار تجريبي', 'تم إرسال إشعار تجريبي للنظام', 'upcoming', 5000);
     }
 
     // ========== In-App Notifications ==========
@@ -283,20 +271,38 @@
         return `منذ ${Math.floor(hours / 24)} يوم`;
     }
 
-    // ========== Google Sheets Integration ==========
-    const SPREADSHEET_ID = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
-    const SHEET_NAME = 'مبيعات';
+    // ========== إعدادات جدول البيانات (الأصلي) ==========
+    const SPREADSHEET_ID_MAIN = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
+    const SHEET_NAME_MAIN = 'مبيعات';
+    // ========== جدول البيانات الجديد (معاينات تمت) ==========
+    const SPREADSHEET_ID_DONE = '1HcnGcO9hcYWPNRETHGzdN1-XwTgpvc6YZhPyw4zRssI';
+    const SHEET_NAME_DONE = 'ورقة1'; // يمكنك تغييره لاسم الورقة الفعلي إن كان مختلفًا
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
 
+    // الأعمدة في الجدول الأصلي
     const COL_NAME = 1, COL_PHONE = 2, COL_CITY = 6, COL_ADDRESS = 7, COL_NOTES = 8;
     const COL_APP_DATE = 14, COL_APP_TIME = 15;
     const COL_CB_L_DATE = 11, COL_CB_L_NOTES = 13;
     const COL_CB_S_DATE = 18, COL_CB_S_NOTES = 20;
 
+    // الأعمدة في الجدول الجديد (صفرية الأساس)
+    // Timestamp(A), الاسم(B), الموبايل(C), ملاحظات(D), نتيجة(E), رد العميل(F), الكود(G), التاريخ(H)
+    const DONE_COL_NAME = 1;        // الاسم
+    const DONE_COL_PHONE = 2;       // الموبايل
+    const DONE_COL_NOTES = 3;       // ملاحظات
+    const DONE_COL_RESULT = 4;      // نتيجة
+    const DONE_COL_CLIENT_REPLY = 5;// رد العميل
+    const DONE_COL_CODE = 6;        // الكود
+    const DONE_COL_DATE = 7;        // التاريخ
+
     let allEvents = [], currentType = 'all', filterStartDate = null, filterEndDate = null, calendar = null, isLoading = false;
     let shownUpcomingAlerts = new Set();
-    const TYPE_APP = 'معاينة', TYPE_CB_L = 'متابعة مكالمة', TYPE_CB_S = 'متابعة معاينة';
+    const TYPE_APP = 'معاينة';
+    const TYPE_CB_L = 'متابعة مكالمة';
+    const TYPE_CB_S = 'متابعة معاينة';
+    const TYPE_DONE = 'معاينة تمت'; // النوع الجديد
 
+    // دوال تحليل التاريخ والوقت (نفسها)
     function parseDate(dateStr) {
         if (!dateStr) return null;
         let s = dateStr.toString().trim();
@@ -328,59 +334,101 @@
         return { hour: 12, minute: 0, display: '' };
     }
 
-    async function fetchRealData() {
-        const statusSpan = document.getElementById('status');
-        statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جلب البيانات...';
-        try {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:Z500?key=${API_KEY}`;
-            const response = await fetch(url);
-            if (!response.ok) {
-                Swal.fire({ icon: 'error', title: 'خطأ في الاتصال', text: 'تعذر جلب البيانات من Google Sheets' });
-                throw new Error('فشل الاتصال');
-            }
-            const data = await response.json();
-            const rows = data.values;
-            if (!rows || rows.length < 2) throw new Error('لا توجد بيانات');
-            const events = [];
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (!row) continue;
-                const name = row[COL_NAME] || 'غير محدد';
-                const phone = row[COL_PHONE] || '';
-                const city = row[COL_CITY] || '';
-                const address = row[COL_ADDRESS] || '';
-                const notes = row[COL_NOTES] || '';
-                
-                const appDate = row[COL_APP_DATE], appTime = row[COL_APP_TIME] || '';
-                if (appDate && appDate !== 'FALSE' && appDate.toString().trim()) {
-                    const d = parseDate(appDate);
-                    if (d) {
-                        const t = parseTime(appTime);
-                        d.setHours(t.hour, t.minute);
-                        events.push({ id: `app_${i}`, title: name, type: TYPE_APP, date: d, displayTime: t.display, phone, city, address, notes });
-                    }
-                }
-                const cbL = row[COL_CB_L_DATE], cbLNotes = row[COL_CB_L_NOTES] || '';
-                if (cbL && cbL !== 'FALSE' && cbL.toString().trim()) {
-                    const d = parseDate(cbL);
-                    if (d) events.push({ id: `cbL_${i}`, title: name, type: TYPE_CB_L, date: d, displayTime: '', phone, city, address, notes: cbLNotes || notes });
-                }
-                const cbS = row[COL_CB_S_DATE], cbSNotes = row[COL_CB_S_NOTES] || '';
-                if (cbS && cbS !== 'FALSE' && cbS.toString().trim()) {
-                    const d = parseDate(cbS);
-                    if (d) events.push({ id: `cbS_${i}`, title: name, type: TYPE_CB_S, date: d, displayTime: '', phone, city, address, notes: cbSNotes || notes });
-                }
-            }
-            statusSpan.innerHTML = `✅ ${events.length} موعد`;
-            return events;
-        } catch (error) {
-            statusSpan.innerHTML = '❌ فشل الجلب';
-            return [];
+    // جلب البيانات من الجدول الأصلي
+    async function fetchMainSheetData() {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_MAIN}/values/${SHEET_NAME_MAIN}!A1:Z500?key=${API_KEY}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            Swal.fire({ icon: 'error', title: 'خطأ في الاتصال', text: 'تعذر جلب بيانات الجدول الرئيسي' });
+            throw new Error('فشل الاتصال');
         }
+        const data = await response.json();
+        const rows = data.values;
+        if (!rows || rows.length < 2) return [];
+        const events = [];
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row) continue;
+            const name = row[COL_NAME] || 'غير محدد';
+            const phone = row[COL_PHONE] || '';
+            const city = row[COL_CITY] || '';
+            const address = row[COL_ADDRESS] || '';
+            const notes = row[COL_NOTES] || '';
+
+            // معاينات
+            const appDate = row[COL_APP_DATE], appTime = row[COL_APP_TIME] || '';
+            if (appDate && appDate !== 'FALSE' && appDate.toString().trim()) {
+                const d = parseDate(appDate);
+                if (d) {
+                    const t = parseTime(appTime);
+                    d.setHours(t.hour, t.minute);
+                    events.push({ id: `main_app_${i}`, title: name, type: TYPE_APP, date: d, displayTime: t.display, phone, city, address, notes });
+                }
+            }
+            // متابعة مكالمات
+            const cbL = row[COL_CB_L_DATE], cbLNotes = row[COL_CB_L_NOTES] || '';
+            if (cbL && cbL !== 'FALSE' && cbL.toString().trim()) {
+                const d = parseDate(cbL);
+                if (d) events.push({ id: `main_cbL_${i}`, title: name, type: TYPE_CB_L, date: d, displayTime: '', phone, city, address, notes: cbLNotes || notes });
+            }
+            // متابعة معاينات
+            const cbS = row[COL_CB_S_DATE], cbSNotes = row[COL_CB_S_NOTES] || '';
+            if (cbS && cbS !== 'FALSE' && cbS.toString().trim()) {
+                const d = parseDate(cbS);
+                if (d) events.push({ id: `main_cbS_${i}`, title: name, type: TYPE_CB_S, date: d, displayTime: '', phone, city, address, notes: cbSNotes || notes });
+            }
+        }
+        return events;
+    }
+
+    // جلب البيانات من الجدول الجديد (معاينات تمت)
+    async function fetchDoneSheetData() {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_DONE}/values/${SHEET_NAME_DONE}!A1:Z500?key=${API_KEY}`;
+        const response = await fetch(url);
+        if (!response.ok) {
+            Swal.fire({ icon: 'error', title: 'خطأ في الاتصال', text: 'تعذر جلب بيانات معاينات تمت' });
+            throw new Error('فشل الاتصال');
+        }
+        const data = await response.json();
+        const rows = data.values;
+        if (!rows || rows.length < 2) return [];
+        const events = [];
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row) continue;
+            const name = row[DONE_COL_NAME] || 'غير محدد';
+            const phone = row[DONE_COL_PHONE] || '';
+            const notes = row[DONE_COL_NOTES] || '';
+            const result = row[DONE_COL_RESULT] || '';
+            const clientReply = row[DONE_COL_CLIENT_REPLY] || '';
+            const code = row[DONE_COL_CODE] || '';
+            const dateStr = row[DONE_COL_DATE];
+            if (dateStr && dateStr !== 'FALSE' && dateStr.toString().trim()) {
+                const d = parseDate(dateStr);
+                if (d) {
+                    // نعتبر الوقت افتراضيًا منتصف النهار
+                    events.push({
+                        id: `done_${i}`,
+                        title: name,
+                        type: TYPE_DONE,
+                        date: d,
+                        displayTime: '',
+                        phone,
+                        city: '', // لا توجد مدينة في هذا الجدول
+                        address: '',
+                        notes,
+                        result,        // حقل إضافي
+                        clientReply,   // حقل إضافي
+                        code           // حقل إضافي
+                    });
+                }
+            }
+        }
+        return events;
     }
 
     function detectOverlaps(events) {
-        const appointmentsOnly = events.filter(e => e.type === TYPE_APP);
+        const appointmentsOnly = events.filter(e => e.type === TYPE_APP); // نكتشف التداخل فقط في المعاينات الأصلية
         const overlaps = [];
         for (let i = 0; i < appointmentsOnly.length; i++) {
             for (let j = i+1; j < appointmentsOnly.length; j++) {
@@ -407,7 +455,7 @@
             shownUpcomingAlerts.add(key);
             const hours = Math.round((new Date(ev.date) - new Date()) / (1000*60*60));
             const timeText = hours < 1 ? 'خلال أقل من ساعة' : `بعد ${hours} ساعات`;
-            const title = `🔔 ${ev.type === TYPE_APP ? 'معاينة' : 'متابعة'} قريب`;
+            const title = `🔔 ${ev.type === TYPE_APP ? 'معاينة' : (ev.type === TYPE_DONE ? 'معاينة تمت' : 'متابعة')} قريب`;
             const message = `${ev.title} - ${timeText}`;
             showInAppNotification(title, message, 'upcoming', 8000);
             sendSystemNotification(title, message, `upcoming_${ev.id}`);
@@ -428,11 +476,11 @@
 
     function updateStats(events) {
         const totalApp = events.filter(e => e.type === TYPE_APP).length;
-        const totalCb = events.filter(e => e.type !== TYPE_APP).length;
+        const totalCb = events.filter(e => e.type === TYPE_CB_L || e.type === TYPE_CB_S).length;
         const today = new Date(); today.setHours(0,0,0,0);
         const todayTime = today.getTime();
         const todayApp = events.filter(e => e.type === TYPE_APP && new Date(e.date).setHours(0,0,0,0) === todayTime).length;
-        const todayCb = events.filter(e => e.type !== TYPE_APP && new Date(e.date).setHours(0,0,0,0) === todayTime).length;
+        const todayCb = events.filter(e => (e.type === TYPE_CB_L || e.type === TYPE_CB_S) && new Date(e.date).setHours(0,0,0,0) === todayTime).length;
         document.getElementById('totalApp').innerText = totalApp;
         document.getElementById('totalCb').innerText = totalCb;
         document.getElementById('todayApp').innerText = todayApp;
@@ -455,16 +503,28 @@
             const dateStr = dateObj.toLocaleDateString('ar-EG');
             html += `<div class="day-group"><div class="day-header"><i class="fas fa-calendar-day"></i> ${dayName}<span>${dateStr}</span><span class="day-count">${dayEvents.length} مواعيد</span></div>`;
             for (const ev of dayEvents) {
-                const isCallback = ev.type !== TYPE_APP;
-                const icon = isCallback ? (ev.type === TYPE_CB_L ? '📞' : '📋') : '🏢';
+                const isCallback = ev.type === TYPE_CB_L || ev.type === TYPE_CB_S;
+                const isDone = ev.type === TYPE_DONE;
+                let icon, extraClass = '';
+                if (isDone) {
+                    icon = '✅';
+                    extraClass = 'done';
+                } else if (isCallback) {
+                    icon = ev.type === TYPE_CB_L ? '📞' : '📋';
+                    extraClass = 'callback';
+                } else {
+                    icon = '🏢';
+                }
                 const timeDisplay = ev.displayTime ? `🕐 ${ev.displayTime}` : '';
                 const isOverlap = overlapIds.has(ev.id);
                 const isUpcoming = upcomingIds.has(ev.id);
-                let extraClass = isOverlap ? 'overlap' : (isUpcoming ? 'upcoming' : '');
-                html += `<div class="event-item ${isCallback ? 'callback' : ''} ${extraClass}" onclick="showEventDetails('${ev.title.replace(/'/g,"\\'")}', '${dateStr}', '${ev.displayTime || ''}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${ev.type}')">
+                if (isOverlap) extraClass = 'overlap';
+                else if (isUpcoming) extraClass = 'upcoming';
+                // تمرير كافة الحقول إلى دالة التفاصيل
+                html += `<div class="event-item ${extraClass}" onclick="showEventDetails('${ev.title.replace(/'/g,"\\'")}', '${dateStr}', '${ev.displayTime || ''}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${ev.type}', '${ev.result || ''}', '${ev.clientReply || ''}', '${ev.code || ''}')">
                     ${isOverlap ? '<div class="overlap-warning">!</div>' : ''}
                     ${isUpcoming && !isOverlap ? '<div class="upcoming-badge">⏰</div>' : ''}
-                    <div class="event-title"><div class="event-name"><i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i> ${ev.title}</div><span class="event-type">${icon} ${ev.type}</span></div>
+                    <div class="event-title"><div class="event-name"><i class="fas ${isDone ? 'fa-check-circle' : (isCallback ? 'fa-phone-alt' : 'fa-building')}"></i> ${ev.title}</div><span class="event-type">${icon} ${ev.type}</span></div>
                     <div class="event-details">${timeDisplay ? `<span>${timeDisplay}</span>` : ''}<span>📞 ${ev.phone || 'غير متوفر'}</span></div>
                 </div>`;
             }
@@ -479,30 +539,72 @@
         if (!events.length) { el.innerHTML = '<div class="loading">📅 لا توجد مواعيد</div>'; return; }
         const overlapIds = new Set(overlaps.flatMap(o => [o.event1.id, o.event2.id]));
         const upcomingIds = new Set(upcomingEvents.map(e => e.id));
-        const fcEvents = events.map(ev => ({
-            id: ev.id,
-            title: `${ev.type === TYPE_APP ? '🏢' : (ev.type === TYPE_CB_L ? '📞' : '📋')} ${ev.title}${ev.displayTime ? ` (${ev.displayTime})` : ''}`,
-            start: ev.date,
-            backgroundColor: overlapIds.has(ev.id) ? '#dc2626' : (upcomingIds.has(ev.id) ? '#f4b942' : (ev.type === TYPE_APP ? '#c9a03d' : (ev.type === TYPE_CB_L ? '#e67e22' : '#3b82f6'))),
-            extendedProps: { title: ev.title, dateStr: ev.date.toLocaleDateString('ar-EG'), time: ev.displayTime, phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, type: ev.type }
-        }));
+        const fcEvents = events.map(ev => {
+            let bgColor;
+            if (overlapIds.has(ev.id)) bgColor = '#dc2626';
+            else if (upcomingIds.has(ev.id)) bgColor = '#f4b942';
+            else if (ev.type === TYPE_DONE) bgColor = '#10b981';
+            else if (ev.type === TYPE_APP) bgColor = '#c9a03d';
+            else if (ev.type === TYPE_CB_L) bgColor = '#e67e22';
+            else bgColor = '#3b82f6';
+            let icon = ev.type === TYPE_DONE ? '✅' : (ev.type === TYPE_APP ? '🏢' : (ev.type === TYPE_CB_L ? '📞' : '📋'));
+            return {
+                id: ev.id,
+                title: `${icon} ${ev.title}${ev.displayTime ? ` (${ev.displayTime})` : ''}`,
+                start: ev.date,
+                backgroundColor: bgColor,
+                extendedProps: {
+                    title: ev.title,
+                    dateStr: ev.date.toLocaleDateString('ar-EG'),
+                    time: ev.displayTime,
+                    phone: ev.phone,
+                    city: ev.city,
+                    address: ev.address,
+                    notes: ev.notes,
+                    type: ev.type,
+                    result: ev.result || '',
+                    clientReply: ev.clientReply || '',
+                    code: ev.code || ''
+                }
+            };
+        });
         calendar = new FullCalendar.Calendar(el, {
             initialView: 'dayGridMonth', locale: 'ar', direction: 'rtl',
             headerToolbar: { left: 'prev,next today', center: 'title', right: window.innerWidth < 768 ? '' : 'dayGridMonth' },
             buttonText: { today: 'اليوم', month: 'شهر' }, events: fcEvents, height: 'auto', firstDay: 6,
-            eventClick: (info) => { const e = info.event.extendedProps; showEventDetails(e.title, e.dateStr, e.time || '', e.phone || '', e.city || '', e.address || '', e.notes || '', e.type); }
+            eventClick: (info) => {
+                const e = info.event.extendedProps;
+                showEventDetails(e.title, e.dateStr, e.time || '', e.phone || '', e.city || '', e.address || '', e.notes || '', e.type, e.result || '', e.clientReply || '', e.code || '');
+            }
         });
         calendar.render();
         if (filterStartDate) calendar.gotoDate(filterStartDate);
     }
 
-    window.showEventDetails = function(title, date, time, phone, city, address, notes, type) {
+    // دالة عرض التفاصيل (محدثة لتشمل الحقول الجديدة)
+    window.showEventDetails = function(title, date, time, phone, city, address, notes, type, result, clientReply, code) {
+        let extraHtml = '';
+        if (type === 'معاينة تمت') {
+            if (result) extraHtml += `<p><strong>📊 النتيجة:</strong> ${result}</p>`;
+            if (clientReply) extraHtml += `<p><strong>💬 رد العميل:</strong> ${clientReply}</p>`;
+            if (code) extraHtml += `<p><strong>🏷️ الكود:</strong> ${code}</p>`;
+        }
         let locationHtml = '';
         if (city || address) locationHtml = `<p><strong>📍 الموقع:</strong> ${city || ''} ${address || ''}</p>`;
         Swal.fire({
-            title: title, 
-            html: `<div style="text-align:right"><p><strong>📋 النوع:</strong> ${type}</p><p><strong>📅 التاريخ:</strong> ${date}</p>${time ? `<p><strong>🕐 الوقت:</strong> ${time}</p>` : ''}<p><strong>📞 الهاتف:</strong> ${phone || 'غير متوفر'}</p>${locationHtml}<p><strong>📝 الملاحظات:</strong> ${notes || 'لا توجد'}</p></div>`,
-            icon: type === TYPE_APP ? 'info' : 'warning', confirmButtonColor: '#c9a03d', confirmButtonText: 'إغلاق'
+            title: title,
+            html: `<div style="text-align:right">
+                <p><strong>📋 النوع:</strong> ${type}</p>
+                <p><strong>📅 التاريخ:</strong> ${date}</p>
+                ${time ? `<p><strong>🕐 الوقت:</strong> ${time}</p>` : ''}
+                <p><strong>📞 الهاتف:</strong> ${phone || 'غير متوفر'}</p>
+                ${locationHtml}
+                <p><strong>📝 ملاحظات:</strong> ${notes || 'لا توجد'}</p>
+                ${extraHtml}
+            </div>`,
+            icon: type === 'معاينة' ? 'info' : 'warning',
+            confirmButtonColor: '#c9a03d',
+            confirmButtonText: 'إغلاق'
         });
     };
 
@@ -511,8 +613,11 @@
         shownUpcomingAlerts.clear();
 
         let filtered = [...allEvents];
+        // تطبيق فلتر النوع
         if (currentType === 'appointment') filtered = filtered.filter(e => e.type === TYPE_APP);
-        else if (currentType === 'callback') filtered = filtered.filter(e => e.type !== TYPE_APP);
+        else if (currentType === 'callback') filtered = filtered.filter(e => e.type === TYPE_CB_L || e.type === TYPE_CB_S);
+        else if (currentType === 'done') filtered = filtered.filter(e => e.type === TYPE_DONE);
+        // فلتر التاريخ
         if (filterStartDate) filtered = filtered.filter(e => new Date(e.date).setHours(0,0,0,0) >= filterStartDate.getTime());
         if (filterEndDate) filtered = filtered.filter(e => new Date(e.date).setHours(0,0,0,0) <= filterEndDate.getTime());
         const overlaps = detectOverlaps(filtered);
@@ -556,9 +661,21 @@
     async function loadData() {
         if (isLoading) return;
         isLoading = true;
-        const events = await fetchRealData();
-        if (events.length > 0) { allEvents = events; refreshAll(); }
-        isLoading = false;
+        document.getElementById('status').innerHTML = '<i class="fas fa-spinner fa-spin"></i> جلب البيانات...';
+        try {
+            // جلب البيانات من كلا الجدولين في نفس الوقت
+            const [mainEvents, doneEvents] = await Promise.all([
+                fetchMainSheetData(),
+                fetchDoneSheetData()
+            ]);
+            allEvents = [...mainEvents, ...doneEvents];
+            document.getElementById('status').innerHTML = `✅ ${allEvents.length} موعد`;
+            refreshAll();
+        } catch (error) {
+            document.getElementById('status').innerHTML = '❌ فشل الجلب';
+        } finally {
+            isLoading = false;
+        }
     }
 
     // ========== Initialization ==========
@@ -568,7 +685,7 @@
         document.getElementById('refreshBtn').addEventListener('click', loadData);
         document.getElementById('applyDateBtn').addEventListener('click', applyDateFilter);
         document.getElementById('clearDateBtn').addEventListener('click', clearDateFilter);
-        document.getElementById('testNotifBtn').addEventListener('click', testSystemNotification);
+        // إزالة مستمع زر اختبار الإشعار
         const bell = document.getElementById('notificationBell');
         const panel = document.getElementById('notificationPanel');
         bell.addEventListener('click', () => panel.classList.toggle('show'));
