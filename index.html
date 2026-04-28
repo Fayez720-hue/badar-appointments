@@ -22,6 +22,7 @@
         .filter-btn.active { background: #c9a03d; color: white; }
         .refresh-btn { background: #c9a03d; border: none; color: white; padding: 5px 15px; border-radius: 25px; cursor: pointer; margin-right: 10px; }
         .status-badge { background: #eef2ff; padding: 5px 12px; border-radius: 25px; font-size: 0.7rem; }
+        .status-badge.warning { background: #fee2e2; color: #dc2626; }
         
         .date-range-filter { background: white; border-radius: 18px; padding: 12px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; border: 1px solid #eee; }
         .date-range-filter input { padding: 6px 10px; border-radius: 10px; border: 1px solid #ddd; }
@@ -58,6 +59,7 @@
         .event-item { background: #f9fbfa; margin-bottom: 8px; padding: 10px; border-radius: 12px; border-right: 3px solid #c9a03d; transition: all 0.2s; cursor: pointer; position: relative; }
         .event-item.callback { border-right-color: #e67e22; background: #fffbf0; }
         .event-item.overlap { background: #fee2e2; border-right-color: #dc2626; }
+        .event-item.upcoming { background: #fef8e7; border-right-color: #f4b942; }
         .event-item:hover { transform: translateX(-5px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .event-title { font-weight: bold; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .event-name { display: flex; align-items: center; gap: 6px; }
@@ -65,6 +67,7 @@
         .event-details { font-size: 0.65rem; color: #666; display: flex; flex-wrap: wrap; gap: 8px; }
         .event-phone { direction: ltr; font-family: monospace; background: #f0f0f0; padding: 1px 4px; border-radius: 6px; font-size: 0.6rem; }
         .overlap-warning { position: absolute; top: -5px; left: -5px; background: #dc2626; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+        .upcoming-badge { position: absolute; top: -5px; right: -5px; background: #f4b942; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
         
         .fc { direction: rtl; }
         .fc .fc-toolbar { flex-direction: column; gap: 10px; margin-bottom: 15px; }
@@ -72,6 +75,7 @@
         .fc .fc-button { background: #c9a03d !important; border: none !important; cursor: pointer; }
         .fc-event { cursor: pointer; }
         .fc-event.overlap-event { border: 2px solid #dc2626 !important; box-shadow: 0 0 5px rgba(220,38,38,0.5); }
+        .fc-event.upcoming-event { border: 2px solid #f4b942 !important; }
         
         .loading { text-align: center; padding: 40px; }
         .spinner { width: 40px; height: 40px; border: 3px solid #fef8e7; border-top: 3px solid #c9a03d; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
@@ -80,8 +84,24 @@
         .footer-note { margin-top: 20px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 25px; }
         .error-message { text-align: center; padding: 30px; background: #fee2e2; border-radius: 16px; margin: 20px; }
         
-        .toast-notification { position: fixed; bottom: 20px; right: 20px; background: #dc2626; color: white; padding: 12px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 9999; animation: slideIn 0.3s ease; direction: rtl; display: flex; align-items: center; gap: 10px; }
+        .toast-notification { position: fixed; bottom: 20px; right: 20px; background: #f4b942; color: #1a472a; padding: 12px 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 9999; animation: slideIn 0.3s ease; direction: rtl; display: flex; align-items: center; gap: 10px; font-weight: bold; }
+        .toast-notification.overlap { background: #dc2626; color: white; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        
+        .notification-bell { position: relative; cursor: pointer; }
+        .notification-count { position: absolute; top: -8px; right: -8px; background: #dc2626; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+        
+        .notification-panel { position: fixed; top: 60px; left: 20px; width: 350px; max-height: 400px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 10000; display: none; flex-direction: column; overflow: hidden; direction: rtl; }
+        .notification-panel.show { display: flex; }
+        .notification-header { background: linear-gradient(135deg, #c9a03d, #8b6914); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
+        .notification-header button { background: none; border: none; color: white; cursor: pointer; font-size: 0.8rem; }
+        .notification-list { max-height: 350px; overflow-y: auto; }
+        .notification-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; }
+        .notification-item:hover { background: #fef8e7; }
+        .notification-item.unread { background: #fef8e7; }
+        .notification-title { font-weight: bold; font-size: 0.85rem; }
+        .notification-message { font-size: 0.7rem; color: #666; margin-top: 4px; }
+        .notification-time { font-size: 0.6rem; color: #999; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -93,6 +113,10 @@
                 <button class="filter-btn active" data-filter="all">الكل</button>
                 <button class="filter-btn" data-filter="appointment">معاينات</button>
                 <button class="filter-btn" data-filter="callback">متابعات</button>
+            </div>
+            <div class="notification-bell" id="notificationBell">
+                <i class="fas fa-bell" style="font-size: 1.2rem; color: #c9a03d;"></i>
+                <span class="notification-count" id="notificationCount" style="display: none;">0</span>
             </div>
             <button class="refresh-btn" id="refreshBtn"><i class="fas fa-sync-alt"></i> تحديث</button>
             <span class="status-badge" id="status">⏳ جاري...</span>
@@ -135,6 +159,17 @@
     </div>
 </div>
 
+<!-- لوحة الإشعارات -->
+<div class="notification-panel" id="notificationPanel">
+    <div class="notification-header">
+        <span><i class="fas fa-bell"></i> الإشعارات</span>
+        <button id="clearNotificationsBtn">مسح الكل</button>
+    </div>
+    <div class="notification-list" id="notificationList">
+        <div style="text-align: center; padding: 20px; color: #999;">لا توجد إشعارات</div>
+    </div>
+</div>
+
 <script>
     // ======================= إعدادات Google Sheets =======================
     const SPREADSHEET_ID = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
@@ -153,10 +188,113 @@
     let calendar = null;
     let isLoading = false;
     let shownOverlapAlerts = new Set();
+    let shownUpcomingAlerts = new Set();
+    let notifications = [];
+    let notificationId = 0;
 
     const TYPE_APP = 'معاينة';
     const TYPE_CB_L = 'متابعة مكالمة';
     const TYPE_CB_S = 'متابعة معاينة';
+
+    // إضافة إشعار
+    function addNotification(title, message, type, eventId) {
+        const id = notificationId++;
+        const notificationKey = `${eventId}_${type}`;
+        
+        // تجنب الإشعارات المكررة
+        if (shownUpcomingAlerts.has(notificationKey)) return;
+        shownUpcomingAlerts.add(notificationKey);
+        
+        notifications.unshift({
+            id: id,
+            title: title,
+            message: message,
+            type: type,
+            time: new Date(),
+            read: false,
+            eventId: eventId
+        });
+        
+        // الاحتفاظ بآخر 50 إشعار فقط
+        if (notifications.length > 50) notifications.pop();
+        
+        updateNotificationUI();
+        showToast(message, type === 'overlap' ? 'overlap' : 'upcoming');
+        
+        // إشعار المتصفح إذا كان مسموحاً
+        if (Notification.permission === 'granted') {
+            new Notification(title, { body: message });
+        }
+    }
+    
+    // طلب إذن الإشعارات
+    function requestNotificationPermission() {
+        if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            Notification.requestPermission();
+        }
+    }
+    
+    function updateNotificationUI() {
+        const unreadCount = notifications.filter(n => !n.read).length;
+        const countBadge = document.getElementById('notificationCount');
+        if (unreadCount > 0) {
+            countBadge.style.display = 'flex';
+            countBadge.innerText = unreadCount > 9 ? '9+' : unreadCount;
+        } else {
+            countBadge.style.display = 'none';
+        }
+        
+        const container = document.getElementById('notificationList');
+        if (notifications.length === 0) {
+            container.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">لا توجد إشعارات</div>';
+            return;
+        }
+        
+        let html = '';
+        for (const n of notifications) {
+            const timeStr = formatTimeAgo(n.time);
+            html += `
+                <div class="notification-item ${!n.read ? 'unread' : ''}" onclick="markNotificationRead(${n.id})">
+                    <div class="notification-title">${n.title}</div>
+                    <div class="notification-message">${n.message}</div>
+                    <div class="notification-time">${timeStr}</div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+    
+    function formatTimeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        if (seconds < 60) return 'الآن';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `منذ ${minutes} دقيقة`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `منذ ${hours} ساعة`;
+        return `منذ ${Math.floor(hours / 24)} يوم`;
+    }
+    
+    window.markNotificationRead = function(id) {
+        const n = notifications.find(n => n.id === id);
+        if (n) {
+            n.read = true;
+            updateNotificationUI();
+        }
+    };
+    
+    function clearAllNotifications() {
+        notifications = [];
+        updateNotificationUI();
+    }
+    
+    function showToast(message, type = 'upcoming') {
+        const toast = document.createElement('div');
+        toast.className = `toast-notification ${type === 'overlap' ? 'overlap' : ''}`;
+        const icon = type === 'overlap' ? '⚠️' : '🔔';
+        toast.innerHTML = `${icon} ${message}`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
 
     // دالة عرض التفاصيل
     window.showEventDetails = function(title, date, time, phone, city, address, notes, type) {
@@ -181,17 +319,8 @@
         });
     };
 
-    function showToast(message, type = 'warning') {
-        const toast = document.createElement('div');
-        toast.className = 'toast-notification';
-        toast.innerHTML = `<i class="fas ${type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i> ${message}`;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 5000);
-    }
-
-    // كشف تداخل المواعيد - فقط للمعاينات
+    // كشف التداخلات للمعاينات فقط
     function detectOverlaps(events) {
-        // فلترة المعاينات فقط
         const appointmentsOnly = events.filter(e => e.type === TYPE_APP);
         const overlaps = [];
         
@@ -202,56 +331,67 @@
                 const date1 = new Date(event1.date);
                 const date2 = new Date(event2.date);
                 
-                // نفس اليوم
                 if (date1.toDateString() === date2.toDateString()) {
                     const time1 = event1.date.getHours() * 60 + event1.date.getMinutes();
                     const time2 = event2.date.getHours() * 60 + event2.date.getMinutes();
                     
-                    // تداخل في الوقت (ضمن ساعة واحدة)
                     if (Math.abs(time1 - time2) < 60) {
-                        overlaps.push({
-                            event1: event1,
-                            event2: event2,
-                            date: date1,
-                            time1: time1,
-                            time2: time2
-                        });
+                        overlaps.push({ event1, event2, date: date1 });
                     }
                 }
             }
         }
         return overlaps;
     }
-
+    
+    // كشف المواعيد القادمة خلال 24 ساعة
+    function detectUpcomingEvents(events) {
+        const now = new Date();
+        const next24Hours = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        const upcoming = [];
+        
+        for (const ev of events) {
+            const eventDate = new Date(ev.date);
+            // تجاهل المواعيد التي مضت
+            if (eventDate < now) continue;
+            // المواعيد خلال 24 ساعة القادمة
+            if (eventDate <= next24Hours) {
+                upcoming.push(ev);
+            }
+        }
+        return upcoming;
+    }
+    
+    // عرض إشعارات المواعيد القادمة
+    function showUpcomingNotifications(upcomingEvents) {
+        for (const ev of upcomingEvents) {
+            const eventDate = new Date(ev.date);
+            const hoursDiff = Math.round((eventDate - new Date()) / (1000 * 60 * 60));
+            let timeText = '';
+            if (hoursDiff < 1) {
+                timeText = 'خلال أقل من ساعة';
+            } else if (hoursDiff === 1) {
+                timeText = 'بعد ساعة';
+            } else {
+                timeText = `بعد ${hoursDiff} ساعات`;
+            }
+            
+            const title = `🔔 ${ev.type === TYPE_APP ? 'معاينة' : 'متابعة'} قريب`;
+            const message = `${ev.title} - ${timeText} (${eventDate.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })})`;
+            addNotification(title, message, 'upcoming', ev.id);
+        }
+    }
+    
     function showOverlapAlerts(overlaps) {
-        if (overlaps.length === 0) return;
-        
-        const alertKey = overlaps.map(o => `${o.event1.id}_${o.event2.id}`).join(',');
-        if (shownOverlapAlerts.has(alertKey)) return;
-        shownOverlapAlerts.add(alertKey);
-        
-        let message = `<div style="text-align:right">`;
         for (const ov of overlaps) {
             const dateStr = ov.date.toLocaleDateString('ar-EG');
             const time1Str = ov.event1.displayTime || `${ov.event1.date.getHours()}:${ov.event1.date.getMinutes().toString().padStart(2, '0')}`;
             const time2Str = ov.event2.displayTime || `${ov.event2.date.getHours()}:${ov.event2.date.getMinutes().toString().padStart(2, '0')}`;
-            message += `<div style="background:#fee2e2; margin:10px 0; padding:10px; border-radius:8px;">
-                <strong>📅 ${dateStr}</strong><br>
-                🕐 ${time1Str} - ${ov.event1.title}<br>
-                🕐 ${time2Str} - ${ov.event2.title}
-            </div>`;
+            
+            const title = `⚠️ تداخل في مواعيد المعاينات`;
+            const message = `${dateStr}: ${ov.event1.title} (${time1Str}) و ${ov.event2.title} (${time2Str})`;
+            addNotification(title, message, 'overlap', `${ov.event1.id}_${ov.event2.id}`);
         }
-        message += `</div>`;
-        
-        Swal.fire({
-            title: '⚠️ تداخل في مواعيد المعاينات',
-            html: message,
-            icon: 'warning',
-            confirmButtonColor: '#dc2626',
-            confirmButtonText: 'فهمت'
-        });
-        
-        showToast(`🚨 يوجد ${overlaps.length} حالة تداخل في مواعيد المعاينات!`);
     }
 
     function parseDate(dateStr) {
@@ -439,16 +579,22 @@
             });
         }
         
-        // كشف التداخلات فقط للمعاينات
+        // كشف التداخلات للمعاينات فقط
         const overlaps = detectOverlaps(filtered);
         if (overlaps.length > 0) {
             showOverlapAlerts(overlaps);
         }
         
+        // كشف المواعيد القادمة خلال 24 ساعة (للمعاينات والمتابعات)
+        const upcomingEvents = detectUpcomingEvents(filtered);
+        if (upcomingEvents.length > 0) {
+            showUpcomingNotifications(upcomingEvents);
+        }
+        
         document.getElementById('eventsCount').innerText = filtered.length;
         updateStats(filtered);
-        renderGroupedList(filtered, overlaps);
-        renderCalendar(filtered, overlaps);
+        renderGroupedList(filtered, overlaps, upcomingEvents);
+        renderCalendar(filtered, overlaps, upcomingEvents);
     }
 
     function updateStats(events) {
@@ -479,18 +625,22 @@
         document.getElementById('todayCb').innerText = todayCb;
     }
 
-    function renderGroupedList(events, overlaps) {
+    function renderGroupedList(events, overlaps, upcomingEvents) {
         const container = document.getElementById('eventList');
         if (!events.length) {
             container.innerHTML = '<div class="loading">✨ لا توجد مواعيد في النطاق المحدد</div>';
             return;
         }
         
-        // تجميع معرفات المعاينات المتداخلة فقط
         const overlapEventIds = new Set();
         for (const ov of overlaps) {
             overlapEventIds.add(ov.event1.id);
             overlapEventIds.add(ov.event2.id);
+        }
+        
+        const upcomingEventIds = new Set();
+        for (const ev of upcomingEvents) {
+            upcomingEventIds.add(ev.id);
         }
         
         const grouped = {};
@@ -521,6 +671,11 @@
                 const icon = isCallback ? (ev.type === TYPE_CB_L ? '📞' : '📋') : '🏢';
                 const timeDisplay = ev.displayTime ? `🕐 ${ev.displayTime}` : '';
                 const isOverlap = overlapEventIds.has(ev.id);
+                const isUpcoming = upcomingEventIds.has(ev.id);
+                let extraClass = '';
+                if (isOverlap) extraClass = 'overlap';
+                else if (isUpcoming) extraClass = 'upcoming';
+                
                 const safeTitle = ev.title.replace(/'/g, "\\'");
                 const safeDate = dateStr.replace(/'/g, "\\'");
                 const safeTime = (ev.displayTime || '').replace(/'/g, "\\'");
@@ -531,8 +686,9 @@
                 const safeType = ev.type.replace(/'/g, "\\'");
                 
                 html += `
-                    <div class="event-item ${isCallback ? 'callback' : ''} ${isOverlap ? 'overlap' : ''}" onclick="showEventDetails('${safeTitle}', '${safeDate}', '${safeTime}', '${safePhone}', '${safeCity}', '${safeAddress}', '${safeNotes}', '${safeType}')">
+                    <div class="event-item ${isCallback ? 'callback' : ''} ${extraClass}" onclick="showEventDetails('${safeTitle}', '${safeDate}', '${safeTime}', '${safePhone}', '${safeCity}', '${safeAddress}', '${safeNotes}', '${safeType}')">
                         ${isOverlap ? '<div class="overlap-warning" title="تداخل في مواعيد المعاينات">!</div>' : ''}
+                        ${isUpcoming && !isOverlap ? '<div class="upcoming-badge" title="موعد خلال 24 ساعة">⏰</div>' : ''}
                         <div class="event-title">
                             <div class="event-name">
                                 <i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i>
@@ -552,7 +708,7 @@
         container.innerHTML = html;
     }
 
-    function renderCalendar(events, overlaps) {
+    function renderCalendar(events, overlaps, upcomingEvents) {
         const calendarEl = document.getElementById('calendar');
         
         if (calendar) {
@@ -565,19 +721,23 @@
             return;
         }
         
-        // تجميع معرفات المعاينات المتداخلة فقط للتمييز في التقويم
         const overlapEventIds = new Set();
         for (const ov of overlaps) {
             overlapEventIds.add(ov.event1.id);
             overlapEventIds.add(ov.event2.id);
         }
         
+        const upcomingEventIds = new Set();
+        for (const ev of upcomingEvents) {
+            upcomingEventIds.add(ev.id);
+        }
+        
         const fcEvents = events.map(ev => ({
             id: ev.id,
             title: `${ev.type === TYPE_APP ? '🏢' : (ev.type === TYPE_CB_L ? '📞' : '📋')} ${ev.title}${ev.displayTime ? ` (${ev.displayTime})` : ''}`,
             start: ev.date,
-            backgroundColor: overlapEventIds.has(ev.id) ? '#dc2626' : (ev.type === TYPE_APP ? '#c9a03d' : (ev.type === TYPE_CB_L ? '#e67e22' : '#3b82f6')),
-            className: overlapEventIds.has(ev.id) ? 'overlap-event' : '',
+            backgroundColor: overlapEventIds.has(ev.id) ? '#dc2626' : (upcomingEventIds.has(ev.id) ? '#f4b942' : (ev.type === TYPE_APP ? '#c9a03d' : (ev.type === TYPE_CB_L ? '#e67e22' : '#3b82f6'))),
+            className: overlapEventIds.has(ev.id) ? 'overlap-event' : (upcomingEventIds.has(ev.id) ? 'upcoming-event' : ''),
             extendedProps: {
                 title: ev.title,
                 dateStr: ev.date.toLocaleDateString('ar-EG'),
@@ -680,7 +840,10 @@
         isLoading = false;
     }
 
+    // إضافة مستمعي الأحداث
     window.addEventListener('load', () => {
+        requestNotificationPermission();
+        
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => setTypeFilter(btn.dataset.filter));
         });
@@ -688,6 +851,21 @@
         document.getElementById('refreshBtn').addEventListener('click', loadData);
         document.getElementById('applyDateBtn').addEventListener('click', applyDateFilter);
         document.getElementById('clearDateBtn').addEventListener('click', clearDateFilter);
+        
+        // لوحة الإشعارات
+        const bell = document.getElementById('notificationBell');
+        const panel = document.getElementById('notificationPanel');
+        bell.addEventListener('click', () => {
+            panel.classList.toggle('show');
+        });
+        document.getElementById('clearNotificationsBtn').addEventListener('click', clearAllNotifications);
+        
+        // إغلاق اللوحة عند النقر خارجها
+        document.addEventListener('click', (e) => {
+            if (!bell.contains(e.target) && !panel.contains(e.target)) {
+                panel.classList.remove('show');
+            }
+        });
         
         loadData();
         setInterval(loadData, 300000);
