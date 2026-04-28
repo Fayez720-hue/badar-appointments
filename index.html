@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* Same as previous comprehensive CSS - include all styles */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', sans-serif; }
         body { background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 100%); min-height: 100vh; padding: 15px; direction: rtl; }
         .dashboard-container { max-width: 1600px; margin: 0 auto; }
@@ -146,12 +145,9 @@
         navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed:', err));
     }
 
-    // ========== System Notification Support ==========
+    // ========== System Notification Support (corrected) ==========
     async function requestNotificationPermission() {
-        if (!('Notification' in window)) {
-            console.log('Notifications not supported');
-            return false;
-        }
+        if (!('Notification' in window)) return false;
         if (Notification.permission === 'granted') return true;
         if (Notification.permission !== 'denied') {
             const permission = await Notification.requestPermission();
@@ -160,41 +156,54 @@
         return false;
     }
 
-    function sendSystemNotification(title, body, tag = null) {
+    async function sendSystemNotification(title, body, tag = null) {
+        // Request permission if not yet decided
+        if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') {
+                console.warn('Notification permission denied');
+                return;
+            }
+        }
+
         if (Notification.permission !== 'granted') {
-            console.log('Notification permission not granted');
+            console.warn('Notifications are disabled');
             return;
         }
+
         try {
-            const options = {
-                body: body,
-                icon: 'https://img.icons8.com/color/96/real-estate.png',
-                badge: 'https://img.icons8.com/color/96/real-estate.png',
-                vibrate: [200, 100, 200],
-                tag: tag,
-                renotify: true
-            };
-            new Notification(title, options);
-        } catch(e) {
-            console.error('Error sending notification:', e);
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                await registration.showNotification(title, {
+                    body: body,
+                    icon: 'https://img.icons8.com/color/96/real-estate.png',
+                    badge: 'https://img.icons8.com/color/96/real-estate.png',
+                    vibrate: [200, 100, 200],
+                    tag: tag || 'default-notification',
+                    renotify: true,
+                    data: {
+                        url: window.location.href
+                    },
+                    requireInteraction: false
+                });
+            } else {
+                new Notification(title, { body: body });
+            }
+        } catch (error) {
+            console.error("Service Worker notification failed:", error);
+            // Fallback to standard notification if SW fails
+            try {
+                new Notification(title, { body: body });
+            } catch (e) {
+                console.error("Standard notification also failed:", e);
+            }
         }
     }
 
-    // Test notification function (direct)
+    // Test function for the button
     function testSystemNotification() {
-        if (Notification.permission === 'granted') {
-            sendSystemNotification('🧪 اختبار الإشعار', 'هذا إشعار نظام حقيقي. إذا وصل إليك، فالإعدادات صحيحة!', 'test');
-            // Also show in-app toast
-            showInAppNotification('🧪 اختبار الإشعار', 'تم إرسال إشعار النظام. تحقق من شريط الحالة.', 'upcoming', 5000);
-        } else {
-            Swal.fire({
-                title: '⚠️ الإشعارات غير مفعلة',
-                text: 'يرجى السماح بالإشعارات من المتصفح',
-                icon: 'warning',
-                confirmButtonText: 'طلب الإذن',
-                confirmButtonColor: '#c9a03d'
-            }).then(() => requestNotificationPermission());
-        }
+        sendSystemNotification('اختبار النظام', 'هذا إشعار تجريبي من نظام العقارات', 'test-notif');
+        showInAppNotification('إشعار تجريبي', 'تم إرسال إشعار تجريبي للنظام', 'upcoming', 5000);
     }
 
     // ========== In-App Notifications & Persistent List ==========
@@ -279,7 +288,7 @@
         return `منذ ${Math.floor(hours / 24)} يوم`;
     }
 
-    // ========== Google Sheets Integration (same as before, simplified) ==========
+    // ========== Google Sheets Integration ==========
     const SPREADSHEET_ID = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
     const SHEET_NAME = 'مبيعات';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
@@ -330,7 +339,10 @@
         try {
             const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}!A1:Z500?key=${API_KEY}`;
             const response = await fetch(url);
-            if (!response.ok) throw new Error('فشل الاتصال');
+            if (!response.ok) {
+                Swal.fire({ icon: 'error', title: 'خطأ في الاتصال', text: 'تعذر جلب البيانات من Google Sheets' });
+                throw new Error('فشل الاتصال');
+            }
             const data = await response.json();
             const rows = data.values;
             if (!rows || rows.length < 2) throw new Error('لا توجد بيانات');
@@ -501,6 +513,9 @@
 
     function refreshAll() {
         if (!allEvents.length) return;
+        // Clear old alert tracking so new alerts always show
+        shownUpcomingAlerts.clear();
+
         let filtered = [...allEvents];
         if (currentType === 'appointment') filtered = filtered.filter(e => e.type === TYPE_APP);
         else if (currentType === 'callback') filtered = filtered.filter(e => e.type !== TYPE_APP);
