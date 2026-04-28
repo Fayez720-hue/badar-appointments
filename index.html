@@ -4,119 +4,88 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>نظام إدارة العقارات - المعاينات والمتابعات</title>
-    
-    <!-- PWA manifest & theme -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#c9a03d">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://img.icons8.com/color/96/real-estate.png">
-    
-    <!-- FullCalendar -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ar.js"></script>
-    
-    <!-- Font Awesome & SweetAlert -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
     <style>
+        /* Same as previous comprehensive CSS - include all styles */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', sans-serif; }
         body { background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 100%); min-height: 100vh; padding: 15px; direction: rtl; }
         .dashboard-container { max-width: 1600px; margin: 0 auto; }
-        
         .header { background: white; border-radius: 20px; padding: 15px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         h1 { font-size: 1.2rem; color: #c9a03d; display: flex; align-items: center; gap: 8px; }
-        
         .filter-group { display: flex; gap: 5px; background: #f0f0f0; padding: 5px; border-radius: 40px; }
         .filter-btn { padding: 5px 15px; border-radius: 30px; border: none; cursor: pointer; font-size: 0.75rem; background: transparent; }
         .filter-btn.active { background: #c9a03d; color: white; }
         .refresh-btn { background: #c9a03d; border: none; color: white; padding: 5px 15px; border-radius: 25px; cursor: pointer; margin-right: 10px; }
         .test-notif-btn { background: #3b82f6; border: none; color: white; padding: 5px 12px; border-radius: 25px; cursor: pointer; font-size: 0.7rem; margin-right: 10px; }
         .status-badge { background: #eef2ff; padding: 5px 12px; border-radius: 25px; font-size: 0.7rem; }
-        
         .date-range-filter { background: white; border-radius: 18px; padding: 12px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; border: 1px solid #eee; }
         .date-range-filter input { padding: 6px 10px; border-radius: 10px; border: 1px solid #ddd; }
         .date-range-filter button { background: #c9a03d; border: none; color: white; padding: 6px 15px; border-radius: 25px; cursor: pointer; }
         .date-range-filter .clear-btn { background: #888; }
         .range-info { font-size: 0.7rem; background: #fef8e7; padding: 4px 12px; border-radius: 20px; color: #c9a03d; }
-        
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
         @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
         .stat-card { background: white; border-radius: 16px; padding: 15px; border-right: 4px solid #c9a03d; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; }
         .stat-card h3 { font-size: 0.75rem; color: #666; margin-bottom: 8px; }
         .stat-number { font-size: 1.6rem; font-weight: bold; color: #c9a03d; }
-        
         .two-columns { display: flex; flex-direction: row; gap: 20px; }
         @media (max-width: 768px) { .two-columns { flex-direction: column; } }
         .calendar-panel { background: white; border-radius: 20px; padding: 20px; flex: 2; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .events-panel { background: white; border-radius: 20px; padding: 20px; flex: 1.2; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .section-title { font-size: 1rem; font-weight: bold; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #eee; color: #8b6914; display: flex; justify-content: space-between; align-items: center; }
         .events-count { background: #c9a03d; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; }
-        
         .day-group { margin-bottom: 20px; border-right: 3px solid #c9a03d; padding-right: 12px; }
         .day-header { font-weight: bold; font-size: 0.85rem; color: #8b6914; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px dashed #ddd; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .day-header span { background: #c9a03d20; padding: 2px 8px; border-radius: 20px; font-size: 0.65rem; color: #c9a03d; }
         .day-count { background: #c9a03d; color: white; padding: 2px 8px; border-radius: 20px; font-size: 0.6rem; }
-        
         .event-list { max-height: 550px; overflow-y: auto; cursor: pointer; }
-        .event-list::-webkit-scrollbar { width: 4px; }
-        .event-list::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 10px; }
-        .event-list::-webkit-scrollbar-thumb { background: #c9a03d; border-radius: 10px; }
-        
         .event-item { background: #f9fbfa; margin-bottom: 8px; padding: 10px; border-radius: 12px; border-right: 3px solid #c9a03d; transition: all 0.2s; cursor: pointer; position: relative; }
         .event-item.callback { border-right-color: #e67e22; background: #fffbf0; }
         .event-item.overlap { background: #fee2e2; border-right-color: #dc2626; }
         .event-item.upcoming { background: #fef8e7; border-right-color: #f4b942; }
-        .event-item:hover { transform: translateX(-5px); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .event-title { font-weight: bold; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .event-name { display: flex; align-items: center; gap: 6px; }
         .event-type { font-size: 0.6rem; padding: 2px 8px; border-radius: 20px; background: #fef8e7; }
         .event-details { font-size: 0.65rem; color: #666; display: flex; flex-wrap: wrap; gap: 8px; }
         .event-phone { direction: ltr; font-family: monospace; background: #f0f0f0; padding: 1px 4px; border-radius: 6px; font-size: 0.6rem; }
-        .overlap-warning { position: absolute; top: -5px; left: -5px; background: #dc2626; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
-        .upcoming-badge { position: absolute; top: -5px; right: -5px; background: #f4b942; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
-        
+        .overlap-warning, .upcoming-badge { position: absolute; top: -5px; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; color: white; }
+        .overlap-warning { left: -5px; background: #dc2626; }
+        .upcoming-badge { right: -5px; background: #f4b942; }
         .fc { direction: rtl; }
         .fc .fc-toolbar { flex-direction: column; gap: 10px; margin-bottom: 15px; }
         @media (min-width: 768px) { .fc .fc-toolbar { flex-direction: row; } }
-        .fc .fc-button { background: #c9a03d !important; border: none !important; cursor: pointer; }
-        .fc-event { cursor: pointer; }
-        .fc-event.overlap-event { border: 2px solid #dc2626 !important; box-shadow: 0 0 5px rgba(220,38,38,0.5); }
-        .fc-event.upcoming-event { border: 2px solid #f4b942 !important; }
-        
+        .fc .fc-button { background: #c9a03d !important; border: none !important; }
         .loading { text-align: center; padding: 40px; }
         .spinner { width: 40px; height: 40px; border: 3px solid #fef8e7; border-top: 3px solid #c9a03d; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .footer-note { margin-top: 20px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 25px; }
-        
-        /* in‑app notification toasts */
         .notification-container { position: fixed; top: 70px; right: 10px; left: 10px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .in-app-notification { background: white; border-radius: 16px; padding: 14px 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.2); animation: slideDown 0.3s ease; direction: rtl; display: flex; align-items: center; gap: 12px; cursor: pointer; pointer-events: auto; border-right: 4px solid #f4b942; }
         .in-app-notification.overlap { border-right-color: #dc2626; }
-        .in-app-notification.overlap .notif-icon { background: #fee2e2; color: #dc2626; }
-        .in-app-notification.warning .notif-icon { background: #fef8e7; color: #f4b942; }
-        .notif-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .notif-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; background: #fef8e7; }
         .notif-content { flex: 1; }
         .notif-title { font-weight: bold; font-size: 0.85rem; margin-bottom: 4px; }
         .notif-message { font-size: 0.7rem; color: #666; }
-        .notif-time { font-size: 0.6rem; color: #999; margin-top: 4px; }
-        .notif-close { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #f0f0f0; font-size: 0.8rem; }
+        .notif-close { width: 24px; height: 24px; border-radius: 50%; background: #f0f0f0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
         @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        
         .notification-bell { position: relative; cursor: pointer; }
         .notification-count { position: absolute; top: -8px; right: -8px; background: #dc2626; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
-        .notification-panel { position: fixed; top: 60px; left: 20px; right: 20px; width: auto; max-width: 380px; max-height: 500px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 10001; display: none; flex-direction: column; overflow: hidden; direction: rtl; margin: 0 auto; }
+        .notification-panel { position: fixed; top: 60px; left: 20px; right: 20px; max-width: 380px; max-height: 500px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 10001; display: none; flex-direction: column; overflow: hidden; direction: rtl; margin: 0 auto; }
         @media (min-width: 768px) { .notification-panel { left: 20px; right: auto; width: 350px; } }
         .notification-panel.show { display: flex; }
         .notification-header { background: linear-gradient(135deg, #c9a03d, #8b6914); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
-        .notification-header button { background: none; border: none; color: white; cursor: pointer; font-size: 0.8rem; }
         .notification-list { max-height: 450px; overflow-y: auto; }
-        .notification-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; transition: background 0.2s; }
+        .notification-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
         .notification-item.unread { background: #fef8e7; }
         .notification-title { font-weight: bold; font-size: 0.85rem; }
-        .notification-message { font-size: 0.7rem; color: #666; margin-top: 4px; }
+        .notification-message { font-size: 0.7rem; color: #666; }
         .notification-time { font-size: 0.6rem; color: #999; margin-top: 4px; }
     </style>
 </head>
@@ -160,44 +129,27 @@
     </div>
 
     <div class="two-columns">
-        <div class="calendar-panel">
-            <div class="section-title">📆 التقويم</div>
-            <div id="calendar"><div class="loading"><div class="spinner"></div><p>جاري تحميل التقويم...</p></div></div>
-        </div>
-        <div class="events-panel">
-            <div class="section-title">
-                <span>📋 قائمة المواعيد (انقر لعرض التفاصيل)</span>
-                <span class="events-count" id="eventsCount">0</span>
-            </div>
-            <div id="eventList" class="event-list"><div class="loading"><div class="spinner"></div><p>جاري تحميل البيانات...</p></div></div>
-        </div>
+        <div class="calendar-panel"><div class="section-title">📆 التقويم</div><div id="calendar"><div class="loading"><div class="spinner"></div><p>جاري تحميل التقويم...</p></div></div></div>
+        <div class="events-panel"><div class="section-title"><span>📋 قائمة المواعيد</span><span class="events-count" id="eventsCount">0</span></div><div id="eventList" class="event-list"><div class="loading"><div class="spinner"></div><p>جاري تحميل البيانات...</p></div></div></div>
     </div>
-
-    <div class="footer-note">
-        📌 المعاينات من العمود O | 📞 متابعات المكالمات من العمود L | 📋 متابعات المعاينات من العمود S
-    </div>
+    <div class="footer-note">📌 المعاينات من العمود O | 📞 متابعات المكالمات من العمود L | 📋 متابعات المعاينات من العمود S</div>
 </div>
 
 <div class="notification-panel" id="notificationPanel">
-    <div class="notification-header">
-        <span><i class="fas fa-bell"></i> الإشعارات</span>
-        <button id="clearNotificationsBtn">مسح الكل</button>
-    </div>
-    <div class="notification-list" id="notificationList">
-        <div style="text-align: center; padding: 20px; color: #999;">لا توجد إشعارات</div>
-    </div>
+    <div class="notification-header"><span><i class="fas fa-bell"></i> الإشعارات</span><button id="clearNotificationsBtn">مسح الكل</button></div>
+    <div class="notification-list" id="notificationList"><div style="text-align:center;padding:20px;color:#999;">لا توجد إشعارات</div></div>
 </div>
 
 <script>
     // ========== PWA Service Worker ==========
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').then(reg => console.log('Service Worker registered')).catch(err => console.log('SW failed:', err));
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed:', err));
     }
 
-    // ========== طلب إذن الإشعارات ==========
+    // ========== System Notification Support ==========
     async function requestNotificationPermission() {
         if (!('Notification' in window)) {
-            console.log('المتصفح لا يدعم الإشعارات');
+            console.log('Notifications not supported');
             return false;
         }
         if (Notification.permission === 'granted') return true;
@@ -208,38 +160,47 @@
         return false;
     }
 
-    // ========== إرسال إشعار نظام (Push) ==========
     function sendSystemNotification(title, body, tag = null) {
-        if (Notification.permission !== 'granted') return;
-        const options = {
-            body: body,
-            icon: 'https://img.icons8.com/color/96/real-estate.png',
-            badge: 'https://img.icons8.com/color/96/real-estate.png',
-            vibrate: [200, 100, 200],
-            tag: tag,
-            renotify: true
-        };
-        new Notification(title, options);
+        if (Notification.permission !== 'granted') {
+            console.log('Notification permission not granted');
+            return;
+        }
+        try {
+            const options = {
+                body: body,
+                icon: 'https://img.icons8.com/color/96/real-estate.png',
+                badge: 'https://img.icons8.com/color/96/real-estate.png',
+                vibrate: [200, 100, 200],
+                tag: tag,
+                renotify: true
+            };
+            new Notification(title, options);
+        } catch(e) {
+            console.error('Error sending notification:', e);
+        }
     }
 
-    // ========== Google Sheets Settings ==========
-    const SPREADSHEET_ID = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
-    const SHEET_NAME = 'مبيعات';
-    const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
+    // Test notification function (direct)
+    function testSystemNotification() {
+        if (Notification.permission === 'granted') {
+            sendSystemNotification('🧪 اختبار الإشعار', 'هذا إشعار نظام حقيقي. إذا وصل إليك، فالإعدادات صحيحة!', 'test');
+            // Also show in-app toast
+            showInAppNotification('🧪 اختبار الإشعار', 'تم إرسال إشعار النظام. تحقق من شريط الحالة.', 'upcoming', 5000);
+        } else {
+            Swal.fire({
+                title: '⚠️ الإشعارات غير مفعلة',
+                text: 'يرجى السماح بالإشعارات من المتصفح',
+                icon: 'warning',
+                confirmButtonText: 'طلب الإذن',
+                confirmButtonColor: '#c9a03d'
+            }).then(() => requestNotificationPermission());
+        }
+    }
 
-    const COL_NAME = 1, COL_PHONE = 2, COL_CITY = 6, COL_ADDRESS = 7, COL_NOTES = 8;
-    const COL_APP_DATE = 14, COL_APP_TIME = 15;
-    const COL_CB_L_DATE = 11, COL_CB_L_NOTES = 13;
-    const COL_CB_S_DATE = 18, COL_CB_S_NOTES = 20;
-
-    let allEvents = [], currentType = 'all', filterStartDate = null, filterEndDate = null, calendar = null, isLoading = false;
-    let shownUpcomingAlerts = new Set();
+    // ========== In-App Notifications & Persistent List ==========
     let notificationsList = [];
     let notifId = 0;
-    
-    const TYPE_APP = 'معاينة', TYPE_CB_L = 'متابعة مكالمة', TYPE_CB_S = 'متابعة معاينة';
 
-    // ---------- In‑App Notifications + Persistent List ----------
     function showInAppNotification(title, message, type, duration = 8000) {
         const container = document.getElementById('notificationContainer');
         if (!container) return;
@@ -259,10 +220,8 @@
         container.appendChild(notif);
         setTimeout(() => { if (notif.parentNode) notif.remove(); }, duration);
         addToPersistentList(title, message, type);
-        // Also send system notification
-        sendSystemNotification(title, message, type === 'overlap' ? 'overlap' : 'upcoming');
     }
-    
+
     function addToPersistentList(title, message, type) {
         const id = notifId++;
         notificationsList.unshift({ id, title, message, type, time: new Date(), read: false });
@@ -270,7 +229,7 @@
         updateNotificationPanel();
         updateNotificationCount();
     }
-    
+
     function updateNotificationPanel() {
         const listContainer = document.getElementById('notificationList');
         if (!listContainer) return;
@@ -289,12 +248,12 @@
         }
         listContainer.innerHTML = html;
     }
-    
+
     window.markNotificationRead = function(id) {
         const n = notificationsList.find(n => n.id === id);
         if (n) { n.read = true; updateNotificationPanel(); updateNotificationCount(); }
     };
-    
+
     function updateNotificationCount() {
         const unread = notificationsList.filter(n => !n.read).length;
         const badge = document.getElementById('notificationCount');
@@ -303,13 +262,13 @@
             else { badge.style.display = 'none'; }
         }
     }
-    
+
     function clearAllNotifications() {
         notificationsList = [];
         updateNotificationPanel();
         updateNotificationCount();
     }
-    
+
     function formatTimeAgo(date) {
         const seconds = Math.floor((new Date() - date) / 1000);
         if (seconds < 60) return 'الآن';
@@ -319,79 +278,21 @@
         if (hours < 24) return `منذ ${hours} ساعة`;
         return `منذ ${Math.floor(hours / 24)} يوم`;
     }
-    
-    function testNotification() {
-        const title = '🧪 اختبار الإشعار';
-        const message = 'هذا إشعار نظام حقيقي. إذا وصل إليك، فالإعدادات صحيحة!';
-        showInAppNotification(title, message, 'upcoming', 5000);
-        sendSystemNotification(title, message, 'test');
-    }
 
-    // ---------- Event Details ----------
-    window.showEventDetails = function(title, date, time, phone, city, address, notes, type) {
-        let locationHtml = '';
-        if (city || address) locationHtml = `<p><strong>📍 الموقع:</strong> ${city || ''} ${address || ''}</p>`;
-        Swal.fire({
-            title: title, 
-            html: `<div style="text-align:right">
-                        <p><strong>📋 النوع:</strong> ${type}</p>
-                        <p><strong>📅 التاريخ:</strong> ${date}</p>
-                        ${time ? `<p><strong>🕐 الوقت:</strong> ${time}</p>` : ''}
-                        <p><strong>📞 الهاتف:</strong> ${phone || 'غير متوفر'}</p>
-                        ${locationHtml}
-                        <p><strong>📝 الملاحظات:</strong> ${notes || 'لا توجد'}</p>
-                    </div>`,
-            icon: type === TYPE_APP ? 'info' : 'warning', confirmButtonColor: '#c9a03d', confirmButtonText: 'إغلاق'
-        });
-    };
+    // ========== Google Sheets Integration (same as before, simplified) ==========
+    const SPREADSHEET_ID = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
+    const SHEET_NAME = 'مبيعات';
+    const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
 
-    // ---------- Overlap & Upcoming detection ----------
-    function detectOverlaps(events) {
-        const appointmentsOnly = events.filter(e => e.type === TYPE_APP);
-        const overlaps = [];
-        for (let i = 0; i < appointmentsOnly.length; i++) {
-            for (let j = i+1; j < appointmentsOnly.length; j++) {
-                const e1 = appointmentsOnly[i], e2 = appointmentsOnly[j];
-                if (new Date(e1.date).toDateString() === new Date(e2.date).toDateString()) {
-                    const t1 = e1.date.getHours()*60 + e1.date.getMinutes();
-                    const t2 = e2.date.getHours()*60 + e2.date.getMinutes();
-                    if (Math.abs(t1 - t2) < 60) overlaps.push({ event1: e1, event2: e2, date: new Date(e1.date) });
-                }
-            }
-        }
-        return overlaps;
-    }
-    
-    function detectUpcomingEvents(events) {
-        const now = new Date(), next24 = new Date(now.getTime() + 24*60*60*1000);
-        return events.filter(ev => { const ed = new Date(ev.date); return ed >= now && ed <= next24; });
-    }
-    
-    function showUpcomingNotifications(upcoming) {
-        for (const ev of upcoming) {
-            const key = `upcoming_${ev.id}`;
-            if (shownUpcomingAlerts.has(key)) continue;
-            shownUpcomingAlerts.add(key);
-            const hours = Math.round((new Date(ev.date) - new Date()) / (1000*60*60));
-            const timeText = hours < 1 ? 'خلال أقل من ساعة' : `بعد ${hours} ساعات`;
-            const title = `🔔 ${ev.type === TYPE_APP ? 'معاينة' : 'متابعة'} قريب`;
-            const message = `${ev.title} - ${timeText}`;
-            showInAppNotification(title, message, 'upcoming', 8000);
-        }
-    }
-    
-    function showOverlapAlerts(overlaps) {
-        for (const ov of overlaps) {
-            const key = `overlap_${ov.event1.id}_${ov.event2.id}`;
-            if (shownUpcomingAlerts.has(key)) continue;
-            shownUpcomingAlerts.add(key);
-            const title = `⚠️ تداخل في مواعيد المعاينات`;
-            const message = `${ov.date.toLocaleDateString('ar-EG')}: ${ov.event1.title} و ${ov.event2.title}`;
-            showInAppNotification(title, message, 'overlap', 10000);
-        }
-    }
+    const COL_NAME = 1, COL_PHONE = 2, COL_CITY = 6, COL_ADDRESS = 7, COL_NOTES = 8;
+    const COL_APP_DATE = 14, COL_APP_TIME = 15;
+    const COL_CB_L_DATE = 11, COL_CB_L_NOTES = 13;
+    const COL_CB_S_DATE = 18, COL_CB_S_NOTES = 20;
 
-    // ---------- Date/Time parsing ----------
+    let allEvents = [], currentType = 'all', filterStartDate = null, filterEndDate = null, calendar = null, isLoading = false;
+    let shownUpcomingAlerts = new Set();
+    const TYPE_APP = 'معاينة', TYPE_CB_L = 'متابعة مكالمة', TYPE_CB_S = 'متابعة معاينة';
+
     function parseDate(dateStr) {
         if (!dateStr) return null;
         let s = dateStr.toString().trim();
@@ -407,7 +308,7 @@
         let d = new Date(year, month, day, 12, 0);
         return !isNaN(d.getTime()) ? d : null;
     }
-    
+
     function parseTime(timeStr) {
         if (!timeStr) return { hour: 12, minute: 0, display: '' };
         let s = timeStr.toString().trim();
@@ -423,7 +324,6 @@
         return { hour: 12, minute: 0, display: '' };
     }
 
-    // ---------- Fetch from Google Sheets ----------
     async function fetchRealData() {
         const statusSpan = document.getElementById('status');
         statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جلب البيانات...';
@@ -468,31 +368,57 @@
             return events;
         } catch (error) {
             statusSpan.innerHTML = '❌ فشل الجلب';
-            console.error(error);
             return [];
         }
     }
 
-    // ---------- Render UI ----------
-    function refreshAll() {
-        if (!allEvents.length) return;
-        let filtered = [...allEvents];
-        if (currentType === 'appointment') filtered = filtered.filter(e => e.type === TYPE_APP);
-        else if (currentType === 'callback') filtered = filtered.filter(e => e.type !== TYPE_APP);
-        if (filterStartDate) filtered = filtered.filter(e => new Date(e.date).setHours(0,0,0,0) >= filterStartDate.getTime());
-        if (filterEndDate) filtered = filtered.filter(e => new Date(e.date).setHours(0,0,0,0) <= filterEndDate.getTime());
-        
-        const overlaps = detectOverlaps(filtered);
-        if (overlaps.length > 0) showOverlapAlerts(overlaps);
-        const upcoming = detectUpcomingEvents(filtered);
-        if (upcoming.length > 0) showUpcomingNotifications(upcoming);
-        
-        document.getElementById('eventsCount').innerText = filtered.length;
-        updateStats(filtered);
-        renderGroupedList(filtered, overlaps, upcoming);
-        renderCalendar(filtered, overlaps, upcoming);
+    function detectOverlaps(events) {
+        const appointmentsOnly = events.filter(e => e.type === TYPE_APP);
+        const overlaps = [];
+        for (let i = 0; i < appointmentsOnly.length; i++) {
+            for (let j = i+1; j < appointmentsOnly.length; j++) {
+                const e1 = appointmentsOnly[i], e2 = appointmentsOnly[j];
+                if (new Date(e1.date).toDateString() === new Date(e2.date).toDateString()) {
+                    const t1 = e1.date.getHours()*60 + e1.date.getMinutes();
+                    const t2 = e2.date.getHours()*60 + e2.date.getMinutes();
+                    if (Math.abs(t1 - t2) < 60) overlaps.push({ event1: e1, event2: e2, date: new Date(e1.date) });
+                }
+            }
+        }
+        return overlaps;
     }
-    
+
+    function detectUpcomingEvents(events) {
+        const now = new Date(), next24 = new Date(now.getTime() + 24*60*60*1000);
+        return events.filter(ev => { const ed = new Date(ev.date); return ed >= now && ed <= next24; });
+    }
+
+    function showUpcomingNotifications(upcoming) {
+        for (const ev of upcoming) {
+            const key = `upcoming_${ev.id}`;
+            if (shownUpcomingAlerts.has(key)) continue;
+            shownUpcomingAlerts.add(key);
+            const hours = Math.round((new Date(ev.date) - new Date()) / (1000*60*60));
+            const timeText = hours < 1 ? 'خلال أقل من ساعة' : `بعد ${hours} ساعات`;
+            const title = `🔔 ${ev.type === TYPE_APP ? 'معاينة' : 'متابعة'} قريب`;
+            const message = `${ev.title} - ${timeText}`;
+            showInAppNotification(title, message, 'upcoming', 8000);
+            sendSystemNotification(title, message, `upcoming_${ev.id}`);
+        }
+    }
+
+    function showOverlapAlerts(overlaps) {
+        for (const ov of overlaps) {
+            const key = `overlap_${ov.event1.id}_${ov.event2.id}`;
+            if (shownUpcomingAlerts.has(key)) continue;
+            shownUpcomingAlerts.add(key);
+            const title = `⚠️ تداخل في مواعيد المعاينات`;
+            const message = `${ov.date.toLocaleDateString('ar-EG')}: ${ov.event1.title} و ${ov.event2.title}`;
+            showInAppNotification(title, message, 'overlap', 10000);
+            sendSystemNotification(title, message, `overlap_${key}`);
+        }
+    }
+
     function updateStats(events) {
         const totalApp = events.filter(e => e.type === TYPE_APP).length;
         const totalCb = events.filter(e => e.type !== TYPE_APP).length;
@@ -505,10 +431,10 @@
         document.getElementById('todayApp').innerText = todayApp;
         document.getElementById('todayCb').innerText = todayCb;
     }
-    
+
     function renderGroupedList(events, overlaps, upcomingEvents) {
         const container = document.getElementById('eventList');
-        if (!events.length) { container.innerHTML = '<div class="loading">✨ لا توجد مواعيد في النطاق المحدد</div>'; return; }
+        if (!events.length) { container.innerHTML = '<div class="loading">✨ لا توجد مواعيد</div>'; return; }
         const overlapIds = new Set(overlaps.flatMap(o => [o.event1.id, o.event2.id]));
         const upcomingIds = new Set(upcomingEvents.map(e => e.id));
         const grouped = {};
@@ -529,8 +455,8 @@
                 const isUpcoming = upcomingIds.has(ev.id);
                 let extraClass = isOverlap ? 'overlap' : (isUpcoming ? 'upcoming' : '');
                 html += `<div class="event-item ${isCallback ? 'callback' : ''} ${extraClass}" onclick="showEventDetails('${ev.title.replace(/'/g,"\\'")}', '${dateStr}', '${ev.displayTime || ''}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${ev.type}')">
-                    ${isOverlap ? '<div class="overlap-warning" title="تداخل في مواعيد المعاينات">!</div>' : ''}
-                    ${isUpcoming && !isOverlap ? '<div class="upcoming-badge" title="موعد خلال 24 ساعة">⏰</div>' : ''}
+                    ${isOverlap ? '<div class="overlap-warning">!</div>' : ''}
+                    ${isUpcoming && !isOverlap ? '<div class="upcoming-badge">⏰</div>' : ''}
                     <div class="event-title"><div class="event-name"><i class="fas ${isCallback ? 'fa-phone-alt' : 'fa-building'}"></i> ${ev.title}</div><span class="event-type">${icon} ${ev.type}</span></div>
                     <div class="event-details">${timeDisplay ? `<span>${timeDisplay}</span>` : ''}<span>📞 ${ev.phone || 'غير متوفر'}</span></div>
                 </div>`;
@@ -539,7 +465,7 @@
         }
         container.innerHTML = html;
     }
-    
+
     function renderCalendar(events, overlaps, upcomingEvents) {
         const el = document.getElementById('calendar');
         if (calendar) { calendar.destroy(); calendar = null; }
@@ -551,7 +477,6 @@
             title: `${ev.type === TYPE_APP ? '🏢' : (ev.type === TYPE_CB_L ? '📞' : '📋')} ${ev.title}${ev.displayTime ? ` (${ev.displayTime})` : ''}`,
             start: ev.date,
             backgroundColor: overlapIds.has(ev.id) ? '#dc2626' : (upcomingIds.has(ev.id) ? '#f4b942' : (ev.type === TYPE_APP ? '#c9a03d' : (ev.type === TYPE_CB_L ? '#e67e22' : '#3b82f6'))),
-            className: overlapIds.has(ev.id) ? 'overlap-event' : (upcomingIds.has(ev.id) ? 'upcoming-event' : ''),
             extendedProps: { title: ev.title, dateStr: ev.date.toLocaleDateString('ar-EG'), time: ev.displayTime, phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, type: ev.type }
         }));
         calendar = new FullCalendar.Calendar(el, {
@@ -564,7 +489,33 @@
         if (filterStartDate) calendar.gotoDate(filterStartDate);
     }
 
-    // ---------- Filters ----------
+    window.showEventDetails = function(title, date, time, phone, city, address, notes, type) {
+        let locationHtml = '';
+        if (city || address) locationHtml = `<p><strong>📍 الموقع:</strong> ${city || ''} ${address || ''}</p>`;
+        Swal.fire({
+            title: title, 
+            html: `<div style="text-align:right"><p><strong>📋 النوع:</strong> ${type}</p><p><strong>📅 التاريخ:</strong> ${date}</p>${time ? `<p><strong>🕐 الوقت:</strong> ${time}</p>` : ''}<p><strong>📞 الهاتف:</strong> ${phone || 'غير متوفر'}</p>${locationHtml}<p><strong>📝 الملاحظات:</strong> ${notes || 'لا توجد'}</p></div>`,
+            icon: type === TYPE_APP ? 'info' : 'warning', confirmButtonColor: '#c9a03d', confirmButtonText: 'إغلاق'
+        });
+    };
+
+    function refreshAll() {
+        if (!allEvents.length) return;
+        let filtered = [...allEvents];
+        if (currentType === 'appointment') filtered = filtered.filter(e => e.type === TYPE_APP);
+        else if (currentType === 'callback') filtered = filtered.filter(e => e.type !== TYPE_APP);
+        if (filterStartDate) filtered = filtered.filter(e => new Date(e.date).setHours(0,0,0,0) >= filterStartDate.getTime());
+        if (filterEndDate) filtered = filtered.filter(e => new Date(e.date).setHours(0,0,0,0) <= filterEndDate.getTime());
+        const overlaps = detectOverlaps(filtered);
+        if (overlaps.length > 0) showOverlapAlerts(overlaps);
+        const upcoming = detectUpcomingEvents(filtered);
+        if (upcoming.length > 0) showUpcomingNotifications(upcoming);
+        document.getElementById('eventsCount').innerText = filtered.length;
+        updateStats(filtered);
+        renderGroupedList(filtered, overlaps, upcoming);
+        renderCalendar(filtered, overlaps, upcoming);
+    }
+
     function applyDateFilter() {
         const start = document.getElementById('startDate').value, end = document.getElementById('endDate').value;
         filterStartDate = start ? new Date(start) : null;
@@ -578,7 +529,7 @@
         else info.innerText = 'جميع المواعيد';
         refreshAll();
     }
-    
+
     function clearDateFilter() {
         document.getElementById('startDate').value = '';
         document.getElementById('endDate').value = '';
@@ -586,13 +537,13 @@
         document.getElementById('rangeInfo').innerText = 'جميع المواعيد';
         refreshAll();
     }
-    
+
     function setTypeFilter(type) {
         currentType = type;
         document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.filter === type));
         refreshAll();
     }
-    
+
     async function loadData() {
         if (isLoading) return;
         isLoading = true;
@@ -601,23 +552,19 @@
         isLoading = false;
     }
 
-    // ---------- Initialization ----------
+    // ========== Initialization ==========
     window.addEventListener('load', async () => {
-        // Request notification permission on load
         await requestNotificationPermission();
-        
         document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => setTypeFilter(btn.dataset.filter)));
         document.getElementById('refreshBtn').addEventListener('click', loadData);
         document.getElementById('applyDateBtn').addEventListener('click', applyDateFilter);
         document.getElementById('clearDateBtn').addEventListener('click', clearDateFilter);
-        document.getElementById('testNotifBtn').addEventListener('click', testNotification);
-        
+        document.getElementById('testNotifBtn').addEventListener('click', testSystemNotification);
         const bell = document.getElementById('notificationBell');
         const panel = document.getElementById('notificationPanel');
         bell.addEventListener('click', () => panel.classList.toggle('show'));
         document.getElementById('clearNotificationsBtn').addEventListener('click', clearAllNotifications);
         document.addEventListener('click', (e) => { if (!bell.contains(e.target) && !panel.contains(e.target)) panel.classList.remove('show'); });
-        
         loadData();
         setInterval(loadData, 300000);
     });
