@@ -82,7 +82,7 @@
         
         .footer-note { margin-top: 20px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 25px; }
         
-        /* ========== إشعارات داخل التطبيق - تعمل على الجوال 100% ========== */
+        /* ========== إشعارات داخل التطبيق - تظهر على الجوال ========== */
         .notification-container {
             position: fixed;
             top: 70px;
@@ -172,6 +172,18 @@
         .notification-title { font-weight: bold; font-size: 0.85rem; }
         .notification-message { font-size: 0.7rem; color: #666; margin-top: 4px; }
         .notification-time { font-size: 0.6rem; color: #999; margin-top: 4px; }
+        
+        /* زر تجربة الإشعارات */
+        .test-notif-btn {
+            background: #3b82f6;
+            border: none;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            margin-right: 10px;
+        }
     </style>
 </head>
 <body>
@@ -186,6 +198,7 @@
                 <button class="filter-btn" data-filter="appointment">معاينات</button>
                 <button class="filter-btn" data-filter="callback">متابعات</button>
             </div>
+            <button class="test-notif-btn" id="testNotifBtn"><i class="fas fa-bell"></i> اختبار الإشعار</button>
             <div class="notification-bell" id="notificationBell">
                 <i class="fas fa-bell" style="font-size: 1.2rem; color: #c9a03d;"></i>
                 <span class="notification-count" id="notificationCount" style="display: none;">0</span>
@@ -262,6 +275,7 @@
     // ========== نظام الإشعارات الداخلي ==========
     function showInAppNotification(title, message, type, duration = 8000) {
         const container = document.getElementById('notificationContainer');
+        if (!container) return;
         const notif = document.createElement('div');
         notif.className = `in-app-notification ${type === 'overlap' ? 'overlap' : 'warning'}`;
         const icon = type === 'overlap' ? '⚠️' : '🔔';
@@ -296,6 +310,7 @@
     
     function updateNotificationPanel() {
         const listContainer = document.getElementById('notificationList');
+        if (!listContainer) return;
         if (notificationsList.length === 0) {
             listContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">لا توجد إشعارات</div>';
             return;
@@ -322,11 +337,13 @@
     function updateNotificationCount() {
         const unread = notificationsList.filter(n => !n.read).length;
         const badge = document.getElementById('notificationCount');
-        if (unread > 0) {
-            badge.style.display = 'flex';
-            badge.innerText = unread > 9 ? '9+' : unread;
-        } else {
-            badge.style.display = 'none';
+        if (badge) {
+            if (unread > 0) {
+                badge.style.display = 'flex';
+                badge.innerText = unread > 9 ? '9+' : unread;
+            } else {
+                badge.style.display = 'none';
+            }
         }
     }
     
@@ -344,6 +361,12 @@
         const hours = Math.floor(minutes / 60);
         if (hours < 24) return `منذ ${hours} ساعة`;
         return `منذ ${Math.floor(hours / 24)} يوم`;
+    }
+
+    // دالة اختبار الإشعار (للتأكد من عملها على الجوال)
+    function testNotification() {
+        showInAppNotification('🧪 اختبار الإشعار', 'هذا إشعار تجريبي. إذا ظهر على شاشة جوالك، فالنظام يعمل بنجاح!', 'upcoming', 5000);
+        showInAppNotification('⚠️ تنبيه تجريبي', 'يمكنك الآن رؤية الإشعارات على هاتفك', 'overlap', 5000);
     }
 
     // ========== عرض التفاصيل ==========
@@ -628,6 +651,9 @@
         document.getElementById('refreshBtn').addEventListener('click', loadData);
         document.getElementById('applyDateBtn').addEventListener('click', applyDateFilter);
         document.getElementById('clearDateBtn').addEventListener('click', clearDateFilter);
+        
+        // زر اختبار الإشعارات
+        document.getElementById('testNotifBtn').addEventListener('click', testNotification);
         
         const bell = document.getElementById('notificationBell');
         const panel = document.getElementById('notificationPanel');
