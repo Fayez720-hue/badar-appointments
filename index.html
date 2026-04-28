@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* جميع الأنماط كما هي بالكامل دون تغيير */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', sans-serif; }
         body { background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 100%); min-height: 100vh; padding: 15px; direction: rtl; }
         .dashboard-container { max-width: 1600px; margin: 0 auto; }
@@ -24,7 +23,6 @@
         .filter-btn { padding: 5px 15px; border-radius: 30px; border: none; cursor: pointer; font-size: 0.75rem; background: transparent; }
         .filter-btn.active { background: #c9a03d; color: white; }
         .refresh-btn { background: #c9a03d; border: none; color: white; padding: 5px 15px; border-radius: 25px; cursor: pointer; margin-right: 10px; }
-        /* زر اختبار الإشعار تمت إزالته من HTML وبالتالي نزيل تنسيقه */
         .status-badge { background: #eef2ff; padding: 5px 12px; border-radius: 25px; font-size: 0.7rem; }
         .date-range-filter { background: white; border-radius: 18px; padding: 12px 20px; margin-bottom: 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; border: 1px solid #eee; }
         .date-range-filter input { padding: 6px 10px; border-radius: 10px; border: 1px solid #ddd; }
@@ -51,7 +49,6 @@
         .event-item.callback { border-right-color: #e67e22; background: #fffbf0; }
         .event-item.overlap { background: #fee2e2; border-right-color: #dc2626; }
         .event-item.upcoming { background: #fef8e7; border-right-color: #f4b942; }
-        /* إضافة نمط للحدث من النوع الجديد */
         .event-item.done { border-right-color: #10b981; background: #ecfdf5; }
         .event-title { font-weight: bold; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .event-name { display: flex; align-items: center; gap: 6px; }
@@ -102,10 +99,8 @@
                 <button class="filter-btn active" data-filter="all">الكل</button>
                 <button class="filter-btn" data-filter="appointment">معاينات</button>
                 <button class="filter-btn" data-filter="callback">متابعات</button>
-                <!-- الزر الجديد -->
                 <button class="filter-btn" data-filter="done">معاينات تمت</button>
             </div>
-            <!-- زر الجرس والإشعارات فقط -->
             <div class="notification-bell" id="notificationBell">
                 <i class="fas fa-bell" style="font-size: 1.2rem; color: #c9a03d;"></i>
                 <span class="notification-count" id="notificationCount" style="display: none;">0</span>
@@ -271,22 +266,21 @@
         return `منذ ${Math.floor(hours / 24)} يوم`;
     }
 
-    // ========== إعدادات جدول البيانات (الأصلي) ==========
+    // ========== Main Sheet Config (Badar appointments) ==========
     const SPREADSHEET_ID_MAIN = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
     const SHEET_NAME_MAIN = 'مبيعات';
-    // ========== جدول البيانات الجديد (معاينات تمت) ==========
+    // ========== Done Appointments Sheet Config ==========
     const SPREADSHEET_ID_DONE = '1HcnGcO9hcYWPNRETHGzdN1-XwTgpvc6YZhPyw4zRssI';
-    const SHEET_NAME_DONE = 'ورقة1'; // يمكنك تغييره لاسم الورقة الفعلي إن كان مختلفًا
+    const SHEET_NAME_DONE = 'بيدار (نتائج معاينة)';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
 
-    // الأعمدة في الجدول الأصلي
+    // Main sheet columns (0-indexed)
     const COL_NAME = 1, COL_PHONE = 2, COL_CITY = 6, COL_ADDRESS = 7, COL_NOTES = 8;
     const COL_APP_DATE = 14, COL_APP_TIME = 15;
     const COL_CB_L_DATE = 11, COL_CB_L_NOTES = 13;
     const COL_CB_S_DATE = 18, COL_CB_S_NOTES = 20;
 
-    // الأعمدة في الجدول الجديد (صفرية الأساس)
-    // Timestamp(A), الاسم(B), الموبايل(C), ملاحظات(D), نتيجة(E), رد العميل(F), الكود(G), التاريخ(H)
+    // Done sheet columns (0-indexed)
     const DONE_COL_NAME = 1;        // الاسم
     const DONE_COL_PHONE = 2;       // الموبايل
     const DONE_COL_NOTES = 3;       // ملاحظات
@@ -300,9 +294,8 @@
     const TYPE_APP = 'معاينة';
     const TYPE_CB_L = 'متابعة مكالمة';
     const TYPE_CB_S = 'متابعة معاينة';
-    const TYPE_DONE = 'معاينة تمت'; // النوع الجديد
+    const TYPE_DONE = 'معاينة تمت';
 
-    // دوال تحليل التاريخ والوقت (نفسها)
     function parseDate(dateStr) {
         if (!dateStr) return null;
         let s = dateStr.toString().trim();
@@ -334,7 +327,6 @@
         return { hour: 12, minute: 0, display: '' };
     }
 
-    // جلب البيانات من الجدول الأصلي
     async function fetchMainSheetData() {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_MAIN}/values/${SHEET_NAME_MAIN}!A1:Z500?key=${API_KEY}`;
         const response = await fetch(url);
@@ -354,8 +346,7 @@
             const city = row[COL_CITY] || '';
             const address = row[COL_ADDRESS] || '';
             const notes = row[COL_NOTES] || '';
-
-            // معاينات
+            
             const appDate = row[COL_APP_DATE], appTime = row[COL_APP_TIME] || '';
             if (appDate && appDate !== 'FALSE' && appDate.toString().trim()) {
                 const d = parseDate(appDate);
@@ -365,13 +356,11 @@
                     events.push({ id: `main_app_${i}`, title: name, type: TYPE_APP, date: d, displayTime: t.display, phone, city, address, notes });
                 }
             }
-            // متابعة مكالمات
             const cbL = row[COL_CB_L_DATE], cbLNotes = row[COL_CB_L_NOTES] || '';
             if (cbL && cbL !== 'FALSE' && cbL.toString().trim()) {
                 const d = parseDate(cbL);
                 if (d) events.push({ id: `main_cbL_${i}`, title: name, type: TYPE_CB_L, date: d, displayTime: '', phone, city, address, notes: cbLNotes || notes });
             }
-            // متابعة معاينات
             const cbS = row[COL_CB_S_DATE], cbSNotes = row[COL_CB_S_NOTES] || '';
             if (cbS && cbS !== 'FALSE' && cbS.toString().trim()) {
                 const d = parseDate(cbS);
@@ -381,12 +370,11 @@
         return events;
     }
 
-    // جلب البيانات من الجدول الجديد (معاينات تمت)
     async function fetchDoneSheetData() {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_DONE}/values/${SHEET_NAME_DONE}!A1:Z500?key=${API_KEY}`;
         const response = await fetch(url);
         if (!response.ok) {
-            Swal.fire({ icon: 'error', title: 'خطأ في الاتصال', text: 'تعذر جلب بيانات معاينات تمت' });
+            Swal.fire({ icon: 'error', title: 'خطأ في الاتصال', text: `تعذر جلب بيانات معاينات تمت (${response.status})` });
             throw new Error('فشل الاتصال');
         }
         const data = await response.json();
@@ -406,7 +394,6 @@
             if (dateStr && dateStr !== 'FALSE' && dateStr.toString().trim()) {
                 const d = parseDate(dateStr);
                 if (d) {
-                    // نعتبر الوقت افتراضيًا منتصف النهار
                     events.push({
                         id: `done_${i}`,
                         title: name,
@@ -414,12 +401,12 @@
                         date: d,
                         displayTime: '',
                         phone,
-                        city: '', // لا توجد مدينة في هذا الجدول
+                        city: '',
                         address: '',
                         notes,
-                        result,        // حقل إضافي
-                        clientReply,   // حقل إضافي
-                        code           // حقل إضافي
+                        result,
+                        clientReply,
+                        code
                     });
                 }
             }
@@ -428,7 +415,7 @@
     }
 
     function detectOverlaps(events) {
-        const appointmentsOnly = events.filter(e => e.type === TYPE_APP); // نكتشف التداخل فقط في المعاينات الأصلية
+        const appointmentsOnly = events.filter(e => e.type === TYPE_APP);
         const overlaps = [];
         for (let i = 0; i < appointmentsOnly.length; i++) {
             for (let j = i+1; j < appointmentsOnly.length; j++) {
@@ -520,7 +507,6 @@
                 const isUpcoming = upcomingIds.has(ev.id);
                 if (isOverlap) extraClass = 'overlap';
                 else if (isUpcoming) extraClass = 'upcoming';
-                // تمرير كافة الحقول إلى دالة التفاصيل
                 html += `<div class="event-item ${extraClass}" onclick="showEventDetails('${ev.title.replace(/'/g,"\\'")}', '${dateStr}', '${ev.displayTime || ''}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${ev.type}', '${ev.result || ''}', '${ev.clientReply || ''}', '${ev.code || ''}')">
                     ${isOverlap ? '<div class="overlap-warning">!</div>' : ''}
                     ${isUpcoming && !isOverlap ? '<div class="upcoming-badge">⏰</div>' : ''}
@@ -581,7 +567,6 @@
         if (filterStartDate) calendar.gotoDate(filterStartDate);
     }
 
-    // دالة عرض التفاصيل (محدثة لتشمل الحقول الجديدة)
     window.showEventDetails = function(title, date, time, phone, city, address, notes, type, result, clientReply, code) {
         let extraHtml = '';
         if (type === 'معاينة تمت') {
@@ -613,11 +598,9 @@
         shownUpcomingAlerts.clear();
 
         let filtered = [...allEvents];
-        // تطبيق فلتر النوع
         if (currentType === 'appointment') filtered = filtered.filter(e => e.type === TYPE_APP);
         else if (currentType === 'callback') filtered = filtered.filter(e => e.type === TYPE_CB_L || e.type === TYPE_CB_S);
         else if (currentType === 'done') filtered = filtered.filter(e => e.type === TYPE_DONE);
-        // فلتر التاريخ
         if (filterStartDate) filtered = filtered.filter(e => new Date(e.date).setHours(0,0,0,0) >= filterStartDate.getTime());
         if (filterEndDate) filtered = filtered.filter(e => new Date(e.date).setHours(0,0,0,0) <= filterEndDate.getTime());
         const overlaps = detectOverlaps(filtered);
@@ -663,7 +646,6 @@
         isLoading = true;
         document.getElementById('status').innerHTML = '<i class="fas fa-spinner fa-spin"></i> جلب البيانات...';
         try {
-            // جلب البيانات من كلا الجدولين في نفس الوقت
             const [mainEvents, doneEvents] = await Promise.all([
                 fetchMainSheetData(),
                 fetchDoneSheetData()
@@ -685,7 +667,6 @@
         document.getElementById('refreshBtn').addEventListener('click', loadData);
         document.getElementById('applyDateBtn').addEventListener('click', applyDateFilter);
         document.getElementById('clearDateBtn').addEventListener('click', clearDateFilter);
-        // إزالة مستمع زر اختبار الإشعار
         const bell = document.getElementById('notificationBell');
         const panel = document.getElementById('notificationPanel');
         bell.addEventListener('click', () => panel.classList.toggle('show'));
