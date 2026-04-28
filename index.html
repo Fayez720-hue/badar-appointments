@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>نظام إدارة العقارات - المعاينات والمتابعات</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#c9a03d">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/ar.js"></script>
@@ -85,41 +81,86 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         .footer-note { margin-top: 20px; text-align: center; font-size: 0.65rem; color: rgba(255,255,255,0.7); background: rgba(0,0,0,0.2); padding: 10px; border-radius: 25px; }
-        .error-message { text-align: center; padding: 30px; background: #fee2e2; border-radius: 16px; margin: 20px; }
         
-        /* إشعارات داخل التطبيق - تعمل على جميع الأجهزة */
-        .in-app-toast {
+        /* ========== إشعارات داخل التطبيق - تعمل على الجوال 100% ========== */
+        .notification-container {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            left: 20px;
-            background: #f4b942;
-            color: #1a472a;
-            padding: 15px;
-            border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            top: 70px;
+            right: 10px;
+            left: 10px;
             z-index: 10000;
-            animation: slideUp 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .in-app-notification {
+            background: white;
+            border-radius: 16px;
+            padding: 14px 16px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            animation: slideDown 0.3s ease;
             direction: rtl;
             display: flex;
             align-items: center;
             gap: 12px;
-            font-weight: bold;
             cursor: pointer;
-            max-width: 400px;
-            margin: 0 auto;
+            pointer-events: auto;
+            border-right: 4px solid #f4b942;
         }
-        .in-app-toast.overlap { background: #dc2626; color: white; }
-        .in-app-toast.warning { background: #f4b942; color: #1a472a; }
-        @keyframes slideUp {
-            from { transform: translateY(100%); opacity: 0; }
+        .in-app-notification.overlap { border-right-color: #dc2626; }
+        .in-app-notification.overlap .notif-icon { background: #fee2e2; color: #dc2626; }
+        .in-app-notification.warning .notif-icon { background: #fef8e7; color: #f4b942; }
+        .notif-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        .notif-content { flex: 1; }
+        .notif-title { font-weight: bold; font-size: 0.85rem; margin-bottom: 4px; }
+        .notif-message { font-size: 0.7rem; color: #666; }
+        .notif-time { font-size: 0.6rem; color: #999; margin-top: 4px; }
+        .notif-close {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: #f0f0f0;
+            font-size: 0.8rem;
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
         
         .notification-bell { position: relative; cursor: pointer; }
         .notification-count { position: absolute; top: -8px; right: -8px; background: #dc2626; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; display: flex; align-items: center; justify-content: center; }
         
-        .notification-panel { position: fixed; top: 60px; left: 20px; right: 20px; width: auto; max-width: 380px; max-height: 500px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); z-index: 10001; display: none; flex-direction: column; overflow: hidden; direction: rtl; margin: 0 auto; }
+        .notification-panel {
+            position: fixed;
+            top: 60px;
+            left: 20px;
+            right: 20px;
+            width: auto;
+            max-width: 380px;
+            max-height: 500px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 10001;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            direction: rtl;
+            margin: 0 auto;
+        }
         @media (min-width: 768px) { .notification-panel { left: 20px; right: auto; width: 350px; } }
         .notification-panel.show { display: flex; }
         .notification-header { background: linear-gradient(135deg, #c9a03d, #8b6914); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; }
@@ -131,21 +172,11 @@
         .notification-title { font-weight: bold; font-size: 0.85rem; }
         .notification-message { font-size: 0.7rem; color: #666; margin-top: 4px; }
         .notification-time { font-size: 0.6rem; color: #999; margin-top: 4px; }
-        
-        /* زر تثبيت التطبيق */
-        .install-btn {
-            background: #c9a03d;
-            border: none;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 0.7rem;
-            margin-right: 10px;
-        }
     </style>
 </head>
 <body>
+<div class="notification-container" id="notificationContainer"></div>
+
 <div class="dashboard-container">
     <div class="header">
         <h1><i class="fas fa-building"></i> نظام إدارة العقارات</h1>
@@ -211,71 +242,7 @@
 </div>
 
 <script>
-    // تسجيل Service Worker للإشعارات (للتطبيقات المثبتة)
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js').then(reg => {
-            console.log('Service Worker registered');
-        }).catch(err => {
-            console.log('Service Worker registration failed:', err);
-        });
-    }
-    
-    // دالة لإرسال إشعارات داخل التطبيق (تعمل على الجوال)
-    function showInAppNotification(title, message, type) {
-        const toast = document.createElement('div');
-        toast.className = `in-app-toast ${type === 'overlap' ? 'overlap' : 'warning'}`;
-        const icon = type === 'overlap' ? '⚠️' : '🔔';
-        toast.innerHTML = `<strong>${icon} ${title}</strong><br><small>${message}</small>`;
-        toast.onclick = () => toast.remove();
-        document.body.appendChild(toast);
-        setTimeout(() => { if (toast.parentNode) toast.remove(); }, 8000);
-    }
-    
-    // دالة لإضافة إشعار إلى القائمة
-    function addToNotificationList(title, message, type) {
-        const list = document.getElementById('notificationList');
-        const notifDiv = document.createElement('div');
-        notifDiv.className = 'notification-item unread';
-        notifDiv.innerHTML = `
-            <div class="notification-title">${title}</div>
-            <div class="notification-message">${message}</div>
-            <div class="notification-time">الآن</div>
-        `;
-        notifDiv.onclick = () => {
-            notifDiv.classList.remove('unread');
-            updateNotificationCount();
-        };
-        list.insertBefore(notifDiv, list.firstChild);
-        
-        // إزالة رسالة "لا توجد إشعارات"
-        if (list.children.length > 0 && list.children[0].innerText.includes('لا توجد إشعارات')) {
-            list.innerHTML = '';
-            list.appendChild(notifDiv);
-        }
-        
-        updateNotificationCount();
-        
-        // عرض الإشعار المنبثق
-        showInAppNotification(title, message, type);
-    }
-    
-    function updateNotificationCount() {
-        const unread = document.querySelectorAll('#notificationList .notification-item.unread').length;
-        const badge = document.getElementById('notificationCount');
-        if (unread > 0) {
-            badge.style.display = 'flex';
-            badge.innerText = unread > 9 ? '9+' : unread;
-        } else {
-            badge.style.display = 'none';
-        }
-    }
-    
-    function clearAllNotifications() {
-        document.getElementById('notificationList').innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">لا توجد إشعارات</div>';
-        updateNotificationCount();
-    }
-    
-    // ======================= باقي الكود (جلب البيانات، التقويم، إلخ) =======================
+    // ======================= إعدادات Google Sheets =======================
     const SPREADSHEET_ID = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
     const SHEET_NAME = 'مبيعات';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
@@ -287,17 +254,119 @@
 
     let allEvents = [], currentType = 'all', filterStartDate = null, filterEndDate = null, calendar = null, isLoading = false;
     let shownUpcomingAlerts = new Set();
+    let notificationsList = [];
+    let notifId = 0;
+    
     const TYPE_APP = 'معاينة', TYPE_CB_L = 'متابعة مكالمة', TYPE_CB_S = 'متابعة معاينة';
 
+    // ========== نظام الإشعارات الداخلي ==========
+    function showInAppNotification(title, message, type, duration = 8000) {
+        const container = document.getElementById('notificationContainer');
+        const notif = document.createElement('div');
+        notif.className = `in-app-notification ${type === 'overlap' ? 'overlap' : 'warning'}`;
+        const icon = type === 'overlap' ? '⚠️' : '🔔';
+        notif.innerHTML = `
+            <div class="notif-icon">${icon}</div>
+            <div class="notif-content">
+                <div class="notif-title">${title}</div>
+                <div class="notif-message">${message}</div>
+                <div class="notif-time">الآن</div>
+            </div>
+            <div class="notif-close" onclick="this.parentElement.remove()">✕</div>
+        `;
+        notif.onclick = (e) => {
+            if (e.target.classList.contains('notif-close')) return;
+            notif.remove();
+        };
+        container.appendChild(notif);
+        
+        setTimeout(() => { if (notif.parentNode) notif.remove(); }, duration);
+        addToPersistentList(title, message, type);
+    }
+    
+    function addToPersistentList(title, message, type) {
+        const id = notifId++;
+        notificationsList.unshift({
+            id: id, title: title, message: message, type: type, time: new Date(), read: false
+        });
+        if (notificationsList.length > 50) notificationsList.pop();
+        updateNotificationPanel();
+        updateNotificationCount();
+    }
+    
+    function updateNotificationPanel() {
+        const listContainer = document.getElementById('notificationList');
+        if (notificationsList.length === 0) {
+            listContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">لا توجد إشعارات</div>';
+            return;
+        }
+        let html = '';
+        for (const n of notificationsList) {
+            const timeStr = formatTimeAgo(n.time);
+            html += `
+                <div class="notification-item ${!n.read ? 'unread' : ''}" onclick="markNotificationRead(${n.id})">
+                    <div class="notification-title">${n.title}</div>
+                    <div class="notification-message">${n.message}</div>
+                    <div class="notification-time">${timeStr}</div>
+                </div>
+            `;
+        }
+        listContainer.innerHTML = html;
+    }
+    
+    window.markNotificationRead = function(id) {
+        const n = notificationsList.find(n => n.id === id);
+        if (n) { n.read = true; updateNotificationPanel(); updateNotificationCount(); }
+    };
+    
+    function updateNotificationCount() {
+        const unread = notificationsList.filter(n => !n.read).length;
+        const badge = document.getElementById('notificationCount');
+        if (unread > 0) {
+            badge.style.display = 'flex';
+            badge.innerText = unread > 9 ? '9+' : unread;
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+    
+    function clearAllNotifications() {
+        notificationsList = [];
+        updateNotificationPanel();
+        updateNotificationCount();
+    }
+    
+    function formatTimeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        if (seconds < 60) return 'الآن';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `منذ ${minutes} دقيقة`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `منذ ${hours} ساعة`;
+        return `منذ ${Math.floor(hours / 24)} يوم`;
+    }
+
+    // ========== عرض التفاصيل ==========
     window.showEventDetails = function(title, date, time, phone, city, address, notes, type) {
         let locationHtml = '';
         if (city || address) locationHtml = `<p><strong>📍 الموقع:</strong> ${city || ''} ${address || ''}</p>`;
         Swal.fire({
-            title: title, html: `<div style="text-align:right"><p><strong>📋 النوع:</strong> ${type}</p><p><strong>📅 التاريخ:</strong> ${date}</p>${time ? `<p><strong>🕐 الوقت:</strong> ${time}</p>` : ''}<p><strong>📞 الهاتف:</strong> ${phone || 'غير متوفر'}</p>${locationHtml}<p><strong>📝 الملاحظات:</strong> ${notes || 'لا توجد'}</p></div>`,
-            icon: type === TYPE_APP ? 'info' : 'warning', confirmButtonColor: '#c9a03d', confirmButtonText: 'إغلاق'
+            title: title, 
+            html: `<div style="text-align:right">
+                <p><strong>📋 النوع:</strong> ${type}</p>
+                <p><strong>📅 التاريخ:</strong> ${date}</p>
+                ${time ? `<p><strong>🕐 الوقت:</strong> ${time}</p>` : ''}
+                <p><strong>📞 الهاتف:</strong> ${phone || 'غير متوفر'}</p>
+                ${locationHtml}
+                <p><strong>📝 الملاحظات:</strong> ${notes || 'لا توجد'}</p>
+            </div>`,
+            icon: type === TYPE_APP ? 'info' : 'warning', 
+            confirmButtonColor: '#c9a03d', 
+            confirmButtonText: 'إغلاق'
         });
     };
 
+    // ========== كشف التداخلات ==========
     function detectOverlaps(events) {
         const appointmentsOnly = events.filter(e => e.type === TYPE_APP);
         const overlaps = [];
@@ -314,6 +383,7 @@
         return overlaps;
     }
     
+    // ========== كشف المواعيد القادمة خلال 24 ساعة ==========
     function detectUpcomingEvents(events) {
         const now = new Date(), next24 = new Date(now.getTime() + 24 * 60 * 60 * 1000);
         return events.filter(ev => { const ed = new Date(ev.date); return ed >= now && ed <= next24; });
@@ -328,7 +398,7 @@
             const timeText = hours < 1 ? 'خلال أقل من ساعة' : `بعد ${hours} ساعات`;
             const title = `🔔 ${ev.type === TYPE_APP ? 'معاينة' : 'متابعة'} قريب`;
             const message = `${ev.title} - ${timeText}`;
-            addToNotificationList(title, message, 'upcoming');
+            showInAppNotification(title, message, 'upcoming', 8000);
         }
     }
     
@@ -339,10 +409,11 @@
             shownUpcomingAlerts.add(key);
             const title = `⚠️ تداخل في مواعيد المعاينات`;
             const message = `${ov.date.toLocaleDateString('ar-EG')}: ${ov.event1.title} و ${ov.event2.title}`;
-            addToNotificationList(title, message, 'overlap');
+            showInAppNotification(title, message, 'overlap', 10000);
         }
     }
 
+    // ========== معالجة التواريخ ==========
     function parseDate(dateStr) {
         if (!dateStr) return null;
         let s = dateStr.toString().trim();
@@ -374,6 +445,7 @@
         return { hour: 12, minute: 0, display: '' };
     }
 
+    // ========== جلب البيانات من Google Sheets ==========
     async function fetchRealData() {
         const statusSpan = document.getElementById('status');
         statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جلب البيانات...';
@@ -550,6 +622,7 @@
         isLoading = false;
     }
 
+    // ========== تهيئة الصفحة ==========
     window.addEventListener('load', () => {
         document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => setTypeFilter(btn.dataset.filter)));
         document.getElementById('refreshBtn').addEventListener('click', loadData);
@@ -559,10 +632,7 @@
         const bell = document.getElementById('notificationBell');
         const panel = document.getElementById('notificationPanel');
         bell.addEventListener('click', () => panel.classList.toggle('show'));
-        document.getElementById('clearNotificationsBtn').addEventListener('click', () => {
-            document.getElementById('notificationList').innerHTML = '<div style="text-align: center; padding: 20px; color: #999;">لا توجد إشعارات</div>';
-            updateNotificationCount();
-        });
+        document.getElementById('clearNotificationsBtn').addEventListener('click', clearAllNotifications);
         document.addEventListener('click', (e) => { if (!bell.contains(e.target) && !panel.contains(e.target)) panel.classList.remove('show'); });
         
         loadData();
