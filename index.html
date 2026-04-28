@@ -189,12 +189,40 @@
 </div>
 
 <script>
-    // PWA Service Worker
+    // ========== PWA Service Worker ==========
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').then(reg => console.log('Service Worker registered')).catch(err => console.log('SW failed:', err));
     }
 
-    // ======================= Google Sheets Settings =======================
+    // ========== طلب إذن الإشعارات ==========
+    async function requestNotificationPermission() {
+        if (!('Notification' in window)) {
+            console.log('المتصفح لا يدعم الإشعارات');
+            return false;
+        }
+        if (Notification.permission === 'granted') return true;
+        if (Notification.permission !== 'denied') {
+            const permission = await Notification.requestPermission();
+            return permission === 'granted';
+        }
+        return false;
+    }
+
+    // ========== إرسال إشعار نظام (Push) ==========
+    function sendSystemNotification(title, body, tag = null) {
+        if (Notification.permission !== 'granted') return;
+        const options = {
+            body: body,
+            icon: 'https://img.icons8.com/color/96/real-estate.png',
+            badge: 'https://img.icons8.com/color/96/real-estate.png',
+            vibrate: [200, 100, 200],
+            tag: tag,
+            renotify: true
+        };
+        new Notification(title, options);
+    }
+
+    // ========== Google Sheets Settings ==========
     const SPREADSHEET_ID = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
     const SHEET_NAME = 'مبيعات';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
@@ -211,7 +239,7 @@
     
     const TYPE_APP = 'معاينة', TYPE_CB_L = 'متابعة مكالمة', TYPE_CB_S = 'متابعة معاينة';
 
-    // ---------- In‑App Notifications ----------
+    // ---------- In‑App Notifications + Persistent List ----------
     function showInAppNotification(title, message, type, duration = 8000) {
         const container = document.getElementById('notificationContainer');
         if (!container) return;
@@ -231,6 +259,8 @@
         container.appendChild(notif);
         setTimeout(() => { if (notif.parentNode) notif.remove(); }, duration);
         addToPersistentList(title, message, type);
+        // Also send system notification
+        sendSystemNotification(title, message, type === 'overlap' ? 'overlap' : 'upcoming');
     }
     
     function addToPersistentList(title, message, type) {
@@ -291,8 +321,10 @@
     }
     
     function testNotification() {
-        showInAppNotification('🧪 اختبار الإشعار', 'هذا إشعار تجريبي. إذا ظهر على شاشة جوالك، فالنظام يعمل بنجاح!', 'upcoming', 5000);
-        showInAppNotification('⚠️ تنبيه تجريبي', 'يمكنك الآن رؤية الإشعارات على هاتفك', 'overlap', 5000);
+        const title = '🧪 اختبار الإشعار';
+        const message = 'هذا إشعار نظام حقيقي. إذا وصل إليك، فالإعدادات صحيحة!';
+        showInAppNotification(title, message, 'upcoming', 5000);
+        sendSystemNotification(title, message, 'test');
     }
 
     // ---------- Event Details ----------
@@ -391,7 +423,7 @@
         return { hour: 12, minute: 0, display: '' };
     }
 
-    // ---------- Fetch from Sheets ----------
+    // ---------- Fetch from Google Sheets ----------
     async function fetchRealData() {
         const statusSpan = document.getElementById('status');
         statusSpan.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جلب البيانات...';
@@ -569,8 +601,11 @@
         isLoading = false;
     }
 
-    // ---------- Event Listeners ----------
-    window.addEventListener('load', () => {
+    // ---------- Initialization ----------
+    window.addEventListener('load', async () => {
+        // Request notification permission on load
+        await requestNotificationPermission();
+        
         document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => setTypeFilter(btn.dataset.filter)));
         document.getElementById('refreshBtn').addEventListener('click', loadData);
         document.getElementById('applyDateBtn').addEventListener('click', applyDateFilter);
