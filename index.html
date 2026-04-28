@@ -371,10 +371,18 @@
     }
 
     async function fetchDoneSheetData() {
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_DONE}/values/${SHEET_NAME_DONE}!A1:Z500?key=${API_KEY}`;
+    const encodedSheetName = encodeURIComponent(SHEET_NAME_DONE);
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_DONE}/values/${encodedSheetName}!A1:Z500?key=${API_KEY}`;
+    try {
         const response = await fetch(url);
         if (!response.ok) {
-            Swal.fire({ icon: 'error', title: 'خطأ في الاتصال', text: `تعذر جلب بيانات معاينات تمت (${response.status})` });
+            const errorText = await response.text();
+            console.error('Fetch error details:', errorText);
+            Swal.fire({
+                icon: 'error',
+                title: 'خطأ في الاتصال',
+                text: `تعذر جلب بيانات معاينات تمت (رمز الحالة: ${response.status})`
+            });
             throw new Error('فشل الاتصال');
         }
         const data = await response.json();
@@ -412,7 +420,11 @@
             }
         }
         return events;
+    } catch (error) {
+        console.error('Fetch exception:', error);
+        return [];
     }
+}
 
     function detectOverlaps(events) {
         const appointmentsOnly = events.filter(e => e.type === TYPE_APP);
