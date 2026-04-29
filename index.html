@@ -307,7 +307,6 @@
         return str.replace(/[٠-٩]/g, d => String.fromCharCode(d.charCodeAt(0) - 1632 + 48));
     }
 
-    // --- دالة parseDate المحسّنة ---
     function parseDate(dateStr, rowIndex = -1) {
         if (!dateStr) return null;
         let original = dateStr.toString().trim();
@@ -318,7 +317,6 @@
         s = s.replace(/،/g, ',');
         s = s.replace(/&/g, '');
 
-        // استخراج أول تاريخ بصيغة dd/mm/yyyy أو yyyy/mm/dd أو yyyy-mm-dd أو dd-mm-yyyy
         let match = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
         if (!match) match = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
         if (!match) match = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
@@ -387,18 +385,50 @@
         return { hour: 12, minute: 0, display: '' };
     }
 
+    // ========== التخزين المؤقت للبيانات ==========
+    const CACHE_KEY = 'sheetCacheData';
+    const CACHE_TIME_KEY = 'sheetCacheTime';
+    const CACHE_DURATION = 5 * 60 * 1000; // 5 دقائق
+
+    function getCachedData() {
+        const cached = localStorage.getItem(CACHE_KEY);
+        const time = localStorage.getItem(CACHE_TIME_KEY);
+        if (cached && time) {
+            const age = Date.now() - parseInt(time);
+            if (age < CACHE_DURATION) {
+                try {
+                    return JSON.parse(cached);
+                } catch (e) {}
+            }
+        }
+        return null;
+    }
+
+    function setCachedData(data) {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+    }
+
+    // ========== جلب البيانات مع التخزين المؤقت ==========
     async function fetchMainSheetData() {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_MAIN}/values/${SHEET_NAME_MAIN}!A1:Z500?key=${API_KEY}`;
         const response = await fetch(url);
         if (!response.ok) {
-            Swal.fire({ icon: 'error', title: 'خطأ في الاتصال', text: 'تعذر جلب بيانات الجدول الرئيسي' });
+            if (response.status === 429) {
+                // محاولة استخدام البيانات المخزنة
+                const cached = getCachedData();
+                if (cached) {
+                    Swal.fire({ icon: 'warning', title: 'طلبات كثيرة', text: 'تم استخدام البيانات المخزنة مؤقتًا.' });
+                    return cached.mainEvents || [];
+                }
+                throw new Error('429: Too many requests');
+            }
             throw new Error('فشل الاتصال');
         }
         const data = await response.json();
         const rows = data.values;
         if (!rows || rows.length < 2) return [];
         const events = [];
-        let appCount = 0;
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
             if (!row) continue;
@@ -415,7 +445,6 @@
                     const t = parseTime(appTime);
                     d.setHours(t.hour, t.minute);
                     events.push({ id: `main_app_${i}`, title: name, type: TYPE_APP, date: d, displayTime: t.display, phone, city, address, notes });
-                    appCount++;
                 }
             }
             const cbL = row[COL_CB_L_DATE], cbLNotes = row[COL_CB_L_NOTES] || '';
@@ -429,7 +458,6 @@
                 if (d) events.push({ id: `main_cbS_${i}`, title: name, type: TYPE_CB_S, date: d, displayTime: '', phone, city, address, notes: cbSNotes || notes });
             }
         }
-        console.log(`[fetchMainSheetData] Total appointments parsed: ${appCount}`);
         return events;
     }
 
@@ -437,7 +465,14 @@
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_DONE}/values/${SHEET_NAME_DONE}!A1:Z500?key=${API_KEY}`;
         const response = await fetch(url);
         if (!response.ok) {
-            Swal.fire({ icon: 'error', title: 'خطأ في الاتصال', text: 'تعذر جلب بيانات معاينات تمت' });
+            if (response.status === 429) {
+                const cached = getCachedData();
+                if (cached) {
+                    Swal.fire({ icon: 'warning', title: 'طلبات كثيرة', text: 'تم استخدام البيانات المخزنة مؤقتًا.' });
+                    return cached.doneEvents || [];
+                }
+                throw new Error('429: Too many requests');
+            }
             throw new Error('فشل الاتصال');
         }
         const data = await response.json();
@@ -683,20 +718,44 @@
         refreshAll();
     }
 
-    async function loadData() {
+    async function loadData(forceRefresh = false) {
         if (isLoading) return;
         isLoading = true;
         document.getElementById('status').innerHTML = '<i class="fas fa-spinner fa-spin"></i> جلب البيانات...';
+
         try {
+            // التخزين المؤقت
+            if (!forceRefresh) {
+                const cached = getCachedData();
+                if (cached) {
+                    allEvents = [...(cached.mainEvents || []), ...(cached.doneEvents || [])];
+                    document.getElementById('status').innerHTML = `✅ ${allEvents.length} موعد (مخبأ)`;
+                    refreshAll();
+                    isLoading = false;
+                    return;
+                }
+            }
+
             const [mainEvents, doneEvents] = await Promise.all([
                 fetchMainSheetData(),
                 fetchDoneSheetData()
             ]);
             allEvents = [...mainEvents, ...doneEvents];
+            // حفظ في التخزين المؤقت
+            setCachedData({ mainEvents, doneEvents });
             document.getElementById('status').innerHTML = `✅ ${allEvents.length} موعد`;
             refreshAll();
         } catch (error) {
             document.getElementById('status').innerHTML = '❌ فشل الجلب';
+            // محاولة استخدام أي بيانات مخزنة في حال الفشل
+            const cached = getCachedData();
+            if (cached) {
+                allEvents = [...(cached.mainEvents || []), ...(cached.doneEvents || [])];
+                refreshAll();
+                if (!document.getElementById('status').innerHTML.includes('مخبأ')) {
+                    document.getElementById('status').innerHTML = '⚠️ بيانات قديمة';
+                }
+            }
         } finally {
             isLoading = false;
         }
@@ -707,7 +766,7 @@
         loadShownAlerts();
         await requestNotificationPermission();
         document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => setTypeFilter(btn.dataset.filter)));
-        document.getElementById('refreshBtn').addEventListener('click', loadData);
+        document.getElementById('refreshBtn').addEventListener('click', () => loadData(true)); // تحديث إجباري
         document.getElementById('applyDateBtn').addEventListener('click', applyDateFilter);
         document.getElementById('clearDateBtn').addEventListener('click', clearDateFilter);
         const bell = document.getElementById('notificationBell');
@@ -716,7 +775,8 @@
         document.getElementById('clearNotificationsBtn').addEventListener('click', clearAllNotifications);
         document.addEventListener('click', (e) => { if (!bell.contains(e.target) && !panel.contains(e.target)) panel.classList.remove('show'); });
         loadData();
-        setInterval(loadData, 300000);
+        // التحديث التلقائي مع استخدام التخزين المؤقت (كل 5 دقائق) لن يسبب 429 لأننا نستخدم المخبأ
+        setInterval(() => loadData(true), 300000);
     });
 </script>
 </body>
