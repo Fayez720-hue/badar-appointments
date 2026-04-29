@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
+        /* جميع الأنماط كما هي بالكامل دون تغيير */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', sans-serif; }
         body { background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 100%); min-height: 100vh; padding: 15px; direction: rtl; }
         .dashboard-container { max-width: 1600px; margin: 0 auto; }
@@ -131,7 +132,10 @@
         <div class="calendar-panel"><div class="section-title">📆 التقويم</div><div id="calendar"><div class="loading"><div class="spinner"></div><p>جاري تحميل التقويم...</p></div></div></div>
         <div class="events-panel"><div class="section-title"><span>📋 قائمة المواعيد</span><span class="events-count" id="eventsCount">0</span></div><div id="eventList" class="event-list"><div class="loading"><div class="spinner"></div><p>جاري تحميل البيانات...</p></div></div></div>
     </div>
-    <div class="footer-note">📌 المعاينات من العمود O | 📞 متابعات المكالمات من العمود L | 📋 متابعات المعاينات من العمود S | ✅ معاينات تمت من جدول ثانوي</div>
+    <div class="footer-note">
+        📌 المعاينات من العمود O | 📞 متابعات المكالمات من العمود L | 📋 متابعات المعاينات من العمود S |
+        ✅ معاينات تمت: كود | اسم | موبايل | تاريخ | رد العميل | ملاحظات
+    </div>
 </div>
 
 <div class="notification-panel" id="notificationPanel">
@@ -266,35 +270,31 @@
         return `منذ ${Math.floor(hours / 24)} يوم`;
     }
 
-    // ========== Main Sheet Config (Badar appointments) ==========
+    // ========== إعدادات جداول البيانات ==========
     const SPREADSHEET_ID_MAIN = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
     const SHEET_NAME_MAIN = 'مبيعات';
-    // ========== Done Appointments Sheet Config ==========
     const SPREADSHEET_ID_DONE = '1HcnGcO9hcYWPNRETHGzdN1-XwTgpvc6YZhPyw4zRssI';
-    const SHEET_NAME_DONE = 'بيدار (نتائج معاينة)';
+    const SHEET_NAME_DONE = 'ورقة1'; // تأكد من اسم الورقة الفعلي
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
 
-    // Main sheet columns (0-indexed)
+    // الأعمدة في الجدول الأصلي (بدون تغيير)
     const COL_NAME = 1, COL_PHONE = 2, COL_CITY = 6, COL_ADDRESS = 7, COL_NOTES = 8;
     const COL_APP_DATE = 14, COL_APP_TIME = 15;
     const COL_CB_L_DATE = 11, COL_CB_L_NOTES = 13;
     const COL_CB_S_DATE = 18, COL_CB_S_NOTES = 20;
 
-    // Done sheet columns (0-indexed)
-    const DONE_COL_NAME = 1;        // الاسم
-    const DONE_COL_PHONE = 2;       // الموبايل
-    const DONE_COL_NOTES = 3;       // ملاحظات
-    const DONE_COL_RESULT = 4;      // نتيجة
-    const DONE_COL_CLIENT_REPLY = 5;// رد العميل
-    const DONE_COL_CODE = 6;        // الكود
-    const DONE_COL_DATE = 7;        // التاريخ
+    // الأعمدة في الجدول الجديد (حسب الترتيب الجديد - تبدأ من 0)
+    // A=الكود, B=الاسم, C=الموبايل, D=التاريخ, E=رد العميل, F=ملاحظات, G=Timestamp
+    const DONE_COL_CODE = 0;
+    const DONE_COL_NAME = 1;
+    const DONE_COL_PHONE = 2;
+    const DONE_COL_DATE = 3;
+    const DONE_COL_CLIENT_REPLY = 4;
+    const DONE_COL_NOTES = 5;
 
     let allEvents = [], currentType = 'all', filterStartDate = null, filterEndDate = null, calendar = null, isLoading = false;
     let shownUpcomingAlerts = new Set();
-    const TYPE_APP = 'معاينة';
-    const TYPE_CB_L = 'متابعة مكالمة';
-    const TYPE_CB_S = 'متابعة معاينة';
-    const TYPE_DONE = 'معاينة تمت';
+    const TYPE_APP = 'معاينة', TYPE_CB_L = 'متابعة مكالمة', TYPE_CB_S = 'متابعة معاينة', TYPE_DONE = 'معاينة تمت';
 
     function parseDate(dateStr) {
         if (!dateStr) return null;
@@ -327,6 +327,7 @@
         return { hour: 12, minute: 0, display: '' };
     }
 
+    // جلب بيانات الجدول الرئيسي (بدون تغيير)
     async function fetchMainSheetData() {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_MAIN}/values/${SHEET_NAME_MAIN}!A1:Z500?key=${API_KEY}`;
         const response = await fetch(url);
@@ -346,7 +347,7 @@
             const city = row[COL_CITY] || '';
             const address = row[COL_ADDRESS] || '';
             const notes = row[COL_NOTES] || '';
-            
+
             const appDate = row[COL_APP_DATE], appTime = row[COL_APP_TIME] || '';
             if (appDate && appDate !== 'FALSE' && appDate.toString().trim()) {
                 const d = parseDate(appDate);
@@ -370,19 +371,12 @@
         return events;
     }
 
+    // جلب بيانات جدول "معاينات تمت" بالترتيب الجديد
     async function fetchDoneSheetData() {
-    const encodedSheetName = encodeURIComponent(SHEET_NAME_DONE);
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_DONE}/values/${encodedSheetName}!A1:Z500?key=${API_KEY}`;
-    try {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_DONE}/values/${SHEET_NAME_DONE}!A1:Z500?key=${API_KEY}`;
         const response = await fetch(url);
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Fetch error details:', errorText);
-            Swal.fire({
-                icon: 'error',
-                title: 'خطأ في الاتصال',
-                text: `تعذر جلب بيانات معاينات تمت (رمز الحالة: ${response.status})`
-            });
+            Swal.fire({ icon: 'error', title: 'خطأ في الاتصال', text: 'تعذر جلب بيانات معاينات تمت' });
             throw new Error('فشل الاتصال');
         }
         const data = await response.json();
@@ -392,13 +386,13 @@
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
             if (!row) continue;
+            const code = row[DONE_COL_CODE] || '';
             const name = row[DONE_COL_NAME] || 'غير محدد';
             const phone = row[DONE_COL_PHONE] || '';
-            const notes = row[DONE_COL_NOTES] || '';
-            const result = row[DONE_COL_RESULT] || '';
             const clientReply = row[DONE_COL_CLIENT_REPLY] || '';
-            const code = row[DONE_COL_CODE] || '';
+            const notes = row[DONE_COL_NOTES] || '';
             const dateStr = row[DONE_COL_DATE];
+
             if (dateStr && dateStr !== 'FALSE' && dateStr.toString().trim()) {
                 const d = parseDate(dateStr);
                 if (d) {
@@ -412,19 +406,15 @@
                         city: '',
                         address: '',
                         notes,
-                        result,
-                        clientReply,
-                        code
+                        code,
+                        clientReply
+                        // لا يوجد حقل result
                     });
                 }
             }
         }
         return events;
-    } catch (error) {
-        console.error('Fetch exception:', error);
-        return [];
     }
-}
 
     function detectOverlaps(events) {
         const appointmentsOnly = events.filter(e => e.type === TYPE_APP);
@@ -519,7 +509,7 @@
                 const isUpcoming = upcomingIds.has(ev.id);
                 if (isOverlap) extraClass = 'overlap';
                 else if (isUpcoming) extraClass = 'upcoming';
-                html += `<div class="event-item ${extraClass}" onclick="showEventDetails('${ev.title.replace(/'/g,"\\'")}', '${dateStr}', '${ev.displayTime || ''}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${ev.type}', '${ev.result || ''}', '${ev.clientReply || ''}', '${ev.code || ''}')">
+                html += `<div class="event-item ${extraClass}" onclick="showEventDetails('${ev.title.replace(/'/g,"\\'")}', '${dateStr}', '${ev.displayTime || ''}', '${ev.phone || ''}', '${ev.city || ''}', '${ev.address || ''}', '${ev.notes || ''}', '${ev.type}', '${ev.code || ''}', '${ev.clientReply || ''}')">
                     ${isOverlap ? '<div class="overlap-warning">!</div>' : ''}
                     ${isUpcoming && !isOverlap ? '<div class="upcoming-badge">⏰</div>' : ''}
                     <div class="event-title"><div class="event-name"><i class="fas ${isDone ? 'fa-check-circle' : (isCallback ? 'fa-phone-alt' : 'fa-building')}"></i> ${ev.title}</div><span class="event-type">${icon} ${ev.type}</span></div>
@@ -552,17 +542,9 @@
                 start: ev.date,
                 backgroundColor: bgColor,
                 extendedProps: {
-                    title: ev.title,
-                    dateStr: ev.date.toLocaleDateString('ar-EG'),
-                    time: ev.displayTime,
-                    phone: ev.phone,
-                    city: ev.city,
-                    address: ev.address,
-                    notes: ev.notes,
-                    type: ev.type,
-                    result: ev.result || '',
-                    clientReply: ev.clientReply || '',
-                    code: ev.code || ''
+                    title: ev.title, dateStr: ev.date.toLocaleDateString('ar-EG'), time: ev.displayTime,
+                    phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, type: ev.type,
+                    code: ev.code || '', clientReply: ev.clientReply || ''
                 }
             };
         });
@@ -572,19 +554,19 @@
             buttonText: { today: 'اليوم', month: 'شهر' }, events: fcEvents, height: 'auto', firstDay: 6,
             eventClick: (info) => {
                 const e = info.event.extendedProps;
-                showEventDetails(e.title, e.dateStr, e.time || '', e.phone || '', e.city || '', e.address || '', e.notes || '', e.type, e.result || '', e.clientReply || '', e.code || '');
+                showEventDetails(e.title, e.dateStr, e.time || '', e.phone || '', e.city || '', e.address || '', e.notes || '', e.type, e.code || '', e.clientReply || '');
             }
         });
         calendar.render();
         if (filterStartDate) calendar.gotoDate(filterStartDate);
     }
 
-    window.showEventDetails = function(title, date, time, phone, city, address, notes, type, result, clientReply, code) {
+    // الدالة المحدثة لعرض التفاصيل (تمت إزالة result وإضافة code و clientReply فقط)
+    window.showEventDetails = function(title, date, time, phone, city, address, notes, type, code, clientReply) {
         let extraHtml = '';
         if (type === 'معاينة تمت') {
-            if (result) extraHtml += `<p><strong>📊 النتيجة:</strong> ${result}</p>`;
-            if (clientReply) extraHtml += `<p><strong>💬 رد العميل:</strong> ${clientReply}</p>`;
             if (code) extraHtml += `<p><strong>🏷️ الكود:</strong> ${code}</p>`;
+            if (clientReply) extraHtml += `<p><strong>💬 رد العميل:</strong> ${clientReply}</p>`;
         }
         let locationHtml = '';
         if (city || address) locationHtml = `<p><strong>📍 الموقع:</strong> ${city || ''} ${address || ''}</p>`;
