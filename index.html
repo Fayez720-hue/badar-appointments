@@ -307,7 +307,7 @@
         return str.replace(/[٠-٩]/g, d => String.fromCharCode(d.charCodeAt(0) - 1632 + 48));
     }
 
-    // --- دالة parseDate المُحسَّنة ---
+    // --- دالة parseDate المحسّنة ---
     function parseDate(dateStr, rowIndex = -1) {
         if (!dateStr) return null;
         let original = dateStr.toString().trim();
@@ -318,27 +318,49 @@
         s = s.replace(/،/g, ',');
         s = s.replace(/&/g, '');
 
-        // استخراج أول تاريخ من أي مكان في النص
-        let match = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        // استخراج أول تاريخ بصيغة dd/mm/yyyy أو yyyy/mm/dd أو yyyy-mm-dd أو dd-mm-yyyy
+        let match = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
         if (!match) match = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
         if (!match) match = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+        if (!match) match = s.match(/(\d{1,2})-(\d{1,2})-(\d{4})/);
 
         if (match) {
-            // نأخذ النص المطابق فقط
-            let extracted = match[0];
             let day, month, year;
             if (match[1].length === 4) {
-                year = parseInt(match[1]); month = parseInt(match[2])-1; day = parseInt(match[3]);
+                year = parseInt(match[1]);
+                month = parseInt(match[2]) - 1;
+                day = parseInt(match[3]);
             } else {
-                day = parseInt(match[1]); month = parseInt(match[2])-1; year = parseInt(match[3]);
+                let part1 = parseInt(match[1]);
+                let part2 = parseInt(match[2]);
+                let part3 = parseInt(match[3]);
+                if (match[3].length <= 2 && part3 < 100) {
+                    year = 2000 + part3;
+                    month = part2 - 1;
+                    day = part1;
+                } else if (match[3].length <= 2 && part1 >= 1000) {
+                    year = part1;
+                    month = part2 - 1;
+                    day = part3;
+                } else {
+                    day = part1;
+                    month = part2 - 1;
+                    year = part3;
+                }
             }
             let d = new Date(year, month, day, 12, 0);
-            if (!isNaN(d.getTime()) && d.getFullYear() === year) return d;
+            if (!isNaN(d.getTime()) && d.getFullYear() >= 2000) return d;
         }
 
-        // خطة أخيرة
         let cleaned = s.replace(/[^\d\/\.\-\s:]/g, '').trim();
         let timestamp = Date.parse(cleaned);
+        if (!isNaN(timestamp)) {
+            let d = new Date(timestamp);
+            if (d.getFullYear() > 2000) return d;
+        }
+
+        let noSpaces = cleaned.replace(/\s+/g, '');
+        timestamp = Date.parse(noSpaces);
         if (!isNaN(timestamp)) {
             let d = new Date(timestamp);
             if (d.getFullYear() > 2000) return d;
