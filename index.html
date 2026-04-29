@@ -112,9 +112,9 @@
 
     <div class="date-range-filter">
         <label>📅 من:</label>
-        <input type="date" id="startDate" value="">   <!-- أزلنا التاريخ الافتراضي -->
+        <input type="date" id="startDate" value="">
         <label>إلى:</label>
-        <input type="date" id="endDate" value="">     <!-- أزلنا التاريخ الافتراضي -->
+        <input type="date" id="endDate" value="">
         <button id="applyDateBtn"><i class="fas fa-filter"></i> تطبيق</button>
         <button id="clearDateBtn" class="clear-btn"><i class="fas fa-times"></i> إلغاء</button>
         <span id="rangeInfo" class="range-info">جميع المواعيد</span>
@@ -273,7 +273,7 @@
     const SPREADSHEET_ID_MAIN = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
     const SHEET_NAME_MAIN = 'مبيعات';
     const SPREADSHEET_ID_DONE = '1HcnGcO9hcYWPNRETHGzdN1-XwTgpvc6YZhPyw4zRssI';
-    const SHEET_NAME_DONE = 'بيدار (نتائج معاينة)';
+    const SHEET_NAME_DONE = 'ورقة1'; // تأكد من الاسم الصحيح
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
 
     const COL_NAME = 1, COL_PHONE = 2, COL_CITY = 6, COL_ADDRESS = 7, COL_NOTES = 8;
@@ -307,27 +307,36 @@
         return str.replace(/[٠-٩]/g, d => String.fromCharCode(d.charCodeAt(0) - 1632 + 48));
     }
 
-    function parseDate(dateStr) {
+    // --- دالة parseDate المُحسَّنة ---
+    function parseDate(dateStr, rowIndex = -1) {
         if (!dateStr) return null;
-        let s = dateStr.toString().trim();
-        if (s === 'FALSE' || s === 'TRUE' || s === '') return null;
-        s = normalizeArabicDigits(s);
+        let original = dateStr.toString().trim();
+        if (original === 'FALSE' || original === 'TRUE' || original === '') return null;
+
+        let s = normalizeArabicDigits(original);
         s = s.replace(/(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة)\s*,?\s*/i, '');
         s = s.replace(/،/g, ',');
         s = s.replace(/&/g, '');
 
+        // استخراج أول تاريخ من أي مكان في النص
         let match = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
         if (!match) match = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
         if (!match) match = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
 
         if (match) {
+            // نأخذ النص المطابق فقط
+            let extracted = match[0];
             let day, month, year;
-            if (match[1].length === 4) { year = parseInt(match[1]); month = parseInt(match[2])-1; day = parseInt(match[3]); }
-            else { day = parseInt(match[1]); month = parseInt(match[2])-1; year = parseInt(match[3]); }
+            if (match[1].length === 4) {
+                year = parseInt(match[1]); month = parseInt(match[2])-1; day = parseInt(match[3]);
+            } else {
+                day = parseInt(match[1]); month = parseInt(match[2])-1; year = parseInt(match[3]);
+            }
             let d = new Date(year, month, day, 12, 0);
             if (!isNaN(d.getTime()) && d.getFullYear() === year) return d;
         }
 
+        // خطة أخيرة
         let cleaned = s.replace(/[^\d\/\.\-\s:]/g, '').trim();
         let timestamp = Date.parse(cleaned);
         if (!isNaN(timestamp)) {
@@ -335,7 +344,9 @@
             if (d.getFullYear() > 2000) return d;
         }
 
-        console.warn(`[parseDate] Could not parse date: "${dateStr}"`);
+        if (rowIndex >= 0) {
+            console.warn(`[parseDate] Row ${rowIndex}: Could not parse date: "${original}"`);
+        }
         return null;
     }
 
@@ -365,6 +376,7 @@
         const rows = data.values;
         if (!rows || rows.length < 2) return [];
         const events = [];
+        let appCount = 0;
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
             if (!row) continue;
@@ -376,24 +388,26 @@
 
             const appDate = row[COL_APP_DATE], appTime = row[COL_APP_TIME] || '';
             if (appDate && appDate !== 'FALSE' && appDate.toString().trim()) {
-                const d = parseDate(appDate);
+                const d = parseDate(appDate, i);
                 if (d) {
                     const t = parseTime(appTime);
                     d.setHours(t.hour, t.minute);
                     events.push({ id: `main_app_${i}`, title: name, type: TYPE_APP, date: d, displayTime: t.display, phone, city, address, notes });
+                    appCount++;
                 }
             }
             const cbL = row[COL_CB_L_DATE], cbLNotes = row[COL_CB_L_NOTES] || '';
             if (cbL && cbL !== 'FALSE' && cbL.toString().trim()) {
-                const d = parseDate(cbL);
+                const d = parseDate(cbL, i);
                 if (d) events.push({ id: `main_cbL_${i}`, title: name, type: TYPE_CB_L, date: d, displayTime: '', phone, city, address, notes: cbLNotes || notes });
             }
             const cbS = row[COL_CB_S_DATE], cbSNotes = row[COL_CB_S_NOTES] || '';
             if (cbS && cbS !== 'FALSE' && cbS.toString().trim()) {
-                const d = parseDate(cbS);
+                const d = parseDate(cbS, i);
                 if (d) events.push({ id: `main_cbS_${i}`, title: name, type: TYPE_CB_S, date: d, displayTime: '', phone, city, address, notes: cbSNotes || notes });
             }
         }
+        console.log(`[fetchMainSheetData] Total appointments parsed: ${appCount}`);
         return events;
     }
 
@@ -419,7 +433,7 @@
             const dateStr = row[DONE_COL_DATE];
 
             if (dateStr && dateStr !== 'FALSE' && dateStr.toString().trim()) {
-                const d = parseDate(dateStr);
+                const d = parseDate(dateStr, i);
                 if (d) {
                     events.push({
                         id: `done_${i}`,
