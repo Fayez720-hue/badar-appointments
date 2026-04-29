@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        /* جميع الأنماط كما هي بالكامل دون تغيير */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Cairo', 'Segoe UI', sans-serif; }
         body { background: linear-gradient(135deg, #1a472a 0%, #2d5a3b 100%); min-height: 100vh; padding: 15px; direction: rtl; }
         .dashboard-container { max-width: 1600px; margin: 0 auto; }
@@ -118,14 +117,15 @@
         <input type="date" id="endDate" value="2026-04-30">
         <button id="applyDateBtn"><i class="fas fa-filter"></i> تطبيق</button>
         <button id="clearDateBtn" class="clear-btn"><i class="fas fa-times"></i> إلغاء</button>
-        <span id="rangeInfo" class="range-info">أبريل 2026</span>
+        <span id="rangeInfo" class="range-info">جميع المواعيد</span>
     </div>
 
+    <!-- بطاقات الإحصائيات المعدلة -->
     <div class="stats-grid">
         <div class="stat-card"><h3>🏢 المعاينات</h3><div class="stat-number" id="totalApp">0</div></div>
         <div class="stat-card"><h3>📞 المتابعات</h3><div class="stat-number" id="totalCb">0</div></div>
         <div class="stat-card"><h3>📅 معاينات اليوم</h3><div class="stat-number" id="todayApp">0</div></div>
-        <div class="stat-card"><h3>⏰ متابعات اليوم</h3><div class="stat-number" id="todayCb">0</div></div>
+        <div class="stat-card"><h3>✅ معاينات تمت</h3><div class="stat-number" id="totalDone">0</div></div>
     </div>
 
     <div class="two-columns">
@@ -274,17 +274,15 @@
     const SPREADSHEET_ID_MAIN = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
     const SHEET_NAME_MAIN = 'مبيعات';
     const SPREADSHEET_ID_DONE = '1HcnGcO9hcYWPNRETHGzdN1-XwTgpvc6YZhPyw4zRssI';
-    const SHEET_NAME_DONE = 'بيدار (نتائج معاينة)'; // تأكد من اسم الورقة الفعلي
+    const SHEET_NAME_DONE = 'بيدار (نتائج معاينة)'; 
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
 
-    // الأعمدة في الجدول الأصلي (بدون تغيير)
     const COL_NAME = 1, COL_PHONE = 2, COL_CITY = 6, COL_ADDRESS = 7, COL_NOTES = 8;
     const COL_APP_DATE = 14, COL_APP_TIME = 15;
     const COL_CB_L_DATE = 11, COL_CB_L_NOTES = 13;
     const COL_CB_S_DATE = 18, COL_CB_S_NOTES = 20;
 
-    // الأعمدة في الجدول الجديد (حسب الترتيب الجديد - تبدأ من 0)
-    // A=الكود, B=الاسم, C=الموبايل, D=التاريخ, E=رد العميل, F=ملاحظات, G=Timestamp
+    // أعمدة جدول "معاينات تمت" (كود، اسم، موبايل، تاريخ، رد العميل، ملاحظات)
     const DONE_COL_CODE = 0;
     const DONE_COL_NAME = 1;
     const DONE_COL_PHONE = 2;
@@ -327,7 +325,6 @@
         return { hour: 12, minute: 0, display: '' };
     }
 
-    // جلب بيانات الجدول الرئيسي (بدون تغيير)
     async function fetchMainSheetData() {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_MAIN}/values/${SHEET_NAME_MAIN}!A1:Z500?key=${API_KEY}`;
         const response = await fetch(url);
@@ -371,7 +368,6 @@
         return events;
     }
 
-    // جلب بيانات جدول "معاينات تمت" بالترتيب الجديد
     async function fetchDoneSheetData() {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_DONE}/values/${SHEET_NAME_DONE}!A1:Z500?key=${API_KEY}`;
         const response = await fetch(url);
@@ -408,7 +404,6 @@
                         notes,
                         code,
                         clientReply
-                        // لا يوجد حقل result
                     });
                 }
             }
@@ -466,14 +461,14 @@
     function updateStats(events) {
         const totalApp = events.filter(e => e.type === TYPE_APP).length;
         const totalCb = events.filter(e => e.type === TYPE_CB_L || e.type === TYPE_CB_S).length;
+        const totalDone = events.filter(e => e.type === TYPE_DONE).length;
         const today = new Date(); today.setHours(0,0,0,0);
         const todayTime = today.getTime();
         const todayApp = events.filter(e => e.type === TYPE_APP && new Date(e.date).setHours(0,0,0,0) === todayTime).length;
-        const todayCb = events.filter(e => (e.type === TYPE_CB_L || e.type === TYPE_CB_S) && new Date(e.date).setHours(0,0,0,0) === todayTime).length;
         document.getElementById('totalApp').innerText = totalApp;
         document.getElementById('totalCb').innerText = totalCb;
         document.getElementById('todayApp').innerText = todayApp;
-        document.getElementById('todayCb').innerText = todayCb;
+        document.getElementById('totalDone').innerText = totalDone;
     }
 
     function renderGroupedList(events, overlaps, upcomingEvents) {
@@ -561,7 +556,6 @@
         if (filterStartDate) calendar.gotoDate(filterStartDate);
     }
 
-    // الدالة المحدثة لعرض التفاصيل (تمت إزالة result وإضافة code و clientReply فقط)
     window.showEventDetails = function(title, date, time, phone, city, address, notes, type, code, clientReply) {
         let extraHtml = '';
         if (type === 'معاينة تمت') {
@@ -602,7 +596,7 @@
         const upcoming = detectUpcomingEvents(filtered);
         if (upcoming.length > 0) showUpcomingNotifications(upcoming);
         document.getElementById('eventsCount').innerText = filtered.length;
-        updateStats(filtered);
+        updateStats(filtered);   // الآن يحسب done أيضًا
         renderGroupedList(filtered, overlaps, upcoming);
         renderCalendar(filtered, overlaps, upcoming);
     }
