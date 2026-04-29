@@ -120,7 +120,6 @@
         <span id="rangeInfo" class="range-info">جميع المواعيد</span>
     </div>
 
-    <!-- بطاقات الإحصائيات المعدلة -->
     <div class="stats-grid">
         <div class="stat-card"><h3>🏢 المعاينات</h3><div class="stat-number" id="totalApp">0</div></div>
         <div class="stat-card"><h3>📞 المتابعات</h3><div class="stat-number" id="totalCb">0</div></div>
@@ -274,7 +273,7 @@
     const SPREADSHEET_ID_MAIN = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
     const SHEET_NAME_MAIN = 'مبيعات';
     const SPREADSHEET_ID_DONE = '1HcnGcO9hcYWPNRETHGzdN1-XwTgpvc6YZhPyw4zRssI';
-    const SHEET_NAME_DONE = 'بيدار (نتائج معاينة)'; 
+    const SHEET_NAME_DONE = 'بيدار (نتائج معاينة)';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
 
     const COL_NAME = 1, COL_PHONE = 2, COL_CITY = 6, COL_ADDRESS = 7, COL_NOTES = 8;
@@ -282,7 +281,6 @@
     const COL_CB_L_DATE = 11, COL_CB_L_NOTES = 13;
     const COL_CB_S_DATE = 18, COL_CB_S_NOTES = 20;
 
-    // أعمدة جدول "معاينات تمت" (كود، اسم، موبايل، تاريخ، رد العميل، ملاحظات)
     const DONE_COL_CODE = 0;
     const DONE_COL_NAME = 1;
     const DONE_COL_PHONE = 2;
@@ -292,22 +290,58 @@
 
     let allEvents = [], currentType = 'all', filterStartDate = null, filterEndDate = null, calendar = null, isLoading = false;
     let shownUpcomingAlerts = new Set();
+
+    function loadShownAlerts() {
+        const stored = localStorage.getItem('shownAlerts');
+        if (stored) {
+            try { const arr = JSON.parse(stored); shownUpcomingAlerts = new Set(arr); } catch (e) {}
+        }
+    }
+    function saveShownAlerts() {
+        localStorage.setItem('shownAlerts', JSON.stringify([...shownUpcomingAlerts]));
+    }
+
     const TYPE_APP = 'معاينة', TYPE_CB_L = 'متابعة مكالمة', TYPE_CB_S = 'متابعة معاينة', TYPE_DONE = 'معاينة تمت';
+
+    // ========== Improved Date Parser ==========
+    function normalizeArabicDigits(str) {
+        return str.replace(/[٠-٩]/g, d => String.fromCharCode(d.charCodeAt(0) - 1632 + 48));
+    }
 
     function parseDate(dateStr) {
         if (!dateStr) return null;
         let s = dateStr.toString().trim();
         if (s === 'FALSE' || s === 'TRUE' || s === '') return null;
+
+        // Step 1: Normalize Arabic digits
+        s = normalizeArabicDigits(s);
+
+        // Step 2: Remove Arabic weekday names if present
         s = s.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
-        let parts = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-        if (!parts) parts = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})/);
-        if (!parts) parts = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
-        if (!parts) return null;
-        let day, month, year;
-        if (parts[1].length === 4) { year = parseInt(parts[1]); month = parseInt(parts[2])-1; day = parseInt(parts[3]); }
-        else { day = parseInt(parts[1]); month = parseInt(parts[2])-1; year = parseInt(parts[3]); }
-        let d = new Date(year, month, day, 12, 0);
-        return !isNaN(d.getTime()) ? d : null;
+
+        // Step 3: Try to extract date with regex (allowing surrounding text)
+        let parts = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (!parts) parts = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+        if (!parts) parts = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+
+        if (parts) {
+            let day, month, year;
+            if (parts[1].length === 4) { year = parseInt(parts[1]); month = parseInt(parts[2])-1; day = parseInt(parts[3]); }
+            else { day = parseInt(parts[1]); month = parseInt(parts[2])-1; year = parseInt(parts[3]); }
+            let d = new Date(year, month, day, 12, 0);
+            if (!isNaN(d.getTime())) return d;
+        }
+
+        // Step 4: Fallback to Date.parse
+        let timestamp = Date.parse(s);
+        if (!isNaN(timestamp)) {
+            let d = new Date(timestamp);
+            if (d.getFullYear() > 2000) return d;
+        }
+
+        // If nothing worked, log skipped date for debugging
+        console.warn(`[parseDate] Could not parse date: "${dateStr}"`);
+        return null;
     }
 
     function parseTime(timeStr) {
@@ -398,12 +432,7 @@
                         type: TYPE_DONE,
                         date: d,
                         displayTime: '',
-                        phone,
-                        city: '',
-                        address: '',
-                        notes,
-                        code,
-                        clientReply
+                        phone, city: '', address: '', notes, code, clientReply
                     });
                 }
             }
@@ -437,6 +466,7 @@
             const key = `upcoming_${ev.id}`;
             if (shownUpcomingAlerts.has(key)) continue;
             shownUpcomingAlerts.add(key);
+            saveShownAlerts();
             const hours = Math.round((new Date(ev.date) - new Date()) / (1000*60*60));
             const timeText = hours < 1 ? 'خلال أقل من ساعة' : `بعد ${hours} ساعات`;
             const title = `🔔 ${ev.type === TYPE_APP ? 'معاينة' : (ev.type === TYPE_DONE ? 'معاينة تمت' : 'متابعة')} قريب`;
@@ -451,6 +481,7 @@
             const key = `overlap_${ov.event1.id}_${ov.event2.id}`;
             if (shownUpcomingAlerts.has(key)) continue;
             shownUpcomingAlerts.add(key);
+            saveShownAlerts();
             const title = `⚠️ تداخل في مواعيد المعاينات`;
             const message = `${ov.date.toLocaleDateString('ar-EG')}: ${ov.event1.title} و ${ov.event2.title}`;
             showInAppNotification(title, message, 'overlap', 10000);
@@ -490,15 +521,9 @@
                 const isCallback = ev.type === TYPE_CB_L || ev.type === TYPE_CB_S;
                 const isDone = ev.type === TYPE_DONE;
                 let icon, extraClass = '';
-                if (isDone) {
-                    icon = '✅';
-                    extraClass = 'done';
-                } else if (isCallback) {
-                    icon = ev.type === TYPE_CB_L ? '📞' : '📋';
-                    extraClass = 'callback';
-                } else {
-                    icon = '🏢';
-                }
+                if (isDone) { icon = '✅'; extraClass = 'done'; }
+                else if (isCallback) { icon = ev.type === TYPE_CB_L ? '📞' : '📋'; extraClass = 'callback'; }
+                else { icon = '🏢'; }
                 const timeDisplay = ev.displayTime ? `🕐 ${ev.displayTime}` : '';
                 const isOverlap = overlapIds.has(ev.id);
                 const isUpcoming = upcomingIds.has(ev.id);
@@ -583,8 +608,7 @@
 
     function refreshAll() {
         if (!allEvents.length) return;
-        shownUpcomingAlerts.clear();
-
+        // Notice: we don't clear shownUpcomingAlerts anymore (handled by localStorage)
         let filtered = [...allEvents];
         if (currentType === 'appointment') filtered = filtered.filter(e => e.type === TYPE_APP);
         else if (currentType === 'callback') filtered = filtered.filter(e => e.type === TYPE_CB_L || e.type === TYPE_CB_S);
@@ -596,7 +620,7 @@
         const upcoming = detectUpcomingEvents(filtered);
         if (upcoming.length > 0) showUpcomingNotifications(upcoming);
         document.getElementById('eventsCount').innerText = filtered.length;
-        updateStats(filtered);   // الآن يحسب done أيضًا
+        updateStats(filtered);
         renderGroupedList(filtered, overlaps, upcoming);
         renderCalendar(filtered, overlaps, upcoming);
     }
@@ -650,6 +674,7 @@
 
     // ========== Initialization ==========
     window.addEventListener('load', async () => {
+        loadShownAlerts();
         await requestNotificationPermission();
         document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => setTypeFilter(btn.dataset.filter)));
         document.getElementById('refreshBtn').addEventListener('click', loadData);
