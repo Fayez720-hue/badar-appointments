@@ -112,9 +112,9 @@
 
     <div class="date-range-filter">
         <label>📅 من:</label>
-        <input type="date" id="startDate" value="2026-04-01">
+        <input type="date" id="startDate" value="">   <!-- أزلنا التاريخ الافتراضي -->
         <label>إلى:</label>
-        <input type="date" id="endDate" value="2026-04-30">
+        <input type="date" id="endDate" value="">     <!-- أزلنا التاريخ الافتراضي -->
         <button id="applyDateBtn"><i class="fas fa-filter"></i> تطبيق</button>
         <button id="clearDateBtn" class="clear-btn"><i class="fas fa-times"></i> إلغاء</button>
         <span id="rangeInfo" class="range-info">جميع المواعيد</span>
@@ -303,7 +303,6 @@
 
     const TYPE_APP = 'معاينة', TYPE_CB_L = 'متابعة مكالمة', TYPE_CB_S = 'متابعة معاينة', TYPE_DONE = 'معاينة تمت';
 
-    // ========== Improved Date Parser ==========
     function normalizeArabicDigits(str) {
         return str.replace(/[٠-٩]/g, d => String.fromCharCode(d.charCodeAt(0) - 1632 + 48));
     }
@@ -312,34 +311,30 @@
         if (!dateStr) return null;
         let s = dateStr.toString().trim();
         if (s === 'FALSE' || s === 'TRUE' || s === '') return null;
-
-        // Step 1: Normalize Arabic digits
         s = normalizeArabicDigits(s);
+        s = s.replace(/(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة)\s*,?\s*/i, '');
+        s = s.replace(/،/g, ',');
+        s = s.replace(/&/g, '');
 
-        // Step 2: Remove Arabic weekday names if present
-        s = s.replace(/^(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة),\s*/i, '');
+        let match = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (!match) match = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
+        if (!match) match = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
 
-        // Step 3: Try to extract date with regex (allowing surrounding text)
-        let parts = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-        if (!parts) parts = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
-        if (!parts) parts = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
-
-        if (parts) {
+        if (match) {
             let day, month, year;
-            if (parts[1].length === 4) { year = parseInt(parts[1]); month = parseInt(parts[2])-1; day = parseInt(parts[3]); }
-            else { day = parseInt(parts[1]); month = parseInt(parts[2])-1; year = parseInt(parts[3]); }
+            if (match[1].length === 4) { year = parseInt(match[1]); month = parseInt(match[2])-1; day = parseInt(match[3]); }
+            else { day = parseInt(match[1]); month = parseInt(match[2])-1; year = parseInt(match[3]); }
             let d = new Date(year, month, day, 12, 0);
-            if (!isNaN(d.getTime())) return d;
+            if (!isNaN(d.getTime()) && d.getFullYear() === year) return d;
         }
 
-        // Step 4: Fallback to Date.parse
-        let timestamp = Date.parse(s);
+        let cleaned = s.replace(/[^\d\/\.\-\s:]/g, '').trim();
+        let timestamp = Date.parse(cleaned);
         if (!isNaN(timestamp)) {
             let d = new Date(timestamp);
             if (d.getFullYear() > 2000) return d;
         }
 
-        // If nothing worked, log skipped date for debugging
         console.warn(`[parseDate] Could not parse date: "${dateStr}"`);
         return null;
     }
@@ -608,7 +603,6 @@
 
     function refreshAll() {
         if (!allEvents.length) return;
-        // Notice: we don't clear shownUpcomingAlerts anymore (handled by localStorage)
         let filtered = [...allEvents];
         if (currentType === 'appointment') filtered = filtered.filter(e => e.type === TYPE_APP);
         else if (currentType === 'callback') filtered = filtered.filter(e => e.type === TYPE_CB_L || e.type === TYPE_CB_S);
