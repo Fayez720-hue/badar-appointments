@@ -122,7 +122,6 @@
         <span id="rangeInfo" class="range-info">جميع المواعيد</span>
     </div>
 
-    <!-- شريط البحث الجديد -->
     <div class="search-bar">
         <i class="fas fa-search" style="color: #c9a03d; margin-left: 10px;"></i>
         <input type="text" id="searchInput" placeholder="ابحث عن اسم، هاتف، ملاحظات...">
@@ -453,7 +452,7 @@
     }
 
     // ========== التخزين المؤقت ==========
-    const CACHE_VERSION = 'v9';
+    const CACHE_VERSION = 'v10';
     const CACHE_KEY = `sheetCacheData_${CACHE_VERSION}`;
     const CACHE_TIME_KEY = `sheetCacheTime_${CACHE_VERSION}`;
     const CACHE_DURATION = 2 * 60 * 1000;
@@ -849,6 +848,8 @@
         updateStats(filtered);
         renderGroupedList(filtered, overlaps, upcoming);
         renderCalendar(filtered, overlaps, upcoming);
+        // محاولة معالجة eventId من الرابط (لفتح تفاصيل الموعد)
+        handleEventIdFromHash();
     }
 
     function applyDateFilter() {
@@ -888,6 +889,36 @@
             refreshAll();
         }, 300);
     });
+
+    // ========== آلية فتح التفاصيل من إشعار النظام ==========
+    let initialHashHandled = false;
+    function handleEventIdFromHash() {
+        if (initialHashHandled) return;
+        const hash = window.location.hash;
+        const match = hash.match(/eventId=([^&]+)/);
+        if (!match) return;
+        const eventId = match[1];
+        const ev = allEvents.find(e => e.id === eventId);
+        if (ev) {
+            initialHashHandled = true;
+            setTimeout(() => {
+                const dateStr = ev.date instanceof Date ? ev.date.toLocaleDateString('ar-EG') : new Date(ev.date).toLocaleDateString('ar-EG');
+                window.showEventDetails(
+                    ev.title || 'غير محدد',
+                    dateStr,
+                    ev.displayTime || '',
+                    ev.phone || '',
+                    ev.city || '',
+                    ev.address || '',
+                    ev.notes || '',
+                    ev.type || '',
+                    ev.code || '',
+                    ev.clientReply || ''
+                );
+                history.replaceState(null, null, ' ');
+            }, 800);
+        }
+    }
 
     async function loadData(forceRefresh = false) {
         if (isLoading) return;
@@ -952,6 +983,9 @@
         bell.addEventListener('click', () => panel.classList.toggle('show'));
         document.getElementById('clearNotificationsBtn').addEventListener('click', clearAllNotifications);
         document.addEventListener('click', (e) => { if (!bell.contains(e.target) && !panel.contains(e.target)) panel.classList.remove('show'); });
+
+        // مستمع تغيير الهاش
+        window.addEventListener('hashchange', handleEventIdFromHash);
 
         loadData();
         setInterval(() => loadData(true), 60000);
