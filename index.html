@@ -415,10 +415,10 @@
     }
 
     // ========== التخزين المؤقت ==========
-    const CACHE_VERSION = 'v4';
+    const CACHE_VERSION = 'v5';
     const CACHE_KEY = `sheetCacheData_${CACHE_VERSION}`;
     const CACHE_TIME_KEY = `sheetCacheTime_${CACHE_VERSION}`;
-    const CACHE_DURATION = 5 * 60 * 1000;
+    const CACHE_DURATION = 2 * 60 * 1000; // دقيقتان
 
     function reviveEventDates(events) {
         return events.map(ev => ({
@@ -822,8 +822,19 @@
         bell.addEventListener('click', () => panel.classList.toggle('show'));
         document.getElementById('clearNotificationsBtn').addEventListener('click', clearAllNotifications);
         document.addEventListener('click', (e) => { if (!bell.contains(e.target) && !panel.contains(e.target)) panel.classList.remove('show'); });
+
+        // تحميل أولي
         loadData();
-        setInterval(() => loadData(true), 300000);
+
+        // تحديث تلقائي كل دقيقتين
+        setInterval(() => loadData(true), 120000);
+
+        // تحديث عند عودة التبويب إلى الواجهة
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                loadData();
+            }
+        });
     });
 </script>
 </body>
