@@ -29,6 +29,8 @@
         .date-range-filter button { background: #c9a03d; border: none; color: white; padding: 6px 15px; border-radius: 25px; cursor: pointer; }
         .date-range-filter .clear-btn { background: #888; }
         .range-info { font-size: 0.7rem; background: #fef8e7; padding: 4px 12px; border-radius: 20px; color: #c9a03d; }
+        .search-bar { background: white; border-radius: 18px; padding: 10px 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; border: 1px solid #eee; }
+        .search-bar input { padding: 8px 15px; border-radius: 25px; border: 1px solid #ddd; width: 300px; max-width: 100%; font-size: 0.85rem; }
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 20px; }
         @media (min-width: 768px) { .stats-grid { grid-template-columns: repeat(4, 1fr); } }
         .stat-card { background: white; border-radius: 16px; padding: 15px; border-right: 4px solid #c9a03d; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer; }
@@ -120,6 +122,12 @@
         <span id="rangeInfo" class="range-info">جميع المواعيد</span>
     </div>
 
+    <!-- شريط البحث الجديد -->
+    <div class="search-bar">
+        <i class="fas fa-search" style="color: #c9a03d; margin-left: 10px;"></i>
+        <input type="text" id="searchInput" placeholder="ابحث عن اسم، هاتف، ملاحظات...">
+    </div>
+
     <div class="stats-grid">
         <div class="stat-card"><h3>🏢 المعاينات</h3><div class="stat-number" id="totalApp">0</div></div>
         <div class="stat-card"><h3>📞 المتابعات</h3><div class="stat-number" id="totalCb">0</div></div>
@@ -196,7 +204,7 @@
         if (!container) return;
         const notif = document.createElement('div');
         notif.className = `in-app-notification ${type === 'overlap' ? 'overlap' : 'warning'}`;
-        const icon = type === 'overlap' ? '⚠️' : '🔔';
+        const icon = type === 'overlap' ? '⚠️' : (type === 'info' ? 'ℹ️' : '🔔');
         notif.innerHTML = `
             <div class="notif-icon">${icon}</div>
             <div class="notif-content">
@@ -231,8 +239,6 @@
 
         container.appendChild(notif);
         setTimeout(() => { if (notif.parentNode) notif.remove(); }, duration);
-
-        // تخزين في القائمة مع بيانات الحدث
         addToPersistentList(title, message, type, eventData);
     }
 
@@ -245,7 +251,7 @@
             type,
             time: new Date(),
             read: false,
-            eventData: eventData ? { ...eventData } : null // نسخة للبيانات
+            eventData: eventData ? { ...eventData } : null
         });
         if (notificationsList.length > 50) notificationsList.pop();
         updateNotificationPanel();
@@ -271,7 +277,6 @@
         listContainer.innerHTML = html;
     }
 
-    // دالة جديدة لفتح التفاصيل عند النقر على إشعار في القائمة
     window.openNotificationDetail = function(id) {
         const n = notificationsList.find(notif => notif.id === id);
         if (n) {
@@ -294,16 +299,6 @@
                     ev.clientReply || ''
                 );
             }
-        }
-    };
-
-    // تم تعديل markNotificationRead لمجرد التوافق مع النقرات القديمة إن وجدت
-    window.markNotificationRead = function(id) {
-        const n = notificationsList.find(notif => notif.id === id);
-        if (n) {
-            n.read = true;
-            updateNotificationPanel();
-            updateNotificationCount();
         }
     };
 
@@ -352,7 +347,9 @@
     const DONE_COL_NOTES = 5;
 
     let allEvents = [], currentType = 'all', filterStartDate = null, filterEndDate = null, calendar = null, isLoading = false;
+    let searchQuery = '';
     let shownUpcomingAlerts = new Set();
+    let previousEvents = [];
 
     function loadShownAlerts() {
         const stored = localStorage.getItem('shownAlerts');
@@ -456,7 +453,7 @@
     }
 
     // ========== التخزين المؤقت ==========
-    const CACHE_VERSION = 'v7';
+    const CACHE_VERSION = 'v9';
     const CACHE_KEY = `sheetCacheData_${CACHE_VERSION}`;
     const CACHE_TIME_KEY = `sheetCacheTime_${CACHE_VERSION}`;
     const CACHE_DURATION = 2 * 60 * 1000;
@@ -508,7 +505,6 @@
         const rows = data.values;
         if (!rows || rows.length < 2) return [];
         const events = [];
-        let appCount = 0, cbLCount = 0, cbSCount = 0;
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
             if (!row) continue;
@@ -525,7 +521,6 @@
                     const t = parseTime(appTime);
                     d.setHours(t.hour, t.minute);
                     events.push({ id: `main_app_${i}`, title: name, type: TYPE_APP, date: d, displayTime: t.display, phone, city, address, notes });
-                    appCount++;
                 }
             }
             const cbL = row[COL_CB_L_DATE], cbLNotes = row[COL_CB_L_NOTES] || '';
@@ -533,7 +528,6 @@
                 const d = parseDate(cbL, i, 'callback-L');
                 if (d) {
                     events.push({ id: `main_cbL_${i}`, title: name, type: TYPE_CB_L, date: d, displayTime: '', phone, city, address, notes: cbLNotes || notes });
-                    cbLCount++;
                 }
             }
             const cbS = row[COL_CB_S_DATE], cbSNotes = row[COL_CB_S_NOTES] || '';
@@ -541,11 +535,9 @@
                 const d = parseDate(cbS, i, 'callback-S');
                 if (d) {
                     events.push({ id: `main_cbS_${i}`, title: name, type: TYPE_CB_S, date: d, displayTime: '', phone, city, address, notes: cbSNotes || notes });
-                    cbSCount++;
                 }
             }
         }
-        console.log(`[fetchMainSheetData] Rows: ${rows.length}, Apps: ${appCount}, CB-L: ${cbLCount}, CB-S: ${cbSCount}`);
         return events;
     }
 
@@ -592,6 +584,67 @@
             }
         }
         return events;
+    }
+
+    // ========== كشف التغييرات ==========
+    function makeEventKey(ev) {
+        const dateStr = ev.date instanceof Date ? ev.date.toISOString().slice(0,10) : new Date(ev.date).toISOString().slice(0,10);
+        return `${ev.type}|${ev.title}|${ev.phone}|${dateStr}|${ev.notes}|${ev.code || ''}`;
+    }
+
+    function detectChanges(oldEvents, newEvents) {
+        const added = [];
+        const removed = [];
+        const updated = [];
+        const oldMap = new Map();
+        for (const ev of oldEvents) {
+            const key = makeEventKey(ev);
+            oldMap.set(key, ev);
+        }
+        const newKeys = new Set();
+        for (const ev of newEvents) {
+            const key = makeEventKey(ev);
+            newKeys.add(key);
+            if (!oldMap.has(key)) {
+                added.push(ev);
+            } else {
+                const oldEv = oldMap.get(key);
+                if (oldEv.displayTime !== ev.displayTime ||
+                    oldEv.notes !== ev.notes ||
+                    oldEv.city !== ev.city ||
+                    oldEv.address !== ev.address ||
+                    oldEv.code !== ev.code ||
+                    oldEv.clientReply !== ev.clientReply) {
+                    updated.push({ old: oldEv, new: ev });
+                }
+                oldMap.delete(key);
+            }
+        }
+        for (const ev of oldMap.values()) {
+            removed.push(ev);
+        }
+        return { added, removed, updated };
+    }
+
+    function showChangeNotifications(changes) {
+        for (const ev of changes.added) {
+            const dateStr = ev.date instanceof Date ? ev.date.toLocaleDateString('ar-EG') : new Date(ev.date).toLocaleDateString('ar-EG');
+            const typeLabel = ev.type === TYPE_APP ? 'معاينة' : (ev.type === TYPE_DONE ? 'معاينة تمت' : 'متابعة');
+            const msg = `${ev.title} - ${dateStr} (${typeLabel})`;
+            showInAppNotification('📌 موعد جديد', msg, 'info', 6000, ev);
+        }
+        for (const ev of changes.removed) {
+            const dateStr = ev.date instanceof Date ? ev.date.toLocaleDateString('ar-EG') : new Date(ev.date).toLocaleDateString('ar-EG');
+            const typeLabel = ev.type === TYPE_APP ? 'معاينة' : (ev.type === TYPE_DONE ? 'معاينة تمت' : 'متابعة');
+            const msg = `${ev.title} - ${dateStr} (${typeLabel})`;
+            showInAppNotification('🗑️ تم حذف موعد', msg, 'info', 6000, ev);
+        }
+        for (const { old: oldEv } of changes.updated) {
+            const dateStr = oldEv.date instanceof Date ? oldEv.date.toLocaleDateString('ar-EG') : new Date(oldEv.date).toLocaleDateString('ar-EG');
+            const typeLabel = oldEv.type === TYPE_APP ? 'معاينة' : (oldEv.type === TYPE_DONE ? 'معاينة تمت' : 'متابعة');
+            const msg = `${oldEv.title} - ${dateStr} (${typeLabel})`;
+            showInAppNotification('✏️ تم تعديل موعد', msg, 'info', 6000, oldEv);
+        }
     }
 
     function detectOverlaps(events) {
@@ -764,6 +817,21 @@
         });
     };
 
+    function applySearchFilter(events) {
+        if (!searchQuery) return events;
+        const query = searchQuery.toLowerCase();
+        return events.filter(ev => {
+            return (ev.title && ev.title.toLowerCase().includes(query)) ||
+                   (ev.phone && ev.phone.toLowerCase().includes(query)) ||
+                   (ev.notes && ev.notes.toLowerCase().includes(query)) ||
+                   (ev.city && ev.city.toLowerCase().includes(query)) ||
+                   (ev.address && ev.address.toLowerCase().includes(query)) ||
+                   (ev.type && ev.type.toLowerCase().includes(query)) ||
+                   (ev.code && ev.code.toLowerCase().includes(query)) ||
+                   (ev.clientReply && ev.clientReply.toLowerCase().includes(query));
+        });
+    }
+
     function refreshAll() {
         if (!allEvents.length) return;
         let filtered = [...allEvents];
@@ -772,6 +840,7 @@
         else if (currentType === 'done') filtered = filtered.filter(e => e.type === TYPE_DONE);
         if (filterStartDate) filtered = filtered.filter(e => new Date(e.date).setHours(0,0,0,0) >= filterStartDate.getTime());
         if (filterEndDate) filtered = filtered.filter(e => new Date(e.date).setHours(0,0,0,0) <= filterEndDate.getTime());
+        filtered = applySearchFilter(filtered);
         const overlaps = detectOverlaps(filtered);
         if (overlaps.length > 0) showOverlapAlerts(overlaps);
         const upcoming = detectUpcomingEvents(filtered);
@@ -810,6 +879,16 @@
         refreshAll();
     }
 
+    // ========== البحث مع تأخير ==========
+    let debounceTimer;
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            searchQuery = e.target.value.trim();
+            refreshAll();
+        }, 300);
+    });
+
     async function loadData(forceRefresh = false) {
         if (isLoading) return;
         isLoading = true;
@@ -831,7 +910,17 @@
                 fetchMainSheetData(),
                 fetchDoneSheetData()
             ]);
-            allEvents = [...mainEvents, ...doneEvents];
+            const newEvents = [...mainEvents, ...doneEvents];
+
+            if (previousEvents.length > 0) {
+                const changes = detectChanges(previousEvents, newEvents);
+                if (changes.added.length || changes.removed.length || changes.updated.length) {
+                    showChangeNotifications(changes);
+                }
+            }
+
+            previousEvents = [...newEvents];
+            allEvents = newEvents;
             setCachedData({ mainEvents, doneEvents });
             document.getElementById('status').innerHTML = `✅ ${allEvents.length} موعد`;
             refreshAll();
