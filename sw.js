@@ -133,7 +133,6 @@ async function checkAndNotify() {
         const now = Date.now();
         const appUrl = self.registration.scope;
 
-        // إشعارات المواعيد القادمة
         const upcoming = newEvents.filter(ev => ev.date > now && ev.date < now + 24*60*60*1000);
         for (const ev of upcoming) {
             const minsLeft = Math.round((ev.date - now) / 60000);
@@ -142,11 +141,10 @@ async function checkAndNotify() {
                 body: `${ev.title} - ${timeText}`,
                 icon: 'https://img.icons8.com/color/96/real-estate.png',
                 tag: `upcoming-${ev.id}`,
-                data: { url: appUrl, eventId: ev.id }   // أضفنا eventId
+                data: { url: appUrl, eventId: ev.id }
             });
         }
 
-        // إشعارات التغييرات
         if (previousEvents.length) {
             const added = newEvents.filter(ev => !previousEvents.some(pe => makeEventKey(pe) === makeEventKey(ev)));
             const removed = previousEvents.filter(pe => !newEvents.some(ev => makeEventKey(ev) === makeEventKey(pe)));
@@ -200,20 +198,24 @@ self.addEventListener('activate', event => {
 self.addEventListener('notificationclick', event => {
     event.notification.close();
     const data = event.notification.data || {};
-    const baseUrl = data.url || self.registration.scope;
+    const appUrl = data.url || self.registration.scope;
     const eventId = data.eventId || '';
-    const targetUrl = eventId ? `${baseUrl}#eventId=${eventId}` : baseUrl;
+
+    // تخزين معرف الحدث في Cache API ليقرأه التطبيق عند الفتح
+    caches.open('notification-intent').then(cache => {
+        cache.put('pending-event', new Response(JSON.stringify({ eventId })));
+    });
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true })
             .then(windowClients => {
                 for (let client of windowClients) {
                     if (client.url.startsWith(self.registration.scope) && 'focus' in client) {
-                        client.navigate(targetUrl); // تحديث الصفحة الحالية
+                        client.navigate(appUrl);
                         return client.focus();
                     }
                 }
-                return clients.openWindow(targetUrl);
+                return clients.openWindow(appUrl);
             })
     );
 });
