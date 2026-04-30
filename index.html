@@ -191,7 +191,6 @@
     let notificationsList = [];
     let notifId = 0;
 
-    // دالة عرض الإشعار داخل التطبيق، مع إمكانية تمرير بيانات الحدث لفتح التفاصيل عند النقر
     function showInAppNotification(title, message, type, duration = 8000, eventData = null) {
         const container = document.getElementById('notificationContainer');
         if (!container) return;
@@ -208,14 +207,12 @@
             <div class="notif-close" onclick="event.stopPropagation(); this.parentElement.remove();">✕</div>
         `;
 
-        // عند النقر على الإشعار بالكامل (عدا زر الإغلاق)
         notif.addEventListener('click', (e) => {
             if (!e.target.classList.contains('notif-close')) {
                 if (eventData) {
-                    // استخدم بيانات الحدث لفتح النافذة التفصيلية
                     const ev = eventData;
                     const dateStr = ev.date instanceof Date ? ev.date.toLocaleDateString('ar-EG') : new Date(ev.date).toLocaleDateString('ar-EG');
-                    showEventDetails(
+                    window.showEventDetails(
                         ev.title,
                         dateStr,
                         ev.displayTime || '',
@@ -418,7 +415,7 @@
     }
 
     // ========== التخزين المؤقت ==========
-    const CACHE_VERSION = 'v3';
+    const CACHE_VERSION = 'v4';
     const CACHE_KEY = `sheetCacheData_${CACHE_VERSION}`;
     const CACHE_TIME_KEY = `sheetCacheTime_${CACHE_VERSION}`;
     const CACHE_DURATION = 5 * 60 * 1000;
@@ -579,7 +576,6 @@
         return events.filter(ev => { const ed = ev.date instanceof Date ? ev.date : new Date(ev.date); return ed >= now && ed <= next24; });
     }
 
-    // تم تعديل هذه الدالة لتمرير بيانات الحدث إلى showInAppNotification
     function showUpcomingNotifications(upcoming) {
         for (const ev of upcoming) {
             const key = `upcoming_${ev.id}`;
@@ -591,13 +587,11 @@
             const timeText = hours < 1 ? 'خلال أقل من ساعة' : `بعد ${hours} ساعات`;
             const title = `🔔 ${ev.type === TYPE_APP ? 'معاينة' : (ev.type === TYPE_DONE ? 'معاينة تمت' : 'متابعة')} قريب`;
             const message = `${ev.title} - ${timeText}`;
-            // تمرير الحدث بأكمله
             showInAppNotification(title, message, 'upcoming', 8000, ev);
             sendSystemNotification(title, message, `upcoming_${ev.id}`);
         }
     }
 
-    // تم تعديل هذه الدالة لتمرير الحدث الأول من حالة التداخل
     function showOverlapAlerts(overlaps) {
         for (const ov of overlaps) {
             const key = `overlap_${ov.event1.id}_${ov.event2.id}`;
@@ -606,7 +600,6 @@
             saveShownAlerts();
             const title = `⚠️ تداخل في مواعيد المعاينات`;
             const message = `${ov.date.toLocaleDateString('ar-EG')}: ${ov.event1.title} و ${ov.event2.title}`;
-            // نمرر الحدث الأول كمثال
             showInAppNotification(title, message, 'overlap', 10000, ov.event1);
             sendSystemNotification(title, message, `overlap_${key}`);
         }
@@ -698,7 +691,7 @@
             buttonText: { today: 'اليوم', month: 'شهر' }, events: fcEvents, height: 'auto', firstDay: 6,
             eventClick: (info) => {
                 const e = info.event.extendedProps;
-                showEventDetails(e.title, e.dateStr, e.time || '', e.phone || '', e.city || '', e.address || '', e.notes || '', e.type, e.code || '', e.clientReply || '');
+                window.showEventDetails(e.title, e.dateStr, e.time || '', e.phone || '', e.city || '', e.address || '', e.notes || '', e.type, e.code || '', e.clientReply || '');
             }
         });
         calendar.render();
