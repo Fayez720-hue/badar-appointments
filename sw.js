@@ -8,7 +8,9 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
+  // استخدم الرابط المخزن في بيانات الإشعار (من sendSystemNotification)
+  const urlToOpen = event.notification.data?.url || './';
   event.waitUntil(
-    clients.openWindow('/')  // يفتح التطبيق عند النقر على الإشعار
+    clients.openWindow(urlToOpen)
   );
 });
