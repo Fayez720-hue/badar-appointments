@@ -213,14 +213,14 @@
                     const ev = eventData;
                     const dateStr = ev.date instanceof Date ? ev.date.toLocaleDateString('ar-EG') : new Date(ev.date).toLocaleDateString('ar-EG');
                     window.showEventDetails(
-                        ev.title,
+                        ev.title || 'غير محدد',
                         dateStr,
                         ev.displayTime || '',
                         ev.phone || '',
                         ev.city || '',
                         ev.address || '',
                         ev.notes || '',
-                        ev.type,
+                        ev.type || '',
                         ev.code || '',
                         ev.clientReply || ''
                     );
@@ -231,12 +231,22 @@
 
         container.appendChild(notif);
         setTimeout(() => { if (notif.parentNode) notif.remove(); }, duration);
-        addToPersistentList(title, message, type);
+
+        // تخزين في القائمة مع بيانات الحدث
+        addToPersistentList(title, message, type, eventData);
     }
 
-    function addToPersistentList(title, message, type) {
+    function addToPersistentList(title, message, type, eventData = null) {
         const id = notifId++;
-        notificationsList.unshift({ id, title, message, type, time: new Date(), read: false });
+        notificationsList.unshift({
+            id,
+            title,
+            message,
+            type,
+            time: new Date(),
+            read: false,
+            eventData: eventData ? { ...eventData } : null // نسخة للبيانات
+        });
         if (notificationsList.length > 50) notificationsList.pop();
         updateNotificationPanel();
         updateNotificationCount();
@@ -252,7 +262,7 @@
         let html = '';
         for (const n of notificationsList) {
             const timeStr = formatTimeAgo(n.time);
-            html += `<div class="notification-item ${!n.read ? 'unread' : ''}" onclick="markNotificationRead(${n.id})">
+            html += `<div class="notification-item ${!n.read ? 'unread' : ''}" data-notif-id="${n.id}" onclick="openNotificationDetail(${n.id})">
                         <div class="notification-title">${n.title}</div>
                         <div class="notification-message">${n.message}</div>
                         <div class="notification-time">${timeStr}</div>
@@ -261,9 +271,40 @@
         listContainer.innerHTML = html;
     }
 
+    // دالة جديدة لفتح التفاصيل عند النقر على إشعار في القائمة
+    window.openNotificationDetail = function(id) {
+        const n = notificationsList.find(notif => notif.id === id);
+        if (n) {
+            n.read = true;
+            updateNotificationPanel();
+            updateNotificationCount();
+            if (n.eventData) {
+                const ev = n.eventData;
+                const dateStr = ev.date instanceof Date ? ev.date.toLocaleDateString('ar-EG') : new Date(ev.date).toLocaleDateString('ar-EG');
+                window.showEventDetails(
+                    ev.title || 'غير محدد',
+                    dateStr,
+                    ev.displayTime || '',
+                    ev.phone || '',
+                    ev.city || '',
+                    ev.address || '',
+                    ev.notes || '',
+                    ev.type || '',
+                    ev.code || '',
+                    ev.clientReply || ''
+                );
+            }
+        }
+    };
+
+    // تم تعديل markNotificationRead لمجرد التوافق مع النقرات القديمة إن وجدت
     window.markNotificationRead = function(id) {
-        const n = notificationsList.find(n => n.id === id);
-        if (n) { n.read = true; updateNotificationPanel(); updateNotificationCount(); }
+        const n = notificationsList.find(notif => notif.id === id);
+        if (n) {
+            n.read = true;
+            updateNotificationPanel();
+            updateNotificationCount();
+        }
     };
 
     function updateNotificationCount() {
@@ -415,10 +456,10 @@
     }
 
     // ========== التخزين المؤقت ==========
-    const CACHE_VERSION = 'v6';
+    const CACHE_VERSION = 'v7';
     const CACHE_KEY = `sheetCacheData_${CACHE_VERSION}`;
     const CACHE_TIME_KEY = `sheetCacheTime_${CACHE_VERSION}`;
-    const CACHE_DURATION = 2 * 60 * 1000; // دقيقتان
+    const CACHE_DURATION = 2 * 60 * 1000;
 
     function reviveEventDates(events) {
         return events.map(ev => ({
@@ -823,13 +864,8 @@
         document.getElementById('clearNotificationsBtn').addEventListener('click', clearAllNotifications);
         document.addEventListener('click', (e) => { if (!bell.contains(e.target) && !panel.contains(e.target)) panel.classList.remove('show'); });
 
-        // تحميل أولي
         loadData();
-
-        // تحديث تلقائي كل دقيقة (باستثناء استخدام التخزين المؤقت)
         setInterval(() => loadData(true), 60000);
-
-        // تحديث عند العودة إلى التبويب (جلب إجباري)
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
                 loadData(true);
