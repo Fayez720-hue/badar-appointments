@@ -307,18 +307,19 @@
         return str.replace(/[٠-٩]/g, d => String.fromCharCode(d.charCodeAt(0) - 1632 + 48));
     }
 
+    // ---------- الدالة المحسّنة لتحليل التاريخ (تصحيح كامل) ----------
     function parseDate(dateStr, rowIndex = -1, source = '') {
         if (!dateStr) return null;
         let original = dateStr.toString().trim();
         if (original === 'FALSE' || original === 'TRUE' || original === '') return null;
 
+        // تطبيع الأرقام العربية (إن وجدت)
         let s = normalizeArabicDigits(original);
-        s = s.replace(/(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة)\s*,?\s*/i, '');
-        s = s.replace(/،/g, ',').replace(/&/g, '');
 
-        let timeMatch = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*[مص]/);
-        if (timeMatch) s = s.replace(timeMatch[0], '');
+        // إزالة جميع الرموز غير الرقمية، مع الإبقاء على الأرقام، الشرطات المائلة (- . /) والمسافات
+        s = s.replace(/[^\d\/\.\-\s]/g, '').trim();
 
+        // استخراج أول تاريخ متطابق من النص المنقى
         let match = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
         if (!match) match = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
         if (!match) match = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
@@ -334,6 +335,7 @@
                 let part1 = parseInt(match[1]);
                 let part2 = parseInt(match[2]);
                 let part3 = parseInt(match[3]);
+                // معالجة السنة المختصرة (مثال 26 → 2026)
                 if (match[3].length <= 2 && part3 < 100) {
                     year = 2000 + part3;
                     month = part2 - 1;
@@ -349,18 +351,13 @@
                 }
             }
             let d = new Date(year, month, day, 12, 0);
-            if (!isNaN(d.getTime()) && d.getFullYear() >= 2000) return d;
+            if (!isNaN(d.getTime()) && d.getFullYear() >= 2000) {
+                return d;
+            }
         }
 
-        let cleaned = s.replace(/[^\d\/\.\-\s:]/g, '').trim();
-        let timestamp = Date.parse(cleaned);
-        if (!isNaN(timestamp)) {
-            let d = new Date(timestamp);
-            if (d.getFullYear() > 2000) return d;
-        }
-
-        let noSpaces = cleaned.replace(/\s+/g, '');
-        timestamp = Date.parse(noSpaces);
+        // محاولة أخيرة باستخدام Date.parse على النص المنقى
+        let timestamp = Date.parse(s);
         if (!isNaN(timestamp)) {
             let d = new Date(timestamp);
             if (d.getFullYear() > 2000) return d;
@@ -387,12 +384,11 @@
         return { hour: 12, minute: 0, display: '' };
     }
 
-    // ========== التخزين المؤقت مع معالجة التواريخ ==========
+    // ========== التخزين المؤقت مع إحياء التواريخ ==========
     const CACHE_KEY = 'sheetCacheData';
     const CACHE_TIME_KEY = 'sheetCacheTime';
     const CACHE_DURATION = 5 * 60 * 1000;
 
-    // تحويل جميع سلاسل التواريخ في الأحداث إلى كائنات Date
     function reviveEventDates(events) {
         return events.map(ev => ({
             ...ev,
