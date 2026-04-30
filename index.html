@@ -194,9 +194,36 @@
         }
     }
 
-    // ========== In-App Notifications ==========
+    // ========== In-App Notifications (Persistent) ==========
+    const NOTIF_STORAGE_KEY = 'persistentNotifications';
     let notificationsList = [];
     let notifId = 0;
+
+    // استعادة الإشعارات من التخزين
+    function loadPersistentNotifications() {
+        const stored = localStorage.getItem(NOTIF_STORAGE_KEY);
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                // تحويل التواريخ النصية إلى كائنات Date
+                notificationsList = parsed.map(n => ({
+                    ...n,
+                    time: new Date(n.time),
+                    eventData: n.eventData ? {
+                        ...n.eventData,
+                        date: n.eventData.date ? new Date(n.eventData.date) : null
+                    } : null
+                }));
+                if (notificationsList.length) {
+                    notifId = Math.max(...notificationsList.map(n => n.id), 0) + 1;
+                }
+            } catch (e) {}
+        }
+    }
+
+    function savePersistentNotifications() {
+        localStorage.setItem(NOTIF_STORAGE_KEY, JSON.stringify(notificationsList));
+    }
 
     function showInAppNotification(title, message, type, duration = 8000, eventData = null) {
         const container = document.getElementById('notificationContainer');
@@ -252,7 +279,8 @@
             read: false,
             eventData: eventData ? { ...eventData } : null
         });
-        if (notificationsList.length > 50) notificationsList.pop();
+        if (notificationsList.length > 100) notificationsList.pop();
+        savePersistentNotifications();
         updateNotificationPanel();
         updateNotificationCount();
     }
@@ -280,6 +308,7 @@
         const n = notificationsList.find(notif => notif.id === id);
         if (n) {
             n.read = true;
+            savePersistentNotifications();
             updateNotificationPanel();
             updateNotificationCount();
             if (n.eventData) {
@@ -312,6 +341,7 @@
 
     function clearAllNotifications() {
         notificationsList = [];
+        savePersistentNotifications();
         updateNotificationPanel();
         updateNotificationCount();
     }
@@ -452,7 +482,7 @@
     }
 
     // ========== التخزين المؤقت ==========
-    const CACHE_VERSION = 'v10';
+    const CACHE_VERSION = 'v11';
     const CACHE_KEY = `sheetCacheData_${CACHE_VERSION}`;
     const CACHE_TIME_KEY = `sheetCacheTime_${CACHE_VERSION}`;
     const CACHE_DURATION = 2 * 60 * 1000;
@@ -848,76 +878,42 @@
         updateStats(filtered);
         renderGroupedList(filtered, overlaps, upcoming);
         renderCalendar(filtered, overlaps, upcoming);
-        // محاولة معالجة eventId من الرابط (لفتح تفاصيل الموعد)
-        handleEventIdFromHash();
+        // البحث عن حدث معلق من إشعار النظام
+        checkPendingNotificationEvent();
     }
 
-    function applyDateFilter() {
-        const start = document.getElementById('startDate').value, end = document.getElementById('endDate').value;
-        filterStartDate = start ? new Date(start) : null;
-        filterEndDate = end ? new Date(end) : null;
-        if (filterStartDate) filterStartDate.setHours(0,0,0,0);
-        if (filterEndDate) filterEndDate.setHours(23,59,59,999);
-        const info = document.getElementById('rangeInfo');
-        if (filterStartDate && filterEndDate) info.innerText = filterStartDate.toLocaleDateString('ar-EG', { month:'long', year:'numeric' });
-        else if (filterStartDate) info.innerText = `من ${filterStartDate.toLocaleDateString('ar-EG')}`;
-        else if (filterEndDate) info.innerText = `حتى ${filterEndDate.toLocaleDateString('ar-EG')}`;
-        else info.innerText = 'جميع المواعيد';
-        refreshAll();
-    }
-
-    function clearDateFilter() {
-        document.getElementById('startDate').value = '';
-        document.getElementById('endDate').value = '';
-        filterStartDate = null; filterEndDate = null;
-        document.getElementById('rangeInfo').innerText = 'جميع المواعيد';
-        refreshAll();
-    }
-
-    function setTypeFilter(type) {
-        currentType = type;
-        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.filter === type));
-        refreshAll();
-    }
-
-    // ========== البحث مع تأخير ==========
-    let debounceTimer;
-    document.getElementById('searchInput').addEventListener('input', function(e) {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-            searchQuery = e.target.value.trim();
-            refreshAll();
-        }, 300);
-    });
-
-    // ========== آلية فتح التفاصيل من إشعار النظام ==========
-    let initialHashHandled = false;
-    function handleEventIdFromHash() {
-        if (initialHashHandled) return;
-        const hash = window.location.hash;
-        const match = hash.match(/eventId=([^&]+)/);
-        if (!match) return;
-        const eventId = match[1];
-        const ev = allEvents.find(e => e.id === eventId);
-        if (ev) {
-            initialHashHandled = true;
-            setTimeout(() => {
-                const dateStr = ev.date instanceof Date ? ev.date.toLocaleDateString('ar-EG') : new Date(ev.date).toLocaleDateString('ar-EG');
-                window.showEventDetails(
-                    ev.title || 'غير محدد',
-                    dateStr,
-                    ev.displayTime || '',
-                    ev.phone || '',
-                    ev.city || '',
-                    ev.address || '',
-                    ev.notes || '',
-                    ev.type || '',
-                    ev.code || '',
-                    ev.clientReply || ''
-                );
-                history.replaceState(null, null, ' ');
-            }, 800);
-        }
+    // ========== معالجة الحدث المعلق من إشعار النظام ==========
+    async function checkPendingNotificationEvent() {
+        try {
+            const cache = await caches.open('notification-intent');
+            const resp = await cache.match('pending-event');
+            if (resp) {
+                const data = await resp.json();
+                const eventId = data.eventId;
+                // حذف التخزين بعد القراءة
+                await cache.delete('pending-event');
+                if (eventId && allEvents.length) {
+                    const ev = allEvents.find(e => e.id === eventId);
+                    if (ev) {
+                        setTimeout(() => {
+                            const dateStr = ev.date instanceof Date ? ev.date.toLocaleDateString('ar-EG') : new Date(ev.date).toLocaleDateString('ar-EG');
+                            window.showEventDetails(
+                                ev.title || 'غير محدد',
+                                dateStr,
+                                ev.displayTime || '',
+                                ev.phone || '',
+                                ev.city || '',
+                                ev.address || '',
+                                ev.notes || '',
+                                ev.type || '',
+                                ev.code || '',
+                                ev.clientReply || ''
+                            );
+                        }, 500);
+                    }
+                }
+            }
+        } catch (e) {}
     }
 
     async function loadData(forceRefresh = false) {
@@ -972,20 +968,31 @@
 
     // ========== Initialization ==========
     window.addEventListener('load', async () => {
+        loadPersistentNotifications(); // تحميل الإشعارات المحفوظة
+        updateNotificationPanel();
+        updateNotificationCount();
+
         loadShownAlerts();
         await requestNotificationPermission();
+
         document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => setTypeFilter(btn.dataset.filter)));
         document.getElementById('refreshBtn').addEventListener('click', () => loadData(true));
         document.getElementById('applyDateBtn').addEventListener('click', applyDateFilter);
         document.getElementById('clearDateBtn').addEventListener('click', clearDateFilter);
+
         const bell = document.getElementById('notificationBell');
         const panel = document.getElementById('notificationPanel');
         bell.addEventListener('click', () => panel.classList.toggle('show'));
         document.getElementById('clearNotificationsBtn').addEventListener('click', clearAllNotifications);
         document.addEventListener('click', (e) => { if (!bell.contains(e.target) && !panel.contains(e.target)) panel.classList.remove('show'); });
 
-        // مستمع تغيير الهاش
-        window.addEventListener('hashchange', handleEventIdFromHash);
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                searchQuery = e.target.value.trim();
+                refreshAll();
+            }, 300);
+        });
 
         loadData();
         setInterval(() => loadData(true), 60000);
@@ -995,6 +1002,33 @@
             }
         });
     });
+
+    // زر تطبيق الفلتر والتاريخ
+    function applyDateFilter() {
+        const start = document.getElementById('startDate').value, end = document.getElementById('endDate').value;
+        filterStartDate = start ? new Date(start) : null;
+        filterEndDate = end ? new Date(end) : null;
+        if (filterStartDate) filterStartDate.setHours(0,0,0,0);
+        if (filterEndDate) filterEndDate.setHours(23,59,59,999);
+        const info = document.getElementById('rangeInfo');
+        if (filterStartDate && filterEndDate) info.innerText = filterStartDate.toLocaleDateString('ar-EG', { month:'long', year:'numeric' });
+        else if (filterStartDate) info.innerText = `من ${filterStartDate.toLocaleDateString('ar-EG')}`;
+        else if (filterEndDate) info.innerText = `حتى ${filterEndDate.toLocaleDateString('ar-EG')}`;
+        else info.innerText = 'جميع المواعيد';
+        refreshAll();
+    }
+    function clearDateFilter() {
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        filterStartDate = null; filterEndDate = null;
+        document.getElementById('rangeInfo').innerText = 'جميع المواعيد';
+        refreshAll();
+    }
+    function setTypeFilter(type) {
+        currentType = type;
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.filter === type));
+        refreshAll();
+    }
 </script>
 </body>
 </html>
