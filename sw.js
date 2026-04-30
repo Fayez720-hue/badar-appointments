@@ -4,12 +4,10 @@ const SPREADSHEET_ID_DONE = '1HcnGcO9hcYWPNRETHGzdN1-XwTgpvc6YZhPyw4zRssI';
 const SHEET_NAME_DONE = 'بيدار (نتائج معاينة)';
 const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
 
-// دالة مساعدة لتحويل الأرقام العربية
 function normalizeArabicDigits(str) {
     return str.replace(/[٠-٩]/g, d => String.fromCharCode(d.charCodeAt(0) - 1632 + 48));
 }
 
-// تحليل التاريخ
 function parseDate(dateStr) {
     if (!dateStr) return null;
     let s = dateStr.toString().trim();
@@ -40,7 +38,19 @@ function parseDate(dateStr) {
     return null;
 }
 
-// جلب البيانات من الجدول الرئيسي
+function parseTime(timeStr) {
+    if (!timeStr) return { hour: 12, minute: 0 };
+    let s = timeStr.toString().trim();
+    if (s === 'FALSE' || s === 'TRUE' || s === '') return { hour: 12, minute: 0 };
+    let match = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*([مص])/);
+    if (match) {
+        let hour = parseInt(match[1]), minute = parseInt(match[2]), period = match[3];
+        let hour24 = period === 'م' ? (hour === 12 ? 12 : hour+12) : (hour === 12 ? 0 : hour);
+        return { hour: hour24, minute };
+    }
+    return { hour: 12, minute: 0 };
+}
+
 async function fetchMainSheetData() {
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_MAIN}/values/${SHEET_NAME_MAIN}!A1:Z2000?key=${API_KEY}`;
     const resp = await fetch(url);
@@ -80,7 +90,6 @@ async function fetchMainSheetData() {
     return events;
 }
 
-// جلب بيانات معاينات تمت
 async function fetchDoneSheetData() {
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_DONE}/values/${SHEET_NAME_DONE}!A1:Z2000?key=${API_KEY}`;
     const resp = await fetch(url);
@@ -104,20 +113,6 @@ async function fetchDoneSheetData() {
     return events;
 }
 
-function parseTime(timeStr) {
-    if (!timeStr) return { hour: 12, minute: 0 };
-    let s = timeStr.toString().trim();
-    if (s === 'FALSE' || s === 'TRUE' || s === '') return { hour: 12, minute: 0 };
-    let match = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*([مص])/);
-    if (match) {
-        let hour = parseInt(match[1]), minute = parseInt(match[2]), period = match[3];
-        let hour24 = period === 'م' ? (hour === 12 ? 12 : hour+12) : (hour === 12 ? 0 : hour);
-        return { hour: hour24, minute };
-    }
-    return { hour: 12, minute: 0 };
-}
-
-// تخزين الأحداث السابقة للمقارنة (باستخدام Cache API)
 function getPreviousEvents() {
     return caches.open('events-cache').then(cache => cache.match('previousEvents')).then(resp => resp?.json() || []);
 }
@@ -130,15 +125,15 @@ function makeEventKey(ev) {
     return `${ev.type}|${ev.title}|${ev.phone}|${dateISO}|${ev.notes}|${ev.code || ''}`;
 }
 
-// كشف التغييرات وإرسال إشعارات
 async function checkAndNotify() {
     try {
         const [mainEvents, doneEvents] = await Promise.all([fetchMainSheetData(), fetchDoneSheetData()]);
         const newEvents = [...mainEvents, ...doneEvents];
         const previousEvents = await getPreviousEvents();
         const now = Date.now();
+        const appUrl = self.registration.scope;
 
-        // إشعارات المواعيد القادمة (خلال 24 ساعة)
+        // إشعارات المواعيد القادمة
         const upcoming = newEvents.filter(ev => ev.date > now && ev.date < now + 24*60*60*1000);
         for (const ev of upcoming) {
             const minsLeft = Math.round((ev.date - now) / 60000);
@@ -147,22 +142,17 @@ async function checkAndNotify() {
                 body: `${ev.title} - ${timeText}`,
                 icon: 'https://img.icons8.com/color/96/real-estate.png',
                 tag: `upcoming-${ev.id}`,
-                data: { url: './' }
+                data: { url: appUrl, eventId: ev.id }   // أضفنا eventId
             });
         }
 
-        // إشعارات التغييرات (إضافة، حذف، تعديل) إذا كانت هناك بيانات سابقة
+        // إشعارات التغييرات
         if (previousEvents.length) {
             const added = newEvents.filter(ev => !previousEvents.some(pe => makeEventKey(pe) === makeEventKey(ev)));
             const removed = previousEvents.filter(pe => !newEvents.some(ev => makeEventKey(ev) === makeEventKey(pe)));
             const updated = newEvents.filter(ev => {
                 const oldEv = previousEvents.find(pe => pe.id === ev.id);
-                return oldEv && (
-                    oldEv.date !== ev.date ||
-                    oldEv.notes !== ev.notes ||
-                    oldEv.phone !== ev.phone ||
-                    oldEv.title !== ev.title
-                );
+                return oldEv && (oldEv.date !== ev.date || oldEv.notes !== ev.notes || oldEv.phone !== ev.phone || oldEv.title !== ev.title);
             });
 
             for (const ev of added) {
@@ -170,7 +160,7 @@ async function checkAndNotify() {
                     body: `${ev.title} - ${new Date(ev.date).toLocaleDateString('ar-EG')}`,
                     icon: 'https://img.icons8.com/color/96/real-estate.png',
                     tag: `add-${ev.id}`,
-                    data: { url: './' }
+                    data: { url: appUrl, eventId: ev.id }
                 });
             }
             for (const ev of removed) {
@@ -178,7 +168,7 @@ async function checkAndNotify() {
                     body: `${ev.title} - ${new Date(ev.date).toLocaleDateString('ar-EG')}`,
                     icon: 'https://img.icons8.com/color/96/real-estate.png',
                     tag: `del-${ev.id}`,
-                    data: { url: './' }
+                    data: { url: appUrl, eventId: ev.id }
                 });
             }
             for (const ev of updated) {
@@ -186,7 +176,7 @@ async function checkAndNotify() {
                     body: `${ev.title} - ${new Date(ev.date).toLocaleDateString('ar-EG')}`,
                     icon: 'https://img.icons8.com/color/96/real-estate.png',
                     tag: `edit-${ev.id}`,
-                    data: { url: './' }
+                    data: { url: appUrl, eventId: ev.id }
                 });
             }
         }
@@ -197,23 +187,33 @@ async function checkAndNotify() {
     }
 }
 
-// جدولة التحديث الدوري
 self.addEventListener('install', event => {
     self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
     self.clients.claim();
-    // بدء الفحص الأول بعد التثبيت
     checkAndNotify();
-    // ثم كل دقيقة (ملاحظة: قد يوقف المتصفح هذه الفترات بعد فترة من عدم النشاط)
     setInterval(checkAndNotify, 60000);
 });
 
 self.addEventListener('notificationclick', event => {
     event.notification.close();
-    const urlToOpen = event.notification.data?.url || './';
+    const data = event.notification.data || {};
+    const baseUrl = data.url || self.registration.scope;
+    const eventId = data.eventId || '';
+    const targetUrl = eventId ? `${baseUrl}#eventId=${eventId}` : baseUrl;
+
     event.waitUntil(
-        clients.openWindow(urlToOpen)
+        clients.matchAll({ type: 'window', includeUncontrolled: true })
+            .then(windowClients => {
+                for (let client of windowClients) {
+                    if (client.url.startsWith(self.registration.scope) && 'focus' in client) {
+                        client.navigate(targetUrl); // تحديث الصفحة الحالية
+                        return client.focus();
+                    }
+                }
+                return clients.openWindow(targetUrl);
+            })
     );
 });
