@@ -191,7 +191,8 @@
     let notificationsList = [];
     let notifId = 0;
 
-    function showInAppNotification(title, message, type, duration = 8000) {
+    // دالة عرض الإشعار داخل التطبيق، مع إمكانية تمرير بيانات الحدث لفتح التفاصيل عند النقر
+    function showInAppNotification(title, message, type, duration = 8000, eventData = null) {
         const container = document.getElementById('notificationContainer');
         if (!container) return;
         const notif = document.createElement('div');
@@ -204,9 +205,33 @@
                 <div class="notif-message">${message}</div>
                 <div class="notif-time">الآن</div>
             </div>
-            <div class="notif-close" onclick="this.parentElement.remove()">✕</div>
+            <div class="notif-close" onclick="event.stopPropagation(); this.parentElement.remove();">✕</div>
         `;
-        notif.onclick = (e) => { if (!e.target.classList.contains('notif-close')) notif.remove(); };
+
+        // عند النقر على الإشعار بالكامل (عدا زر الإغلاق)
+        notif.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('notif-close')) {
+                if (eventData) {
+                    // استخدم بيانات الحدث لفتح النافذة التفصيلية
+                    const ev = eventData;
+                    const dateStr = ev.date instanceof Date ? ev.date.toLocaleDateString('ar-EG') : new Date(ev.date).toLocaleDateString('ar-EG');
+                    showEventDetails(
+                        ev.title,
+                        dateStr,
+                        ev.displayTime || '',
+                        ev.phone || '',
+                        ev.city || '',
+                        ev.address || '',
+                        ev.notes || '',
+                        ev.type,
+                        ev.code || '',
+                        ev.clientReply || ''
+                    );
+                }
+                notif.remove();
+            }
+        });
+
         container.appendChild(notif);
         setTimeout(() => { if (notif.parentNode) notif.remove(); }, duration);
         addToPersistentList(title, message, type);
@@ -310,7 +335,7 @@
     function parseDateSerial(serialStr) {
         let serial = parseFloat(serialStr);
         if (isNaN(serial) || serial < 1) return null;
-        let d = new Date(1899, 11, 30); // 30 Dec 1899
+        let d = new Date(1899, 11, 30);
         d.setDate(d.getDate() + Math.floor(serial));
         if (serial % 1 !== 0) {
             let totalSeconds = Math.round((serial % 1) * 24 * 60 * 60);
@@ -392,8 +417,8 @@
         return { hour: 12, minute: 0, display: '' };
     }
 
-    // ========== التخزين المؤقت مع مفتاح إصدارة ==========
-    const CACHE_VERSION = 'v3'; // تم التحديث لمسح الكاش القديم
+    // ========== التخزين المؤقت ==========
+    const CACHE_VERSION = 'v3';
     const CACHE_KEY = `sheetCacheData_${CACHE_VERSION}`;
     const CACHE_TIME_KEY = `sheetCacheTime_${CACHE_VERSION}`;
     const CACHE_DURATION = 5 * 60 * 1000;
@@ -428,7 +453,6 @@
     }
 
     async function fetchMainSheetData() {
-        // تم زيادة النطاق إلى 2000 صف لضمان جلب كافة البيانات
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_MAIN}/values/${SHEET_NAME_MAIN}!A1:Z2000?key=${API_KEY}`;
         const response = await fetch(url);
         if (!response.ok) {
@@ -488,7 +512,6 @@
     }
 
     async function fetchDoneSheetData() {
-        // تم زيادة النطاق إلى 2000 صف
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_DONE}/values/${SHEET_NAME_DONE}!A1:Z2000?key=${API_KEY}`;
         const response = await fetch(url);
         if (!response.ok) {
@@ -556,6 +579,7 @@
         return events.filter(ev => { const ed = ev.date instanceof Date ? ev.date : new Date(ev.date); return ed >= now && ed <= next24; });
     }
 
+    // تم تعديل هذه الدالة لتمرير بيانات الحدث إلى showInAppNotification
     function showUpcomingNotifications(upcoming) {
         for (const ev of upcoming) {
             const key = `upcoming_${ev.id}`;
@@ -567,11 +591,13 @@
             const timeText = hours < 1 ? 'خلال أقل من ساعة' : `بعد ${hours} ساعات`;
             const title = `🔔 ${ev.type === TYPE_APP ? 'معاينة' : (ev.type === TYPE_DONE ? 'معاينة تمت' : 'متابعة')} قريب`;
             const message = `${ev.title} - ${timeText}`;
-            showInAppNotification(title, message, 'upcoming', 8000);
+            // تمرير الحدث بأكمله
+            showInAppNotification(title, message, 'upcoming', 8000, ev);
             sendSystemNotification(title, message, `upcoming_${ev.id}`);
         }
     }
 
+    // تم تعديل هذه الدالة لتمرير الحدث الأول من حالة التداخل
     function showOverlapAlerts(overlaps) {
         for (const ov of overlaps) {
             const key = `overlap_${ov.event1.id}_${ov.event2.id}`;
@@ -580,7 +606,8 @@
             saveShownAlerts();
             const title = `⚠️ تداخل في مواعيد المعاينات`;
             const message = `${ov.date.toLocaleDateString('ar-EG')}: ${ov.event1.title} و ${ov.event2.title}`;
-            showInAppNotification(title, message, 'overlap', 10000);
+            // نمرر الحدث الأول كمثال
+            showInAppNotification(title, message, 'overlap', 10000, ov.event1);
             sendSystemNotification(title, message, `overlap_${key}`);
         }
     }
