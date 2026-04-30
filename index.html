@@ -273,7 +273,7 @@
     const SPREADSHEET_ID_MAIN = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
     const SHEET_NAME_MAIN = 'مبيعات';
     const SPREADSHEET_ID_DONE = '1HcnGcO9hcYWPNRETHGzdN1-XwTgpvc6YZhPyw4zRssI';
-    const SHEET_NAME_DONE = 'بيدار (نتائج معاينة)';
+    const SHEET_NAME_DONE = 'بيدار (نتائج معاينة)'; // تم التصحيح
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
 
     const COL_NAME = 1, COL_PHONE = 2, COL_CITY = 6, COL_ADDRESS = 7, COL_NOTES = 8;
@@ -307,16 +307,25 @@
         return str.replace(/[٠-٩]/g, d => String.fromCharCode(d.charCodeAt(0) - 1632 + 48));
     }
 
-    function parseDate(dateStr, rowIndex = -1) {
+    // --- دالة parseDate مُحسَّنة تتعامل مع الوقت المدمج ---
+    function parseDate(dateStr, rowIndex = -1, source = '') {
         if (!dateStr) return null;
         let original = dateStr.toString().trim();
         if (original === 'FALSE' || original === 'TRUE' || original === '') return null;
 
         let s = normalizeArabicDigits(original);
+        // إزالة اسم اليوم والرموز
         s = s.replace(/(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة)\s*,?\s*/i, '');
-        s = s.replace(/،/g, ',');
-        s = s.replace(/&/g, '');
+        s = s.replace(/،/g, ',').replace(/&/g, '');
 
+        // إذا كان النص يحتوي على وقت (رقم:رقم وبعده ص/م) فاستخرج الجزء الخاص بالتاريخ فقط
+        let timeMatch = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*[مص]/);
+        if (timeMatch) {
+            // أزل الوقت من النص ليسهل إيجاد التاريخ
+            s = s.replace(timeMatch[0], '');
+        }
+
+        // البحث عن أنماط مختلفة للتاريخ
         let match = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
         if (!match) match = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
         if (!match) match = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
@@ -350,6 +359,7 @@
             if (!isNaN(d.getTime()) && d.getFullYear() >= 2000) return d;
         }
 
+        // محاولات أخرى مع Date.parse
         let cleaned = s.replace(/[^\d\/\.\-\s:]/g, '').trim();
         let timestamp = Date.parse(cleaned);
         if (!isNaN(timestamp)) {
@@ -365,7 +375,7 @@
         }
 
         if (rowIndex >= 0) {
-            console.warn(`[parseDate] Row ${rowIndex}: Could not parse date: "${original}"`);
+            console.warn(`[parseDate] Row ${rowIndex} (${source}): Could not parse date: "${original}"`);
         }
         return null;
     }
@@ -385,10 +395,10 @@
         return { hour: 12, minute: 0, display: '' };
     }
 
-    // ========== التخزين المؤقت للبيانات ==========
+    // ========== التخزين المؤقت ==========
     const CACHE_KEY = 'sheetCacheData';
     const CACHE_TIME_KEY = 'sheetCacheTime';
-    const CACHE_DURATION = 5 * 60 * 1000; // 5 دقائق
+    const CACHE_DURATION = 5 * 60 * 1000;
 
     function getCachedData() {
         const cached = localStorage.getItem(CACHE_KEY);
@@ -396,9 +406,7 @@
         if (cached && time) {
             const age = Date.now() - parseInt(time);
             if (age < CACHE_DURATION) {
-                try {
-                    return JSON.parse(cached);
-                } catch (e) {}
+                try { return JSON.parse(cached); } catch (e) {}
             }
         }
         return null;
@@ -409,19 +417,17 @@
         localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
     }
 
-    // ========== جلب البيانات مع التخزين المؤقت ==========
     async function fetchMainSheetData() {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID_MAIN}/values/${SHEET_NAME_MAIN}!A1:Z500?key=${API_KEY}`;
         const response = await fetch(url);
         if (!response.ok) {
             if (response.status === 429) {
-                // محاولة استخدام البيانات المخزنة
                 const cached = getCachedData();
                 if (cached) {
-                    Swal.fire({ icon: 'warning', title: 'طلبات كثيرة', text: 'تم استخدام البيانات المخزنة مؤقتًا.' });
+                    Swal.fire({ icon: 'warning', title: 'طلبات كثيرة', text: 'تم استخدام البيانات المخزنة.' });
                     return cached.mainEvents || [];
                 }
-                throw new Error('429: Too many requests');
+                throw new Error('429');
             }
             throw new Error('فشل الاتصال');
         }
@@ -429,6 +435,7 @@
         const rows = data.values;
         if (!rows || rows.length < 2) return [];
         const events = [];
+        let appCount = 0, cbLCount = 0, cbSCount = 0;
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i];
             if (!row) continue;
@@ -440,24 +447,32 @@
 
             const appDate = row[COL_APP_DATE], appTime = row[COL_APP_TIME] || '';
             if (appDate && appDate !== 'FALSE' && appDate.toString().trim()) {
-                const d = parseDate(appDate, i);
+                const d = parseDate(appDate, i, 'appointment');
                 if (d) {
                     const t = parseTime(appTime);
                     d.setHours(t.hour, t.minute);
                     events.push({ id: `main_app_${i}`, title: name, type: TYPE_APP, date: d, displayTime: t.display, phone, city, address, notes });
+                    appCount++;
                 }
             }
             const cbL = row[COL_CB_L_DATE], cbLNotes = row[COL_CB_L_NOTES] || '';
             if (cbL && cbL !== 'FALSE' && cbL.toString().trim()) {
-                const d = parseDate(cbL, i);
-                if (d) events.push({ id: `main_cbL_${i}`, title: name, type: TYPE_CB_L, date: d, displayTime: '', phone, city, address, notes: cbLNotes || notes });
+                const d = parseDate(cbL, i, 'callback-L');
+                if (d) {
+                    events.push({ id: `main_cbL_${i}`, title: name, type: TYPE_CB_L, date: d, displayTime: '', phone, city, address, notes: cbLNotes || notes });
+                    cbLCount++;
+                }
             }
             const cbS = row[COL_CB_S_DATE], cbSNotes = row[COL_CB_S_NOTES] || '';
             if (cbS && cbS !== 'FALSE' && cbS.toString().trim()) {
-                const d = parseDate(cbS, i);
-                if (d) events.push({ id: `main_cbS_${i}`, title: name, type: TYPE_CB_S, date: d, displayTime: '', phone, city, address, notes: cbSNotes || notes });
+                const d = parseDate(cbS, i, 'callback-S');
+                if (d) {
+                    events.push({ id: `main_cbS_${i}`, title: name, type: TYPE_CB_S, date: d, displayTime: '', phone, city, address, notes: cbSNotes || notes });
+                    cbSCount++;
+                }
             }
         }
+        console.log(`[fetchMainSheetData] Apps: ${appCount}, CB-L: ${cbLCount}, CB-S: ${cbSCount}`);
         return events;
     }
 
@@ -468,10 +483,10 @@
             if (response.status === 429) {
                 const cached = getCachedData();
                 if (cached) {
-                    Swal.fire({ icon: 'warning', title: 'طلبات كثيرة', text: 'تم استخدام البيانات المخزنة مؤقتًا.' });
+                    Swal.fire({ icon: 'warning', title: 'طلبات كثيرة', text: 'تم استخدام البيانات المخزنة.' });
                     return cached.doneEvents || [];
                 }
-                throw new Error('429: Too many requests');
+                throw new Error('429');
             }
             throw new Error('فشل الاتصال');
         }
@@ -490,7 +505,7 @@
             const dateStr = row[DONE_COL_DATE];
 
             if (dateStr && dateStr !== 'FALSE' && dateStr.toString().trim()) {
-                const d = parseDate(dateStr, i);
+                const d = parseDate(dateStr, i, 'done');
                 if (d) {
                     events.push({
                         id: `done_${i}`,
@@ -724,7 +739,6 @@
         document.getElementById('status').innerHTML = '<i class="fas fa-spinner fa-spin"></i> جلب البيانات...';
 
         try {
-            // التخزين المؤقت
             if (!forceRefresh) {
                 const cached = getCachedData();
                 if (cached) {
@@ -741,13 +755,11 @@
                 fetchDoneSheetData()
             ]);
             allEvents = [...mainEvents, ...doneEvents];
-            // حفظ في التخزين المؤقت
             setCachedData({ mainEvents, doneEvents });
             document.getElementById('status').innerHTML = `✅ ${allEvents.length} موعد`;
             refreshAll();
         } catch (error) {
             document.getElementById('status').innerHTML = '❌ فشل الجلب';
-            // محاولة استخدام أي بيانات مخزنة في حال الفشل
             const cached = getCachedData();
             if (cached) {
                 allEvents = [...(cached.mainEvents || []), ...(cached.doneEvents || [])];
@@ -766,7 +778,7 @@
         loadShownAlerts();
         await requestNotificationPermission();
         document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => setTypeFilter(btn.dataset.filter)));
-        document.getElementById('refreshBtn').addEventListener('click', () => loadData(true)); // تحديث إجباري
+        document.getElementById('refreshBtn').addEventListener('click', () => loadData(true));
         document.getElementById('applyDateBtn').addEventListener('click', applyDateFilter);
         document.getElementById('clearDateBtn').addEventListener('click', clearDateFilter);
         const bell = document.getElementById('notificationBell');
@@ -775,7 +787,6 @@
         document.getElementById('clearNotificationsBtn').addEventListener('click', clearAllNotifications);
         document.addEventListener('click', (e) => { if (!bell.contains(e.target) && !panel.contains(e.target)) panel.classList.remove('show'); });
         loadData();
-        // التحديث التلقائي مع استخدام التخزين المؤقت (كل 5 دقائق) لن يسبب 429 لأننا نستخدم المخبأ
         setInterval(() => loadData(true), 300000);
     });
 </script>
