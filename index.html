@@ -276,6 +276,7 @@
     const SHEET_NAME_DONE = 'بيدار (نتائج معاينة)';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
 
+    // الأعمدة
     const COL_NAME = 1, COL_PHONE = 2, COL_CITY = 6, COL_ADDRESS = 7, COL_NOTES = 8;
     const COL_APP_DATE = 14, COL_APP_TIME = 15;
     const COL_CB_L_DATE = 11, COL_CB_L_NOTES = 13;
@@ -307,19 +308,39 @@
         return str.replace(/[٠-٩]/g, d => String.fromCharCode(d.charCodeAt(0) - 1632 + 48));
     }
 
-    // ---------- الدالة المحسّنة لتحليل التاريخ (تصحيح كامل) ----------
+    // تحويل الرقم التسلسلي لـ Excel/Sheets إلى تاريخ
+    function parseDateSerial(serialStr) {
+        let serial = parseFloat(serialStr);
+        if (isNaN(serial) || serial < 1) return null;
+        // الأساس: 30 ديسمبر 1899 هو اليوم 0 لـ Google Sheets / Excel
+        let d = new Date(1899, 11, 30); // JavaScript months: 0=Jan, 11=Dec
+        d.setDate(d.getDate() + Math.floor(serial));
+        // إذا كان مع الوقت (كسر)
+        if (serial % 1 !== 0) {
+            let totalSeconds = Math.round((serial % 1) * 24 * 60 * 60);
+            d.setSeconds(totalSeconds);
+        }
+        return d;
+    }
+
     function parseDate(dateStr, rowIndex = -1, source = '') {
         if (!dateStr) return null;
         let original = dateStr.toString().trim();
         if (original === 'FALSE' || original === 'TRUE' || original === '') return null;
 
-        // تطبيع الأرقام العربية (إن وجدت)
+        // تطبيع الأرقام العربية
         let s = normalizeArabicDigits(original);
 
-        // إزالة جميع الرموز غير الرقمية، مع الإبقاء على الأرقام، الشرطات المائلة (- . /) والمسافات
+        // إزالة جميع الرموز غير الرقمية، مع الإبقاء على الأرقام، الشرطات، النقط، والمسافات
         s = s.replace(/[^\d\/\.\-\s]/g, '').trim();
 
-        // استخراج أول تاريخ متطابق من النص المنقى
+        // إذا تبقى نص يتألف من أعداد فقط (مع احتمالية وجود فواصل عشرية)، جرب تحويله كـ serial
+        if (/^[\d.]+$/.test(s)) {
+            let d = parseDateSerial(s);
+            if (d) return d;
+        }
+
+        // استخراج أول تاريخ متطابق
         let match = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
         if (!match) match = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
         if (!match) match = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
@@ -335,7 +356,6 @@
                 let part1 = parseInt(match[1]);
                 let part2 = parseInt(match[2]);
                 let part3 = parseInt(match[3]);
-                // معالجة السنة المختصرة (مثال 26 → 2026)
                 if (match[3].length <= 2 && part3 < 100) {
                     year = 2000 + part3;
                     month = part2 - 1;
@@ -351,12 +371,10 @@
                 }
             }
             let d = new Date(year, month, day, 12, 0);
-            if (!isNaN(d.getTime()) && d.getFullYear() >= 2000) {
-                return d;
-            }
+            if (!isNaN(d.getTime()) && d.getFullYear() >= 2000) return d;
         }
 
-        // محاولة أخيرة باستخدام Date.parse على النص المنقى
+        // محاولة Date.parse
         let timestamp = Date.parse(s);
         if (!isNaN(timestamp)) {
             let d = new Date(timestamp);
@@ -384,9 +402,10 @@
         return { hour: 12, minute: 0, display: '' };
     }
 
-    // ========== التخزين المؤقت مع إحياء التواريخ ==========
-    const CACHE_KEY = 'sheetCacheData';
-    const CACHE_TIME_KEY = 'sheetCacheTime';
+    // ========== التخزين المؤقت مع مفتاح إصدارة ==========
+    const CACHE_VERSION = 'v2';  // غيّر الرقم عند الحاجة لمسح الكاش القديم
+    const CACHE_KEY = `sheetCacheData_${CACHE_VERSION}`;
+    const CACHE_TIME_KEY = `sheetCacheTime_${CACHE_VERSION}`;
     const CACHE_DURATION = 5 * 60 * 1000;
 
     function reviveEventDates(events) {
@@ -473,7 +492,7 @@
                 }
             }
         }
-        console.log(`[fetchMainSheetData] Apps: ${appCount}, CB-L: ${cbLCount}, CB-S: ${cbSCount}`);
+        console.log(`[fetchMainSheetData] Total rows: ${rows.length}, Apps: ${appCount}, CB-L: ${cbLCount}, CB-S: ${cbSCount}`);
         return events;
     }
 
