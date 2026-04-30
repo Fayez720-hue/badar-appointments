@@ -415,7 +415,7 @@
     }
 
     // ========== التخزين المؤقت ==========
-    const CACHE_VERSION = 'v5';
+    const CACHE_VERSION = 'v6';
     const CACHE_KEY = `sheetCacheData_${CACHE_VERSION}`;
     const CACHE_TIME_KEY = `sheetCacheTime_${CACHE_VERSION}`;
     const CACHE_DURATION = 2 * 60 * 1000; // دقيقتان
@@ -826,13 +826,13 @@
         // تحميل أولي
         loadData();
 
-        // تحديث تلقائي كل دقيقتين
-        setInterval(() => loadData(true), 120000);
+        // تحديث تلقائي كل دقيقة (باستثناء استخدام التخزين المؤقت)
+        setInterval(() => loadData(true), 60000);
 
-        // تحديث عند عودة التبويب إلى الواجهة
+        // تحديث عند العودة إلى التبويب (جلب إجباري)
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
-                loadData();
+                loadData(true);
             }
         });
     });
