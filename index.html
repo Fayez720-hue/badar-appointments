@@ -273,7 +273,7 @@
     const SPREADSHEET_ID_MAIN = '1oZMWwvTHATw4Eoehm6URoysFwp3ylm8Bb0udy-qG1zg';
     const SHEET_NAME_MAIN = 'مبيعات';
     const SPREADSHEET_ID_DONE = '1HcnGcO9hcYWPNRETHGzdN1-XwTgpvc6YZhPyw4zRssI';
-    const SHEET_NAME_DONE = 'بيدار (نتائج معاينة)'; // تم التصحيح
+    const SHEET_NAME_DONE = 'بيدار (نتائج معاينة)';
     const API_KEY = 'AIzaSyCkoMx_6tPVCPpnnBCzoQjNYovnVaRgjbM';
 
     const COL_NAME = 1, COL_PHONE = 2, COL_CITY = 6, COL_ADDRESS = 7, COL_NOTES = 8;
@@ -307,25 +307,18 @@
         return str.replace(/[٠-٩]/g, d => String.fromCharCode(d.charCodeAt(0) - 1632 + 48));
     }
 
-    // --- دالة parseDate مُحسَّنة تتعامل مع الوقت المدمج ---
     function parseDate(dateStr, rowIndex = -1, source = '') {
         if (!dateStr) return null;
         let original = dateStr.toString().trim();
         if (original === 'FALSE' || original === 'TRUE' || original === '') return null;
 
         let s = normalizeArabicDigits(original);
-        // إزالة اسم اليوم والرموز
         s = s.replace(/(السبت|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة)\s*,?\s*/i, '');
         s = s.replace(/،/g, ',').replace(/&/g, '');
 
-        // إذا كان النص يحتوي على وقت (رقم:رقم وبعده ص/م) فاستخرج الجزء الخاص بالتاريخ فقط
         let timeMatch = s.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*[مص]/);
-        if (timeMatch) {
-            // أزل الوقت من النص ليسهل إيجاد التاريخ
-            s = s.replace(timeMatch[0], '');
-        }
+        if (timeMatch) s = s.replace(timeMatch[0], '');
 
-        // البحث عن أنماط مختلفة للتاريخ
         let match = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
         if (!match) match = s.match(/(\d{4})\/(\d{1,2})\/(\d{1,2})/);
         if (!match) match = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
@@ -359,7 +352,6 @@
             if (!isNaN(d.getTime()) && d.getFullYear() >= 2000) return d;
         }
 
-        // محاولات أخرى مع Date.parse
         let cleaned = s.replace(/[^\d\/\.\-\s:]/g, '').trim();
         let timestamp = Date.parse(cleaned);
         if (!isNaN(timestamp)) {
@@ -395,10 +387,18 @@
         return { hour: 12, minute: 0, display: '' };
     }
 
-    // ========== التخزين المؤقت ==========
+    // ========== التخزين المؤقت مع معالجة التواريخ ==========
     const CACHE_KEY = 'sheetCacheData';
     const CACHE_TIME_KEY = 'sheetCacheTime';
     const CACHE_DURATION = 5 * 60 * 1000;
+
+    // تحويل جميع سلاسل التواريخ في الأحداث إلى كائنات Date
+    function reviveEventDates(events) {
+        return events.map(ev => ({
+            ...ev,
+            date: ev.date ? new Date(ev.date) : new Date()
+        }));
+    }
 
     function getCachedData() {
         const cached = localStorage.getItem(CACHE_KEY);
@@ -406,7 +406,12 @@
         if (cached && time) {
             const age = Date.now() - parseInt(time);
             if (age < CACHE_DURATION) {
-                try { return JSON.parse(cached); } catch (e) {}
+                try {
+                    const parsed = JSON.parse(cached);
+                    if (parsed.mainEvents) parsed.mainEvents = reviveEventDates(parsed.mainEvents);
+                    if (parsed.doneEvents) parsed.doneEvents = reviveEventDates(parsed.doneEvents);
+                    return parsed;
+                } catch (e) {}
             }
         }
         return null;
@@ -527,10 +532,12 @@
         for (let i = 0; i < appointmentsOnly.length; i++) {
             for (let j = i+1; j < appointmentsOnly.length; j++) {
                 const e1 = appointmentsOnly[i], e2 = appointmentsOnly[j];
-                if (new Date(e1.date).toDateString() === new Date(e2.date).toDateString()) {
-                    const t1 = e1.date.getHours()*60 + e1.date.getMinutes();
-                    const t2 = e2.date.getHours()*60 + e2.date.getMinutes();
-                    if (Math.abs(t1 - t2) < 60) overlaps.push({ event1: e1, event2: e2, date: new Date(e1.date) });
+                const d1 = e1.date instanceof Date ? e1.date : new Date(e1.date);
+                const d2 = e2.date instanceof Date ? e2.date : new Date(e2.date);
+                if (d1.toDateString() === d2.toDateString()) {
+                    const t1 = d1.getHours()*60 + d1.getMinutes();
+                    const t2 = d2.getHours()*60 + d2.getMinutes();
+                    if (Math.abs(t1 - t2) < 60) overlaps.push({ event1: e1, event2: e2, date: d1 });
                 }
             }
         }
@@ -539,7 +546,7 @@
 
     function detectUpcomingEvents(events) {
         const now = new Date(), next24 = new Date(now.getTime() + 24*60*60*1000);
-        return events.filter(ev => { const ed = new Date(ev.date); return ed >= now && ed <= next24; });
+        return events.filter(ev => { const ed = ev.date instanceof Date ? ev.date : new Date(ev.date); return ed >= now && ed <= next24; });
     }
 
     function showUpcomingNotifications(upcoming) {
@@ -548,7 +555,8 @@
             if (shownUpcomingAlerts.has(key)) continue;
             shownUpcomingAlerts.add(key);
             saveShownAlerts();
-            const hours = Math.round((new Date(ev.date) - new Date()) / (1000*60*60));
+            const eventDate = ev.date instanceof Date ? ev.date : new Date(ev.date);
+            const hours = Math.round((eventDate - new Date()) / (1000*60*60));
             const timeText = hours < 1 ? 'خلال أقل من ساعة' : `بعد ${hours} ساعات`;
             const title = `🔔 ${ev.type === TYPE_APP ? 'معاينة' : (ev.type === TYPE_DONE ? 'معاينة تمت' : 'متابعة')} قريب`;
             const message = `${ev.title} - ${timeText}`;
@@ -589,11 +597,11 @@
         const overlapIds = new Set(overlaps.flatMap(o => [o.event1.id, o.event2.id]));
         const upcomingIds = new Set(upcomingEvents.map(e => e.id));
         const grouped = {};
-        for (const ev of events) { const key = ev.date.toDateString(); if (!grouped[key]) grouped[key] = []; grouped[key].push(ev); }
+        for (const ev of events) { const key = new Date(ev.date).toDateString(); if (!grouped[key]) grouped[key] = []; grouped[key].push(ev); }
         const sortedDays = Object.keys(grouped).sort((a,b)=>new Date(a)-new Date(b));
         let html = '';
         for (const dayKey of sortedDays) {
-            const dayEvents = grouped[dayKey].sort((a,b)=>a.date-b.date);
+            const dayEvents = grouped[dayKey].sort((a,b)=>new Date(a.date)-new Date(b.date));
             const dateObj = new Date(dayKey);
             const dayName = dateObj.toLocaleDateString('ar-EG', { weekday:'long' });
             const dateStr = dateObj.toLocaleDateString('ar-EG');
@@ -629,6 +637,7 @@
         const overlapIds = new Set(overlaps.flatMap(o => [o.event1.id, o.event2.id]));
         const upcomingIds = new Set(upcomingEvents.map(e => e.id));
         const fcEvents = events.map(ev => {
+            const eventDate = ev.date instanceof Date ? ev.date : new Date(ev.date);
             let bgColor;
             if (overlapIds.has(ev.id)) bgColor = '#dc2626';
             else if (upcomingIds.has(ev.id)) bgColor = '#f4b942';
@@ -640,10 +649,10 @@
             return {
                 id: ev.id,
                 title: `${icon} ${ev.title}${ev.displayTime ? ` (${ev.displayTime})` : ''}`,
-                start: ev.date,
+                start: eventDate,
                 backgroundColor: bgColor,
                 extendedProps: {
-                    title: ev.title, dateStr: ev.date.toLocaleDateString('ar-EG'), time: ev.displayTime,
+                    title: ev.title, dateStr: eventDate.toLocaleDateString('ar-EG'), time: ev.displayTime,
                     phone: ev.phone, city: ev.city, address: ev.address, notes: ev.notes, type: ev.type,
                     code: ev.code || '', clientReply: ev.clientReply || ''
                 }
